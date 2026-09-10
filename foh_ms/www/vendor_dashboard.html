@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{{ site.site_name }} - Vendor Dashboard</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<style>
+		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+	</style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+	<header class="bg-slate-900 text-white">
+		<div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+			<div>
+				<h1 class="text-lg font-bold">{{ site.site_name }}</h1>
+				<p class="text-xs text-slate-400">{{ site.vendor_name }} · AP {{ site.ap_mac }}</p>
+			</div>
+			<a href="/api/method/logout" class="text-sm bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg">Log out</a>
+		</div>
+	</header>
+
+	<main class="max-w-6xl mx-auto px-4 py-6">
+
+		<!-- KPI Cards -->
+		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
+				<p class="text-xs font-semibold text-slate-500 uppercase">Revenue Today</p>
+				<p class="text-2xl font-bold text-slate-900 mt-1">{{ frappe.utils.fmt_money(total_revenue_today) }}</p>
+			</div>
+			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
+				<p class="text-xs font-semibold text-slate-500 uppercase">Revenue This Month</p>
+				<p class="text-2xl font-bold text-slate-900 mt-1">{{ frappe.utils.fmt_money(total_revenue_month) }}</p>
+			</div>
+			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
+				<p class="text-xs font-semibold text-slate-500 uppercase">Paid Connections</p>
+				<p class="text-2xl font-bold text-slate-900 mt-1">{{ active_connections }}</p>
+			</div>
+			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
+				<p class="text-xs font-semibold text-slate-500 uppercase">Controller Status</p>
+				<p class="text-2xl font-bold mt-1 {{ 'text-emerald-600' if omada.connected else 'text-red-500' }}">
+					{{ "Online" if omada.connected else "Offline" }}
+				</p>
+			</div>
+		</div>
+
+		<!-- Live Traffic -->
+		<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200 mb-8">
+			<h2 class="text-sm font-bold text-slate-700 uppercase mb-4">Live Traffic Snapshot</h2>
+			{% if omada.connected %}
+			<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+				<div class="p-4 bg-slate-50 rounded-lg">
+					<p class="text-xs text-slate-500">Active Clients</p>
+					<p class="text-xl font-semibold text-slate-900">{{ omada.client_count }}</p>
+				</div>
+				<div class="p-4 bg-slate-50 rounded-lg">
+					<p class="text-xs text-slate-500">Download Traffic</p>
+					<p class="text-xl font-semibold text-slate-900">{{ "%.2f"|format((omada.tx_rate or 0) / 1024 / 1024) }} MB</p>
+				</div>
+				<div class="p-4 bg-slate-50 rounded-lg">
+					<p class="text-xs text-slate-500">Upload Traffic</p>
+					<p class="text-xl font-semibold text-slate-900">{{ "%.2f"|format((omada.rx_rate or 0) / 1024 / 1024) }} MB</p>
+				</div>
+			</div>
+			{% else %}
+			<p class="text-sm text-slate-500">
+				Could not reach the Omada Controller right now{{ " (" + omada.error + ")" if omada.error else "" }}.
+			</p>
+			{% endif %}
+		</div>
+
+		<!-- Vouchers & Ads -->
+		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
+				<p class="text-xs font-semibold text-slate-500 uppercase">Vouchers Issued</p>
+				<p class="text-2xl font-bold text-slate-900 mt-1">{{ vouchers_issued }}</p>
+			</div>
+			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
+				<p class="text-xs font-semibold text-slate-500 uppercase">Vouchers Redeemed</p>
+				<p class="text-2xl font-bold text-slate-900 mt-1">{{ vouchers_redeemed }}</p>
+			</div>
+			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
+				<p class="text-xs font-semibold text-slate-500 uppercase">Ad Impressions</p>
+				<p class="text-2xl font-bold text-slate-900 mt-1">{{ ad_views }}</p>
+			</div>
+		</div>
+
+		<!-- Transactions -->
+		<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
+			<h2 class="text-sm font-bold text-slate-700 uppercase mb-4">Recent Transactions</h2>
+			<div class="overflow-x-auto">
+				<table class="w-full text-sm text-left">
+					<thead>
+						<tr class="text-xs text-slate-500 uppercase border-b border-slate-200">
+							<th class="py-2 pr-4">Phone</th>
+							<th class="py-2 pr-4">Plan</th>
+							<th class="py-2 pr-4">Amount</th>
+							<th class="py-2 pr-4">Duration</th>
+							<th class="py-2 pr-4">Client MAC</th>
+							<th class="py-2 pr-4">Date</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for txn in transactions %}
+						<tr class="border-b border-slate-100 last:border-0">
+							<td class="py-2 pr-4">{{ txn.phone_number }}</td>
+							<td class="py-2 pr-4">{{ txn.package_name }}</td>
+							<td class="py-2 pr-4">{{ frappe.utils.fmt_money(txn.amount) }}</td>
+							<td class="py-2 pr-4">{{ txn.duration_minutes }} min</td>
+							<td class="py-2 pr-4 text-slate-500">{{ txn.client_mac }}</td>
+							<td class="py-2 pr-4 text-slate-500">{{ frappe.utils.format_datetime(txn.creation, "yyyy-MM-dd HH:mm") }}</td>
+						</tr>
+						{% else %}
+						<tr>
+							<td colspan="6" class="py-6 text-center text-slate-400">No transactions yet.</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</main>
+</body>
+</html>

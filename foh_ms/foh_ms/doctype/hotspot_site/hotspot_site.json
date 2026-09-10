@@ -1,0 +1,269 @@
+{
+ "actions": [],
+ "autoname": "HTS-.#####",
+ "creation": "2026-08-12 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "vendor_information_section",
+  "vendor_name",
+  "vendor_user",
+  "column_break_vendor",
+  "phone_number",
+  "mobile_money_account",
+  "is_active",
+  "enable_online_payment",
+  "omada_credentials_section",
+  "site_name",
+  "ap_mac",
+  "authorization_method",
+  "column_break_omada",
+  "controller_ip",
+  "port",
+  "controller_id",
+  "site_id",
+  "omada_username",
+  "omada_password",
+  "success_redirect_url",
+  "radius_section",
+  "radius_client_ip",
+  "radius_nas_id",
+  "column_break_radius",
+  "radius_secret",
+  "ap_login_url_template",
+  "packages_section",
+  "packages",
+  "lipa_namba_section",
+  "lipa_namba_images"
+ ],
+ "fields": [
+  {
+   "fieldname": "vendor_information_section",
+   "fieldtype": "Section Break",
+   "label": "Vendor Information"
+  },
+  {
+   "fieldname": "vendor_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Vendor Name",
+   "reqd": 1
+  },
+  {
+   "description": "Portal login user (Website User) that will access the Vendor Dashboard for this site.",
+   "fieldname": "vendor_user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Vendor User",
+   "options": "User",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "column_break_vendor",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "phone_number",
+   "fieldtype": "Data",
+   "label": "Phone Number",
+   "options": "Phone"
+  },
+  {
+   "fieldname": "mobile_money_account",
+   "fieldtype": "Data",
+   "label": "Mobile Money Account"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Is Active"
+  },
+  {
+   "default": "0",
+   "description": "While off, the captive portal shows a maintenance message instead of the STK push flow. Voucher redemption and Lipa Namba are unaffected.",
+   "fieldname": "enable_online_payment",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enable Online Payment (Mobile Money)"
+  },
+  {
+   "fieldname": "omada_credentials_section",
+   "fieldtype": "Section Break",
+   "label": "Omada Hardware Credentials"
+  },
+  {
+   "fieldname": "site_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Site Name",
+   "reqd": 1
+  },
+  {
+   "description": "MAC address of the Access Point used to match incoming captive portal redirects.",
+   "fieldname": "ap_mac",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "AP MAC Address",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "Omada Controller API",
+   "description": "How this site authorizes a client after payment/voucher success. \"Omada Controller API\" (default, existing behavior) calls the Omada SDN Controller's REST API -- requires a Controller (software, OC200, or Omada Cloud) managing the AP. \"Local RADIUS Server\" is for standalone EAPs with no Controller: the EAP is set to Authentication Type \"External RADIUS Server\" and validates logins against foh_ms's own independent RADIUS server (see foh_ms.radius_server) instead.",
+   "fieldname": "authorization_method",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Authorization Method",
+   "options": "Omada Controller API\nLocal RADIUS Server",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_omada",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
+   "description": "For a local/self-hosted Controller: its LAN IP. For an Omada Cloud-managed site: the cloud API host shown in the browser URL when you're on the controller's dashboard, e.g. \"euw1-omada-cloud.tplinkcloud.com\".",
+   "fieldname": "controller_ip",
+   "fieldtype": "Data",
+   "label": "Controller IP / Host",
+   "mandatory_depends_on": "eval:doc.authorization_method==\"Omada Controller API\""
+  },
+  {
+   "default": "8043",
+   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
+   "description": "443 for Omada Cloud (HTTPS default); 8043 for a local Controller's default HTTPS management port.",
+   "fieldname": "port",
+   "fieldtype": "Int",
+   "label": "Controller Port"
+  },
+  {
+   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
+   "description": "The CONTROLLER_ID path segment TP-Link's External Portal API requires (also called Omadac ID) -- distinct from the Site ID below. Find it via the controller's Open API app registration page, or in Settings > Platform Integration.",
+   "fieldname": "controller_id",
+   "fieldtype": "Data",
+   "label": "Controller ID",
+   "mandatory_depends_on": "eval:doc.authorization_method==\"Omada Controller API\""
+  },
+  {
+   "default": "default",
+   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
+   "fieldname": "site_id",
+   "fieldtype": "Data",
+   "label": "Omada Site ID"
+  },
+  {
+   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
+   "fieldname": "omada_username",
+   "fieldtype": "Data",
+   "label": "Omada Username",
+   "mandatory_depends_on": "eval:doc.authorization_method==\"Omada Controller API\""
+  },
+  {
+   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
+   "fieldname": "omada_password",
+   "fieldtype": "Password",
+   "label": "Omada Password",
+   "mandatory_depends_on": "eval:doc.authorization_method==\"Omada Controller API\""
+  },
+  {
+   "default": "https://www.google.com",
+   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
+   "description": "Once a client is authorized on the Omada controller, the portal page redirects the browser here to break it out of the captive portal.",
+   "fieldname": "success_redirect_url",
+   "fieldtype": "Data",
+   "label": "Success Redirect URL"
+  },
+  {
+   "depends_on": "eval:doc.authorization_method==\"Local RADIUS Server\"",
+   "fieldname": "radius_section",
+   "fieldtype": "Section Break",
+   "label": "Local RADIUS Server"
+  },
+  {
+   "description": "IP address the EAP itself sends RADIUS requests from (its management/LAN IP) -- must match \"RADIUS Server IP\" reachability on the EAP's Portal page and is used here to look up the correct shared secret for incoming requests.",
+   "fieldname": "radius_client_ip",
+   "fieldtype": "Data",
+   "label": "EAP IP Address",
+   "mandatory_depends_on": "eval:doc.authorization_method==\"Local RADIUS Server\""
+  },
+  {
+   "description": "Must match the \"NAS ID\" field configured on the EAP's Portal page.",
+   "fieldname": "radius_nas_id",
+   "fieldtype": "Data",
+   "label": "RADIUS NAS Identifier",
+   "mandatory_depends_on": "eval:doc.authorization_method==\"Local RADIUS Server\""
+  },
+  {
+   "fieldname": "column_break_radius",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Shared secret -- must match \"RADIUS Password\" configured on the EAP's Portal page exactly.",
+   "fieldname": "radius_secret",
+   "fieldtype": "Password",
+   "label": "RADIUS Shared Secret",
+   "mandatory_depends_on": "eval:doc.authorization_method==\"Local RADIUS Server\""
+  },
+  {
+   "description": "Template for the URL the portal page must send the client's browser to once payment/voucher succeeds, so the EAP performs the RADIUS login itself. Placeholders: {username} {password} {client_mac} {ap_mac}. This has NOT been verified against real TP-Link standalone EAP firmware -- confirm the correct login endpoint/parameters for your exact model before relying on it (e.g. by inspecting what the EAP's own Local Web Portal with Username/Password submits), then fill this in.",
+   "fieldname": "ap_login_url_template",
+   "fieldtype": "Data",
+   "label": "AP Login Redirect URL Template"
+  },
+  {
+   "fieldname": "packages_section",
+   "fieldtype": "Section Break",
+   "label": "Packages"
+  },
+  {
+   "fieldname": "packages",
+   "fieldtype": "Table",
+   "label": "Pricing Packages",
+   "options": "Hotspot Package Item"
+  },
+  {
+   "fieldname": "lipa_namba_section",
+   "fieldtype": "Section Break",
+   "label": "Lipa Namba Images"
+  },
+  {
+   "description": "Manual pay-by-QR/till-number images offered from the captive portal's Lipa Namba button. Add one per network; if more than one, the customer is asked to pick a network first.",
+   "fieldname": "lipa_namba_images",
+   "fieldtype": "Table",
+   "label": "Lipa Namba Images",
+   "options": "Hotspot Lipa Number"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-12 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "FOH-MS",
+ "name": "Hotspot Site",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "vendor_name",
+ "track_changes": 1
+}

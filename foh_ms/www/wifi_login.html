@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+	<title>{{ site_label or "Wi-Fi" }} - Ungana Sasa</title>
+	<style>
+		:root {
+			--green: #16a34a;
+			--green-dark: #0e7a37;
+			--green-light: #eafaf0;
+			--green-border: rgba(22, 163, 74, 0.35);
+			--bg: #ffffff;
+			--text: #12201a;
+			--text-dim: #66766e;
+			--danger-bg: #fef2f2;
+			--danger-text: #b91c1c;
+			--success-bg: #ecfdf5;
+			--success-text: #047857;
+		}
+		* { box-sizing: border-box; margin: 0; padding: 0; }
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+			background: var(--bg);
+			min-height: 100vh;
+			display: flex;
+			justify-content: center;
+			padding: 20px 14px 40px;
+			color: var(--text);
+		}
+		.page { width: 100%; max-width: 430px; }
+
+		.hero {
+			background: #fff;
+			border: 2px solid var(--green);
+			border-radius: 20px;
+			padding: 24px 20px 20px;
+			text-align: center;
+			box-shadow: 0 12px 30px rgba(22, 163, 74, 0.12);
+		}
+		.hero-icon {
+			width: 58px;
+			height: 58px;
+			margin: 0 auto 10px;
+			border-radius: 50%;
+			background: linear-gradient(135deg, #34d17a, var(--green-dark));
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		.hero-icon svg { width: 28px; height: 28px; }
+		.hero h1 { font-size: 18px; font-weight: 800; color: var(--text); }
+		.hero p.tagline { font-size: 12.5px; color: var(--text-dim); margin-top: 3px; }
+
+		.steps {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 6px;
+			margin: 16px 0;
+			font-size: 12px;
+			font-weight: 700;
+			color: var(--green-dark);
+			letter-spacing: 0.3px;
+		}
+		.steps .chevron { color: var(--green); opacity: 0.6; font-size: 11px; }
+
+		.phone-pill {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			background: var(--green-light);
+			border: 1.5px solid var(--green-border);
+			border-radius: 14px;
+			padding: 12px 16px;
+		}
+		.phone-pill svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--green-dark); }
+		.phone-pill input {
+			flex: 1;
+			background: transparent;
+			border: none;
+			outline: none;
+			color: var(--text);
+			font-size: 15px;
+			font-weight: 600;
+		}
+		.phone-pill input::placeholder { color: #8fa39a; font-weight: 500; }
+
+		.pay-label {
+			font-size: 11.5px;
+			font-weight: 700;
+			color: var(--text-dim);
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			margin: 16px 0 8px;
+		}
+		.pay-logos {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			justify-content: center;
+		}
+		.pay-logo {
+			height: 38px;
+			padding: 5px 12px;
+			border: 1px solid var(--green-border);
+			border-radius: 10px;
+			background: #fff;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		.pay-logo img { max-height: 24px; max-width: 84px; object-fit: contain; }
+		.pay-logo .pay-fallback {
+			display: none;
+			align-items: center;
+			font-size: 11px;
+			font-weight: 700;
+			color: var(--green-dark);
+			white-space: nowrap;
+		}
+
+		.ad-card {
+			margin-top: 16px;
+			border: 1px solid var(--green-border);
+			border-radius: 16px;
+			overflow: hidden;
+			background: #fff;
+		}
+		.ad-image-wrap {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: 88px;
+			background: #f7faf8;
+			padding: 10px;
+		}
+		.ad-banner {
+			display: block;
+			max-width: 100%;
+			max-height: 100%;
+			width: auto;
+			height: auto;
+			object-fit: contain;
+		}
+		.ad-marquee {
+			overflow: hidden;
+			white-space: nowrap;
+			border-top: 1px solid var(--green-border);
+			background: var(--green-light);
+			padding: 7px 0;
+		}
+		.ad-marquee-track {
+			display: inline-flex;
+			width: max-content;
+			animation-name: ad-marquee-scroll;
+			animation-timing-function: linear;
+			animation-iteration-count: infinite;
+		}
+		.ad-marquee-item {
+			display: inline-block;
+			padding: 0 20px;
+			font-size: 12px;
+			font-weight: 600;
+			color: var(--green-dark);
+		}
+		@keyframes ad-marquee-scroll {
+			from { transform: translateX(0); }
+			to { transform: translateX(-50%); }
+		}
+
+		.ad-slide { display: none; }
+		.ad-slide.active { display: block; }
+
+		.ad-dots {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			gap: 6px;
+			padding: 9px 0;
+			background: #fff;
+			border-top: 1px solid var(--green-border);
+		}
+		.ad-dot {
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: var(--green-border);
+			border: none;
+			padding: 0;
+			cursor: pointer;
+			transition: width 0.15s ease, border-radius 0.15s ease, background 0.15s ease;
+		}
+		.ad-dot.active { width: 16px; border-radius: 4px; background: var(--green); }
+
+		.section {
+			margin-top: 26px;
+		}
+		.section-header {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin-bottom: 12px;
+		}
+		.section-header .badge {
+			width: 26px;
+			height: 26px;
+			border-radius: 8px;
+			background: var(--green-light);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+		}
+		.section-header .badge svg { width: 14px; height: 14px; color: var(--green-dark); }
+		.section-header h2 {
+			font-size: 15px;
+			font-weight: 800;
+			color: var(--text);
+		}
+
+		.group-title {
+			font-size: 12px;
+			font-weight: 700;
+			color: var(--text-dim);
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			margin: 14px 0 8px;
+		}
+		.group-title:first-child { margin-top: 0; }
+
+		.package-list { display: flex; flex-direction: column; gap: 10px; }
+		.package-card {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			background: #fff;
+			border: 1.5px solid var(--green-border);
+			border-radius: 14px;
+			padding: 14px 16px;
+		}
+		.package-info { min-width: 0; }
+		.package-name { font-size: 14.5px; font-weight: 700; color: var(--text); }
+		.package-meta { font-size: 12.5px; color: var(--text-dim); margin-top: 3px; }
+		.buy-btn {
+			flex-shrink: 0;
+			border: none;
+			background: linear-gradient(135deg, #34d17a, var(--green-dark));
+			color: #fff;
+			font-size: 13px;
+			font-weight: 700;
+			padding: 10px 16px;
+			border-radius: 10px;
+			cursor: pointer;
+		}
+		.buy-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+		.empty-state {
+			text-align: center;
+			color: var(--text-dim);
+			font-size: 13px;
+			padding: 16px 10px;
+			border: 1.5px dashed var(--green-border);
+			border-radius: 14px;
+		}
+
+		.voucher-card {
+			background: #fff;
+			border: 1.5px solid var(--green-border);
+			border-radius: 14px;
+			padding: 16px;
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+		}
+		.voucher-card p {
+			font-size: 12.5px;
+			color: var(--text-dim);
+		}
+		.voucher-card input {
+			width: 100%;
+			padding: 12px 14px;
+			border: 1.5px solid var(--green-border);
+			border-radius: 10px;
+			font-size: 15px;
+			background: var(--green-light);
+			color: var(--text);
+			text-transform: uppercase;
+			letter-spacing: 1px;
+			font-weight: 700;
+			text-align: center;
+		}
+		.voucher-card input:focus { outline: none; border-color: var(--green); }
+		.voucher-card input::placeholder { color: #8fa39a; letter-spacing: normal; text-transform: none; font-weight: 500; }
+		.voucher-card button {
+			width: 100%;
+			padding: 12px;
+			border: none;
+			border-radius: 10px;
+			background: linear-gradient(135deg, #34d17a, var(--green-dark));
+			color: #fff;
+			font-size: 14px;
+			font-weight: 700;
+			cursor: pointer;
+		}
+		.voucher-card button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+		.msg {
+			margin-top: 16px;
+			padding: 12px 14px;
+			border-radius: 10px;
+			font-size: 13px;
+			display: none;
+		}
+		.msg.show { display: block; }
+		.msg.success { background: var(--success-bg); color: var(--success-text); border: 1px solid #a7f3d0; }
+		.msg.error { background: var(--danger-bg); color: var(--danger-text); border: 1px solid #fecaca; }
+
+		.no-site {
+			text-align: center;
+			color: var(--text-dim);
+			font-size: 14px;
+			padding: 30px 10px;
+		}
+
+		.footer-note {
+			text-align: center;
+			font-size: 11px;
+			color: #9aa8a1;
+			margin-top: 26px;
+		}
+
+		.help-bar {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+			margin-top: 20px;
+			background: var(--green-light);
+			border: 1.5px solid var(--green-border);
+			border-radius: 12px;
+			padding: 11px 12px 11px 14px;
+			cursor: pointer;
+		}
+		.help-info { display: flex; align-items: center; gap: 8px; min-width: 0; }
+		.help-info svg { width: 17px; height: 17px; color: var(--green-dark); flex-shrink: 0; }
+		.help-info .help-text { font-size: 12px; color: var(--text-dim); line-height: 1.3; }
+		.help-info .help-text strong {
+			display: block;
+			font-size: 14px;
+			font-weight: 800;
+			color: var(--text);
+			letter-spacing: 0.3px;
+		}
+		.copy-btn {
+			flex-shrink: 0;
+			width: 34px;
+			height: 34px;
+			border-radius: 9px;
+			border: 1px solid var(--green-border);
+			background: #fff;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--green-dark);
+			transition: background 0.15s ease, color 0.15s ease;
+		}
+		.copy-btn svg { width: 15px; height: 15px; }
+		.copy-btn.copied { background: var(--green); color: #fff; border-color: var(--green); }
+
+		.copy-toast {
+			position: fixed;
+			left: 50%;
+			bottom: 88px;
+			transform: translateX(-50%) translateY(12px);
+			background: #14201a;
+			color: #fff;
+			padding: 10px 18px;
+			border-radius: 999px;
+			font-size: 12.5px;
+			font-weight: 600;
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity 0.2s ease, transform 0.2s ease;
+			z-index: 1100;
+			box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+			white-space: nowrap;
+		}
+		.copy-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+		.modal-overlay {
+			position: fixed;
+			inset: 0;
+			background: rgba(10, 20, 15, 0.55);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+			z-index: 1000;
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity 0.18s ease;
+		}
+		.modal-overlay.show { opacity: 1; pointer-events: auto; }
+		.modal-box {
+			background: #fff;
+			border: 2px solid var(--green);
+			border-radius: 18px;
+			width: 100%;
+			max-width: 360px;
+			padding: 24px 20px 20px;
+			box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+			position: relative;
+		}
+		.modal-close {
+			position: absolute;
+			top: 12px;
+			right: 12px;
+			width: 28px;
+			height: 28px;
+			border-radius: 50%;
+			background: var(--green-light);
+			border: none;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+			color: var(--green-dark);
+			font-size: 18px;
+			line-height: 1;
+		}
+		.modal-pkg { text-align: center; margin-bottom: 18px; }
+		.modal-pkg .label {
+			font-size: 11px;
+			font-weight: 700;
+			color: var(--text-dim);
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
+		.modal-pkg .name { font-size: 17px; font-weight: 800; color: var(--text); margin-top: 4px; }
+		.modal-pkg .meta { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+		.modal-box label.field-label {
+			display: block;
+			font-size: 12.5px;
+			font-weight: 700;
+			color: var(--text-dim);
+			margin-bottom: 6px;
+		}
+		.modal-hint {
+			font-size: 11.5px;
+			color: var(--text-dim);
+			margin: 8px 0 16px;
+		}
+		.modal-submit {
+			width: 100%;
+			padding: 13px;
+			border: none;
+			border-radius: 10px;
+			background: linear-gradient(135deg, #34d17a, var(--green-dark));
+			color: #fff;
+			font-size: 14.5px;
+			font-weight: 700;
+			cursor: pointer;
+		}
+		.modal-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+		.modal-msg {
+			margin-top: 12px;
+			padding: 10px 12px;
+			border-radius: 10px;
+			font-size: 12.5px;
+			display: none;
+		}
+		.modal-msg.show { display: block; }
+		.modal-msg.success { background: var(--success-bg); color: var(--success-text); border: 1px solid #a7f3d0; }
+		.modal-msg.error { background: var(--danger-bg); color: var(--danger-text); border: 1px solid #fecaca; }
+
+		.fab-lipa {
+			position: fixed;
+			right: 18px;
+			bottom: 18px;
+			z-index: 900;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			background: linear-gradient(135deg, #34d17a, var(--green-dark));
+			color: #fff;
+			border: none;
+			border-radius: 999px;
+			padding: 13px 20px 13px 16px;
+			font-size: 13.5px;
+			font-weight: 700;
+			box-shadow: 0 10px 26px rgba(22, 163, 74, 0.4);
+			cursor: pointer;
+		}
+		.fab-lipa svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+		.lipa-box {
+			background: #fff;
+			border: 2px solid var(--green);
+			border-radius: 18px;
+			width: 100%;
+			max-width: 340px;
+			padding: 22px 20px 20px;
+			text-align: center;
+			position: relative;
+			box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+		}
+		.lipa-box h3 { font-size: 16px; font-weight: 800; color: var(--text); }
+		.lipa-box p { font-size: 12.5px; color: var(--text-dim); margin-top: 6px; }
+		.lipa-box img {
+			width: 100%;
+			border-radius: 12px;
+			border: 1px solid var(--green-border);
+			margin-top: 14px;
+		}
+
+		.lipa-options {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			margin-top: 16px;
+		}
+		.lipa-option {
+			width: 100%;
+			padding: 13px 16px;
+			border: 1.5px solid var(--green-border);
+			border-radius: 12px;
+			background: var(--green-light);
+			color: var(--text);
+			font-size: 14px;
+			font-weight: 700;
+			cursor: pointer;
+			text-align: center;
+		}
+		.lipa-option:hover { border-color: var(--green); }
+
+		.maintenance-box {
+			background: #fff;
+			border: 2px solid var(--green);
+			border-radius: 18px;
+			width: 100%;
+			max-width: 340px;
+			padding: 28px 22px 24px;
+			text-align: center;
+			box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+		}
+		.maintenance-icon {
+			width: 58px;
+			height: 58px;
+			border-radius: 50%;
+			background: #fef3c7;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			margin: 0 auto 14px;
+		}
+		.maintenance-icon svg { width: 28px; height: 28px; color: #b45309; }
+		.maintenance-box h3 { font-size: 17px; font-weight: 800; color: var(--text); }
+		.maintenance-box p { font-size: 13px; color: var(--text-dim); margin-top: 8px; }
+		.maintenance-box button {
+			width: 100%;
+			margin-top: 18px;
+			padding: 12px;
+			border: none;
+			border-radius: 10px;
+			background: linear-gradient(135deg, #34d17a, var(--green-dark));
+			color: #fff;
+			font-size: 14px;
+			font-weight: 700;
+			cursor: pointer;
+		}
+
+		.success-box {
+			background: #fff;
+			border: 2px solid var(--green);
+			border-radius: 18px;
+			width: 100%;
+			max-width: 340px;
+			padding: 30px 22px 26px;
+			text-align: center;
+			box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+		}
+		.success-icon {
+			width: 62px;
+			height: 62px;
+			border-radius: 50%;
+			background: linear-gradient(135deg, #34d17a, var(--green-dark));
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			margin: 0 auto 14px;
+		}
+		.success-icon svg { width: 30px; height: 30px; }
+		.success-box h3 { font-size: 18px; font-weight: 800; color: var(--text); }
+		.success-box .msg-text { font-size: 13px; color: var(--text-dim); margin-top: 8px; }
+		.success-box .redirect-note { font-size: 11.5px; color: var(--text-dim); margin-top: 18px; }
+	</style>
+</head>
+<body>
+	<div class="page">
+		<div class="hero">
+			<div class="hero-icon">
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M12 18.5C12.8284 18.5 13.5 17.8284 13.5 17C13.5 16.1716 12.8284 15.5 12 15.5C11.1716 15.5 10.5 16.1716 10.5 17C10.5 17.8284 11.1716 18.5 12 18.5Z" fill="#fff"/>
+					<path d="M8.5 14C10.5 12 13.5 12 15.5 14" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+					<path d="M5.5 10.8C9.5 7 14.5 7 18.5 10.8" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+					<path d="M2.5 7.6C8 2.5 16 2.5 21.5 7.6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+				</svg>
+			</div>
+			<h1>{{ site_label or "Wi-Fi Hotspot" }}</h1>
+			<p class="tagline">{% if vendor_name %}Huduma inatolewa na {{ vendor_name }}{% else %}Ungana na intaneti kwa sekunde chache{% endif %}</p>
+
+			{% if site_found %}
+			<div class="steps">
+				<span>Chagua</span><span class="chevron">&#8250;</span>
+				<span>Lipa</span><span class="chevron">&#8250;</span>
+				<span>Unganisha</span>
+			</div>
+
+			<div class="pay-label">Tunakubali malipo kupitia</div>
+			<div class="pay-logos">
+				{% for p in payment_providers %}
+				<div class="pay-logo" title="{{ p.name }}">
+					<img src="/assets/foh_ms/images/payment_logos/{{ p.file }}.png" alt="{{ p.name }}"
+						onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+					<span class="pay-fallback">{{ p.name }}</span>
+				</div>
+				{% endfor %}
+			</div>
+			{% endif %}
+		</div>
+
+		{% if ads %}
+		<div class="ad-card">
+			<div class="ad-slides" id="ad-slides">
+				{% for ad in ads %}
+				<div class="ad-slide{{ ' active' if loop.first else '' }}">
+					<a href="{{ ad.target_url or '#' }}" target="_blank" rel="noopener" class="ad-image-wrap ad-link" data-ad="{{ ad.name }}">
+						<img class="ad-banner" src="{{ ad.image }}" alt="{{ ad.title }}">
+					</a>
+					{% if ad.marquee_text %}
+					<div class="ad-marquee">
+						<div class="ad-marquee-track" style="animation-duration: {{ ad.marquee_duration }}s;">
+							<span class="ad-marquee-item">{{ ad.marquee_text }}</span>
+							<span class="ad-marquee-item" aria-hidden="true">{{ ad.marquee_text }}</span>
+						</div>
+					</div>
+					{% endif %}
+				</div>
+				{% endfor %}
+			</div>
+			{% if ads|length > 1 %}
+			<div class="ad-dots" id="ad-dots">
+				{% for ad in ads %}
+				<span class="ad-dot{{ ' active' if loop.first else '' }}" data-idx="{{ loop.index0 }}"></span>
+				{% endfor %}
+			</div>
+			{% endif %}
+		</div>
+		{% endif %}
+
+		{% if not site_found %}
+		<div class="no-site">
+			Hatukuweza kutambua kifaa hiki cha mtandao. Tafadhali unganisha
+			tena kwenye Wi-Fi na ujaribu tena.
+		</div>
+		{% else %}
+
+		<input type="hidden" id="client_mac" value="{{ client_mac }}">
+		<input type="hidden" id="ap_mac" value="{{ ap_mac }}">
+		<input type="hidden" id="target" value="{{ target }}">
+		<input type="hidden" id="ssid_name" value="{{ ssid_name }}">
+		<input type="hidden" id="radio_id" value="{{ radio_id }}">
+
+		<div class="section">
+			<div class="section-header">
+				<div class="badge">
+					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+					</svg>
+				</div>
+				<h2>Vifurushi vya Mtandao</h2>
+			</div>
+
+			{% set unlimited_pkgs = packages|selectattr("package_type", "equalto", "Unlimited")|list %}
+			{% set bundle_pkgs = packages|selectattr("package_type", "equalto", "Bundle")|list %}
+
+			{% if unlimited_pkgs %}
+			<div class="group-title">Bila Kikomo</div>
+			<div class="package-list">
+				{% for pkg in unlimited_pkgs %}
+				<div class="package-card" data-idx="{{ pkg.idx }}">
+					<div class="package-info">
+						<div class="package-name">{{ pkg.package_name }}</div>
+						<div class="package-meta">{{ currency }} {{ "{:,.0f}".format(pkg.price) }} kwa {{ pkg.duration_label }}</div>
+					</div>
+					<button type="button" class="buy-btn">Nunua Sasa</button>
+				</div>
+				{% endfor %}
+			</div>
+			{% endif %}
+
+			{% if bundle_pkgs %}
+			<div class="group-title">Vifurushi vya Data</div>
+			<div class="package-list">
+				{% for pkg in bundle_pkgs %}
+				<div class="package-card" data-idx="{{ pkg.idx }}">
+					<div class="package-info">
+						<div class="package-name">{{ pkg.package_name }}</div>
+						<div class="package-meta">{{ currency }} {{ "{:,.0f}".format(pkg.price) }} kwa {{ pkg.duration_label }}</div>
+					</div>
+					<button type="button" class="buy-btn">Nunua Sasa</button>
+				</div>
+				{% endfor %}
+			</div>
+			{% endif %}
+
+			{% if not packages %}
+			<div class="empty-state">Hakuna vifurushi kwa sasa. Tafadhali wasiliana na msimamizi wa mtandao.</div>
+			{% endif %}
+		</div>
+
+		<div class="section">
+			<div class="section-header">
+				<div class="badge">
+					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" stroke="currentColor" stroke-width="1.8"/>
+						<path d="M2 10h20" stroke="currentColor" stroke-width="1.8"/>
+					</svg>
+				</div>
+				<h2>Tumia Nambari ya Voucher</h2>
+			</div>
+			<div class="voucher-card">
+				<p>Kama una kadi ya voucher, ingiza nambari yake hapa chini ili uunganishwe moja kwa moja.</p>
+				<input type="text" id="voucher_code" placeholder="mfano ABCD1234">
+				<button type="button" id="voucher-submit-btn">Tumia na Uunganishe</button>
+			</div>
+		</div>
+
+		<div class="msg" id="status-msg"></div>
+
+		{% if support_phone %}
+		<div class="help-bar" id="help-bar">
+			<div class="help-info">
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C11.4 21 3 12.6 3 2.7c0-.6.4-1 1-1H7.7c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.2 1.1L6.6 10.8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+				</svg>
+				<div class="help-text">
+					Una tatizo? Wasiliana nasi
+					<strong id="support-phone-text">{{ support_phone }}</strong>
+				</div>
+			</div>
+			<button type="button" class="copy-btn" id="copy-phone-btn" aria-label="Nakili Nambari">
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.7"/>
+					<path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.7"/>
+				</svg>
+			</button>
+		</div>
+		{% endif %}
+		{% endif %}
+
+		<div class="footer-note">Inaendeshwa na FOH-MS</div>
+	</div>
+
+	<div class="copy-toast" id="copy-toast"></div>
+
+	{% if site_found %}
+	<div class="modal-overlay" id="buy-modal">
+		<div class="modal-box">
+			<button type="button" class="modal-close" id="modal-close" aria-label="Funga">&times;</button>
+			<div class="modal-pkg">
+				<div class="label">Kifurushi Ulichochagua</div>
+				<div class="name" id="modal-pkg-name"></div>
+				<div class="meta" id="modal-pkg-meta"></div>
+			</div>
+
+			<label class="field-label" for="modal-phone">Nambari ya Simu ya Malipo</label>
+			<div class="phone-pill">
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C11.4 21 3 12.6 3 2.7c0-.6.4-1 1-1H7.7c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.2 1.1L6.6 10.8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+				</svg>
+				<input type="tel" id="modal-phone" placeholder="mfano 0745 123 456" inputmode="tel">
+			</div>
+			<div class="modal-hint">Utapokea ujumbe wa STK Push kwenye nambari hii ili uthibitishe malipo.</div>
+
+			<button type="button" class="modal-submit" id="modal-submit-btn">Lipa Sasa</button>
+			<div class="modal-msg" id="modal-msg"></div>
+		</div>
+	</div>
+
+	<button type="button" class="fab-lipa" id="lipa-namba-btn">
+		<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+			<rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/>
+			<rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/>
+			<rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/>
+			<rect x="14.5" y="14.5" width="2.5" height="2.5" fill="currentColor"/>
+			<rect x="18.5" y="14.5" width="2.5" height="2.5" fill="currentColor"/>
+			<rect x="14.5" y="18.5" width="2.5" height="2.5" fill="currentColor"/>
+			<rect x="18.5" y="18.5" width="2.5" height="2.5" fill="currentColor"/>
+		</svg>
+		Lipa Namba
+	</button>
+
+	{% if lipa_images|length > 1 %}
+	<div class="modal-overlay" id="lipa-select-modal">
+		<div class="lipa-box">
+			<button type="button" class="modal-close" id="lipa-select-close" aria-label="Funga">&times;</button>
+			<h3>Chagua Njia ya Lipa</h3>
+			<p>Chagua mtandao unaotaka kulipia ili uone namba/QR yake.</p>
+			<div class="lipa-options">
+				{% for row in lipa_images %}
+				<button type="button" class="lipa-option" data-image="{{ row.image }}" data-label="{{ row.label }}">{{ row.label }}</button>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+	{% endif %}
+
+	<div class="modal-overlay" id="lipa-namba-modal">
+		<div class="lipa-box">
+			<button type="button" class="modal-close" id="lipa-namba-close" aria-label="Funga">&times;</button>
+			<h3 id="lipa-namba-title">{{ lipa_default.label }}</h3>
+			<p>Tumia namba hii au scan QR kulipa moja kwa moja kupitia mtandao wowote au benki.</p>
+			<img id="lipa-namba-img" src="{{ lipa_default.image }}" alt="Lipa Namba">
+		</div>
+	</div>
+
+	<div class="modal-overlay" id="maintenance-modal">
+		<div class="maintenance-box">
+			<div class="maintenance-icon">
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a1.5 1.5 0 0 0 1.3 2.25h17.76a1.5 1.5 0 0 0 1.3-2.25L13.71 3.86a1.5 1.5 0 0 0-2.42 0Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+				</svg>
+			</div>
+			<h3>Mfumo wa kulipa kwa pesa upo katika matengenezo.</h3>
+			<p>Tumia Lipa Namba au nambari ya Voucher kuunganishwa kwa sasa.</p>
+			<button type="button" id="maintenance-close">Nimeelewa</button>
+		</div>
+	</div>
+
+	<div class="modal-overlay" id="success-modal">
+		<div class="success-box">
+			<div class="success-icon">
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+				</svg>
+			</div>
+			<h3>Umefanikiwa!</h3>
+			<p class="msg-text" id="success-msg-text"></p>
+			<p class="redirect-note">Unaelekezwa kwenye intaneti...</p>
+		</div>
+	</div>
+	{% endif %}
+
+	<script>
+		(function () {
+			var AUTHORIZATION_METHOD = "{{ authorization_method or '' }}";
+			var ONLINE_PAYMENT_ENABLED = {{ 'true' if online_payment_enabled else 'false' }};
+			var LIPA_COUNT = {{ lipa_images|length }};
+			// host:port to complete a Local RADIUS Server login against, sent by
+			// standalone EAPs on the initial redirect. Not yet wired into
+			// pollForRadiusLogin -- the exact submission scheme (path/params)
+			// this endpoint expects hasn't been confirmed against real hardware.
+			var TARGET = "{{ target }}";
+
+			function getCookie(name) {
+				var match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+				return match ? decodeURIComponent(match[2]) : "";
+			}
+
+			function val(id) {
+				var el = document.getElementById(id);
+				return el ? el.value : "";
+			}
+
+			var statusMsg = document.getElementById("status-msg");
+
+			function showMessage(text, type) {
+				if (!statusMsg) return;
+				statusMsg.textContent = text;
+				statusMsg.className = "msg show " + type;
+			}
+
+			// Shown only once a connection is actually confirmed -- i.e. a
+			// voucher redeemed successfully, or a payment poll came back with
+			// a redirect. An STK push merely being sent is not this moment;
+			// that stays a pending message (see handleSuccessPayload) until
+			// one of these two paths resolves it.
+			var successModal = document.getElementById("success-modal");
+			var successMsgText = document.getElementById("success-msg-text");
+
+			function showSuccessModal(message) {
+				if (!successModal) return;
+				successMsgText.textContent = message || "Umeunganishwa kwenye Wi-Fi!";
+				successModal.classList.add("show");
+			}
+
+			function redirectAfterSuccess(url, message) {
+				statusMsg.className = "msg";
+				showSuccessModal(message);
+				setTimeout(function () { window.location.href = url; }, 1600);
+			}
+
+			// Local-RADIUS sites only: once a transaction is Paid, fetch its
+			// one-time RADIUS credential and send the browser through the EAP's
+			// own login endpoint so it completes RADIUS auth. Independent of the
+			// Omada-Controller-API sites, which are authorized server-side and
+			// need no browser redirect at all.
+			function pollForRadiusLogin(transactionId, attempt) {
+				attempt = attempt || 0;
+				if (attempt > 30) {
+					showMessage("Malipo yamethibitishwa, lakini hatukuweza kukuunganisha moja kwa moja. Tafadhali unganisha tena kwenye mtandao wa Wi-Fi.", "error");
+					return;
+				}
+
+				fetch("/api/method/foh_ms.api.get_radius_credentials", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"X-Frappe-CSRF-Token": getCookie("csrf_token")
+					},
+					body: JSON.stringify({ transaction_id: transactionId })
+				})
+					.then(function (res) { return res.json(); })
+					.then(function (data) {
+						var result = data && data.message;
+						if (result && result.login_url) {
+							redirectAfterSuccess(result.login_url, "Malipo yamethibitishwa. Umeunganishwa kwenye Wi-Fi!");
+						} else {
+							setTimeout(function () { pollForRadiusLogin(transactionId, attempt + 1); }, 3000);
+						}
+					})
+					.catch(function () {
+						setTimeout(function () { pollForRadiusLogin(transactionId, attempt + 1); }, 3000);
+					});
+			}
+
+			// Omada-Controller-API sites only: once a Pending (payment) transaction
+			// is confirmed Paid and authorized on the controller, fetch the
+			// breakout URL and send the browser there. A voucher redemption is
+			// authorized synchronously and already returns redirect_url directly
+			// in the initial response, so this is only needed for the payment
+			// flow, which waits on an async webhook/poller.
+			function pollForOmadaConnection(transactionId, attempt) {
+				attempt = attempt || 0;
+				if (attempt > 30) {
+					showMessage("Malipo yamethibitishwa, lakini hatukuweza kukuunganisha moja kwa moja. Tafadhali unganisha tena kwenye mtandao wa Wi-Fi.", "error");
+					return;
+				}
+
+				fetch("/api/method/foh_ms.api.get_omada_connection_status", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"X-Frappe-CSRF-Token": getCookie("csrf_token")
+					},
+					body: JSON.stringify({ transaction_id: transactionId })
+				})
+					.then(function (res) { return res.json(); })
+					.then(function (data) {
+						var result = data && data.message;
+						if (result && result.ready && result.redirect_url) {
+							redirectAfterSuccess(result.redirect_url, "Malipo yamethibitishwa. Umeunganishwa kwenye Wi-Fi!");
+						} else if (result && result.failed) {
+							showMessage("Malipo hayakukamilika. Tafadhali jaribu tena.", "error");
+						} else {
+							setTimeout(function () { pollForOmadaConnection(transactionId, attempt + 1); }, 3000);
+						}
+					})
+					.catch(function () {
+						setTimeout(function () { pollForOmadaConnection(transactionId, attempt + 1); }, 3000);
+					});
+			}
+
+			function handleSuccessPayload(payload) {
+				if (payload.redirect_url) {
+					// Voucher fast path: already authorized synchronously --
+					// this is the real success moment.
+					redirectAfterSuccess(payload.redirect_url, payload.message);
+				} else if (AUTHORIZATION_METHOD === "Local RADIUS Server" && payload.transaction_id) {
+					// Retries until Paid (Mobile Money is Pending until the
+					// webhook/poller confirms it; a voucher is Paid immediately).
+					showMessage("Tunasubiri uthibitisho wa malipo yako... Tafadhali kamilisha kwenye simu yako.", "success");
+					pollForRadiusLogin(payload.transaction_id, 0);
+				} else if (AUTHORIZATION_METHOD === "Omada Controller API" && payload.transaction_id) {
+					// Payment flow: waits on the webhook/poller to mark Paid
+					// and enqueue Omada authorization before a redirect exists.
+					showMessage("Tunasubiri uthibitisho wa malipo yako... Tafadhali kamilisha kwenye simu yako.", "success");
+					pollForOmadaConnection(payload.transaction_id, 0);
+				}
+			}
+
+			function postJson(endpoint, payload) {
+				return fetch(endpoint, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"X-Frappe-CSRF-Token": getCookie("csrf_token")
+					},
+					body: JSON.stringify(payload)
+				}).then(function (res) {
+					return res.json().then(function (data) {
+						return { ok: res.ok, data: data };
+					});
+				});
+			}
+
+			// Ad carousel: rotates through every active ad (not just the
+			// first) so campaigns beyond the first slide actually get shown.
+			// Each ad's impression is logged (fire-and-forget) the first
+			// time it's brought into view, not on every rotation loop.
+			var adSlides = document.querySelectorAll(".ad-slide");
+			var adDots = document.querySelectorAll(".ad-dot");
+			var adLoggedIds = {};
+			var adRotateTimer = null;
+			var currentAdIdx = 0;
+
+			function logAdView(adName) {
+				if (!adName || adLoggedIds[adName]) return;
+				adLoggedIds[adName] = true;
+				postJson("/api/method/foh_ms.api.log_ad_view", {
+					ad: adName,
+					ap_mac: val("ap_mac"),
+					client_mac: val("client_mac")
+				}).catch(function () {});
+			}
+
+			function showAd(idx) {
+				currentAdIdx = idx;
+				adSlides.forEach(function (slide, i) {
+					slide.classList.toggle("active", i === idx);
+				});
+				adDots.forEach(function (dot, i) {
+					dot.classList.toggle("active", i === idx);
+				});
+				var link = adSlides[idx] && adSlides[idx].querySelector(".ad-link");
+				if (link) logAdView(link.dataset.ad);
+			}
+
+			function startAdRotation() {
+				clearInterval(adRotateTimer);
+				if (adSlides.length < 2) return;
+				adRotateTimer = setInterval(function () {
+					showAd((currentAdIdx + 1) % adSlides.length);
+				}, 6000);
+			}
+
+			if (adSlides.length) {
+				showAd(0);
+				startAdRotation();
+
+				adDots.forEach(function (dot) {
+					dot.addEventListener("click", function () {
+						showAd(parseInt(dot.dataset.idx, 10));
+						startAdRotation();
+					});
+				});
+			}
+
+			// Buy Now buttons: open the STK phone-number popup for that package
+			// rather than charging immediately. The popup itself posts to
+			// initiate_payment once the customer confirms their number.
+			var buyModal = document.getElementById("buy-modal");
+			var modalPkgName = document.getElementById("modal-pkg-name");
+			var modalPkgMeta = document.getElementById("modal-pkg-meta");
+			var modalPhone = document.getElementById("modal-phone");
+			var modalMsg = document.getElementById("modal-msg");
+			var modalSubmitBtn = document.getElementById("modal-submit-btn");
+			var modalCloseBtn = document.getElementById("modal-close");
+			var modalPackageIdx = null;
+
+			function openBuyModal(card) {
+				if (!buyModal) return;
+				modalPackageIdx = card.dataset.idx;
+				modalPkgName.textContent = card.querySelector(".package-name").textContent;
+				modalPkgMeta.textContent = card.querySelector(".package-meta").textContent;
+				modalPhone.value = "";
+				modalMsg.className = "modal-msg";
+				modalSubmitBtn.disabled = false;
+				buyModal.classList.add("show");
+				setTimeout(function () { modalPhone.focus(); }, 50);
+			}
+
+			function closeBuyModal() {
+				if (!buyModal) return;
+				buyModal.classList.remove("show");
+				modalPackageIdx = null;
+			}
+
+			var maintenanceModal = document.getElementById("maintenance-modal");
+			var maintenanceCloseBtn = document.getElementById("maintenance-close");
+
+			function closeMaintenanceModal() {
+				if (maintenanceModal) maintenanceModal.classList.remove("show");
+			}
+
+			if (maintenanceCloseBtn) maintenanceCloseBtn.addEventListener("click", closeMaintenanceModal);
+			if (maintenanceModal) {
+				maintenanceModal.addEventListener("click", function (e) {
+					if (e.target === maintenanceModal) closeMaintenanceModal();
+				});
+			}
+
+			document.querySelectorAll(".package-card").forEach(function (card) {
+				var btn = card.querySelector(".buy-btn");
+				if (!btn) return;
+				btn.addEventListener("click", function () {
+					if (!ONLINE_PAYMENT_ENABLED) {
+						if (maintenanceModal) maintenanceModal.classList.add("show");
+						return;
+					}
+					openBuyModal(card);
+				});
+			});
+
+			if (modalCloseBtn) modalCloseBtn.addEventListener("click", closeBuyModal);
+			if (buyModal) {
+				buyModal.addEventListener("click", function (e) {
+					if (e.target === buyModal) closeBuyModal();
+				});
+			}
+			// Lipa Namba floating button: opens a lightbox with the manual
+			// pay-by-QR/till-number card, for customers who'd rather pay
+			// directly than wait on an STK push. When a site has more than
+			// one image configured (one per network), a picker is shown
+			// first; the image modal itself is pre-filled from the
+			// server-chosen default so the single-image case needs no JS.
+			var lipaBtn = document.getElementById("lipa-namba-btn");
+			var lipaModal = document.getElementById("lipa-namba-modal");
+			var lipaCloseBtn = document.getElementById("lipa-namba-close");
+			var lipaImg = document.getElementById("lipa-namba-img");
+			var lipaTitle = document.getElementById("lipa-namba-title");
+			var lipaSelectModal = document.getElementById("lipa-select-modal");
+			var lipaSelectCloseBtn = document.getElementById("lipa-select-close");
+
+			function closeLipaModal() {
+				if (lipaModal) lipaModal.classList.remove("show");
+			}
+
+			function closeLipaSelectModal() {
+				if (lipaSelectModal) lipaSelectModal.classList.remove("show");
+			}
+
+			function showLipaImage(imageUrl, label) {
+				if (lipaImg) lipaImg.src = imageUrl;
+				if (lipaTitle) lipaTitle.textContent = label || "Lipa Namba";
+				if (lipaModal) lipaModal.classList.add("show");
+			}
+
+			if (lipaBtn) {
+				lipaBtn.addEventListener("click", function () {
+					if (LIPA_COUNT > 1 && lipaSelectModal) {
+						lipaSelectModal.classList.add("show");
+					} else if (lipaModal) {
+						lipaModal.classList.add("show");
+					}
+				});
+			}
+			if (lipaCloseBtn) lipaCloseBtn.addEventListener("click", closeLipaModal);
+			if (lipaModal) {
+				lipaModal.addEventListener("click", function (e) {
+					if (e.target === lipaModal) closeLipaModal();
+				});
+			}
+
+			document.querySelectorAll(".lipa-option").forEach(function (opt) {
+				opt.addEventListener("click", function () {
+					closeLipaSelectModal();
+					showLipaImage(opt.dataset.image, opt.dataset.label);
+				});
+			});
+			if (lipaSelectCloseBtn) lipaSelectCloseBtn.addEventListener("click", closeLipaSelectModal);
+			if (lipaSelectModal) {
+				lipaSelectModal.addEventListener("click", function (e) {
+					if (e.target === lipaSelectModal) closeLipaSelectModal();
+				});
+			}
+
+			document.addEventListener("keydown", function (e) {
+				if (e.key !== "Escape") return;
+				if (buyModal && buyModal.classList.contains("show")) closeBuyModal();
+				if (lipaModal && lipaModal.classList.contains("show")) closeLipaModal();
+				if (lipaSelectModal && lipaSelectModal.classList.contains("show")) closeLipaSelectModal();
+				if (maintenanceModal && maintenanceModal.classList.contains("show")) closeMaintenanceModal();
+			});
+
+			// Support number: tap the help bar to copy the site's contact
+			// number to the clipboard, for customers who hit a problem.
+			var helpBar = document.getElementById("help-bar");
+			var supportPhoneText = document.getElementById("support-phone-text");
+			var copyToast = document.getElementById("copy-toast");
+			var copyToastTimer = null;
+
+			function showCopyToast(text) {
+				if (!copyToast) return;
+				copyToast.textContent = text;
+				copyToast.classList.add("show");
+				clearTimeout(copyToastTimer);
+				copyToastTimer = setTimeout(function () { copyToast.classList.remove("show"); }, 2200);
+			}
+
+			function fallbackCopy(text) {
+				var input = document.createElement("textarea");
+				input.value = text;
+				input.style.position = "fixed";
+				input.style.opacity = "0";
+				document.body.appendChild(input);
+				input.focus();
+				input.select();
+				var copied = false;
+				try { copied = document.execCommand("copy"); } catch (e) { copied = false; }
+				document.body.removeChild(input);
+				return copied;
+			}
+
+			function copySupportNumber() {
+				var copyBtn = document.getElementById("copy-phone-btn");
+				var number = supportPhoneText ? supportPhoneText.textContent.trim() : "";
+				if (!number) return;
+
+				function onCopied() {
+					showCopyToast("Nambari imenakiliwa: " + number);
+					if (copyBtn) {
+						copyBtn.classList.add("copied");
+						setTimeout(function () { copyBtn.classList.remove("copied"); }, 1200);
+					}
+				}
+
+				// Clipboard API needs a secure context; captive portals are
+				// often plain HTTP on the local network, so fall back to the
+				// hidden-textarea + execCommand trick when it's unavailable.
+				if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+					navigator.clipboard.writeText(number).then(onCopied).catch(function () {
+						if (fallbackCopy(number)) onCopied();
+					});
+				} else if (fallbackCopy(number)) {
+					onCopied();
+				}
+			}
+
+			if (helpBar) helpBar.addEventListener("click", copySupportNumber);
+
+			if (modalSubmitBtn) {
+				var modalSubmitDefaultText = modalSubmitBtn.textContent;
+				modalSubmitBtn.addEventListener("click", function () {
+					var phone = modalPhone.value.trim();
+					if (!phone) {
+						modalMsg.textContent = "Tafadhali ingiza nambari yako ya simu.";
+						modalMsg.className = "modal-msg show error";
+						modalPhone.focus();
+						return;
+					}
+
+					modalSubmitBtn.disabled = true;
+					modalSubmitBtn.textContent = "Inatuma ombi...";
+					modalMsg.className = "modal-msg";
+
+					postJson("/api/method/foh_ms.api.initiate_payment", {
+						phone: phone,
+						package_idx: modalPackageIdx,
+						client_mac: val("client_mac"),
+						ap_mac: val("ap_mac"),
+						ssid_name: val("ssid_name"),
+						radio_id: val("radio_id")
+					})
+						.then(function (result) {
+							if (result.ok && result.data && result.data.message) {
+								var payload = result.data.message;
+								modalMsg.textContent = payload.message || "Ombi la STK limetumwa. Angalia simu yako.";
+								modalMsg.className = "modal-msg show success";
+								setTimeout(closeBuyModal, 1800);
+								handleSuccessPayload(payload);
+							} else {
+								var err = (result.data && (result.data.exception || result.data._server_messages)) || "Hitilafu imetokea. Tafadhali jaribu tena.";
+								modalMsg.textContent = typeof err === "string" ? err : "Ombi halikukamilika.";
+								modalMsg.className = "modal-msg show error";
+							}
+						})
+						.catch(function () {
+							modalMsg.textContent = "Hitilafu ya mtandao. Tafadhali angalia muunganisho wako na ujaribu tena.";
+							modalMsg.className = "modal-msg show error";
+						})
+						.finally(function () {
+							modalSubmitBtn.disabled = false;
+							modalSubmitBtn.textContent = modalSubmitDefaultText;
+						});
+				});
+			}
+
+			// Voucher redemption.
+			var voucherBtn = document.getElementById("voucher-submit-btn");
+			if (voucherBtn) {
+				var voucherDefaultText = voucherBtn.textContent;
+				voucherBtn.addEventListener("click", function () {
+					var code = val("voucher_code").trim();
+					if (!code) {
+						showMessage("Tafadhali ingiza nambari yako ya voucher.", "error");
+						return;
+					}
+
+					voucherBtn.disabled = true;
+					voucherBtn.textContent = "Inachakata...";
+					statusMsg.className = "msg";
+
+					postJson("/api/method/foh_ms.api.redeem_voucher", {
+						voucher_code: code,
+						client_mac: val("client_mac"),
+						ap_mac: val("ap_mac"),
+						ssid_name: val("ssid_name"),
+						radio_id: val("radio_id")
+					})
+						.then(function (result) {
+							if (result.ok && result.data && result.data.message) {
+								handleSuccessPayload(result.data.message);
+							} else {
+								var err = (result.data && (result.data.exception || result.data._server_messages)) || "Hitilafu imetokea. Tafadhali jaribu tena.";
+								showMessage(typeof err === "string" ? err : "Ombi halikukamilika.", "error");
+							}
+						})
+						.catch(function () {
+							showMessage("Hitilafu ya mtandao. Tafadhali angalia muunganisho wako na ujaribu tena.", "error");
+						})
+						.finally(function () {
+							voucherBtn.disabled = false;
+							voucherBtn.textContent = voucherDefaultText;
+						});
+				});
+			}
+		})();
+	</script>
+</body>
+</html>

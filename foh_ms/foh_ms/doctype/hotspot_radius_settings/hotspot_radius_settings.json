@@ -1,0 +1,93 @@
+{
+ "actions": [],
+ "creation": "2026-08-18 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "column_break_1",
+  "refresh_interval_seconds",
+  "network_section",
+  "bind_ip",
+  "column_break_2",
+  "auth_port",
+  "acct_port",
+  "notes"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "description": "Master switch for the independent local RADIUS server (foh_ms.radius_server) used by Hotspot Sites whose Authorization Method is \"Local RADIUS Server\" -- i.e. standalone TP-Link EAPs with no Omada Controller. Does not affect Hotspot Sites using \"Omada Controller API\". While off, the running RADIUS process rejects every request.",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enable Local RADIUS Authorization"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "60",
+   "description": "How often the running RADIUS process reloads this setting and the list of RADIUS-mode Hotspot Sites from the database.",
+   "fieldname": "refresh_interval_seconds",
+   "fieldtype": "Int",
+   "label": "Site/Settings Refresh Interval (Seconds)"
+  },
+  {
+   "fieldname": "network_section",
+   "fieldtype": "Section Break",
+   "label": "Network"
+  },
+  {
+   "default": "0.0.0.0",
+   "fieldname": "bind_ip",
+   "fieldtype": "Data",
+   "label": "Bind IP"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1812",
+   "fieldname": "auth_port",
+   "fieldtype": "Int",
+   "label": "Authentication Port"
+  },
+  {
+   "default": "1813",
+   "fieldname": "acct_port",
+   "fieldtype": "Int",
+   "label": "Accounting Port"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-08-18 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "FOH-MS",
+ "name": "Hotspot RADIUS Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

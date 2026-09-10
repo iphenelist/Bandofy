@@ -1,0 +1,28 @@
+# Minimal RADIUS attribute dictionary for foh_ms.radius_server.
+#
+# pyrad ships no default dictionary -- this file defines only the standard
+# RFC2865/RFC2866 attributes the local RADIUS server actually uses. It is
+# independent of the Omada Controller API integration in foh_ms.api.
+
+ATTRIBUTE	User-Name		1	string
+ATTRIBUTE	User-Password		2	octets
+ATTRIBUTE	CHAP-Password		3	octets
+ATTRIBUTE	NAS-IP-Address		4	ipaddr
+ATTRIBUTE	NAS-Port		5	integer
+ATTRIBUTE	Service-Type		6	integer
+ATTRIBUTE	Framed-IP-Address	8	ipaddr
+ATTRIBUTE	Reply-Message		18	string
+ATTRIBUTE	Session-Timeout		27	integer
+ATTRIBUTE	Idle-Timeout		28	integer
+ATTRIBUTE	Called-Station-Id	30	string
+ATTRIBUTE	Calling-Station-Id	31	string
+ATTRIBUTE	NAS-Identifier		32	string
+ATTRIBUTE	Acct-Status-Type	40	integer
+ATTRIBUTE	Acct-Delay-Time		41	integer
+ATTRIBUTE	Acct-Session-Id		44	string
+
+VALUE	Acct-Status-Type	Start			1
+VALUE	Acct-Status-Type	Stop			2
+VALUE	Acct-Status-Type	Interim-Update		3
+VALUE	Acct-Status-Type	Accounting-On		7
+VALUE	Acct-Status-Type	Accounting-Off		8
