@@ -8,7 +8,7 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-        files: "foh_ms.*"
+        files: "bandofy.*"
         exclude: ".*json$|.*txt$|.*csv|.*md|.*svg"
       - id: check-merge-conflict
       - id: check-ast
@@ -38,11 +38,11 @@ repos:
         # Ignore any files that might contain jinja / bundles
         exclude: |
             (?x)^(
-                foh_ms/public/dist/.*|
+                bandofy/public/dist/.*|
                 .*node_modules.*|
                 .*boilerplate.*|
-                foh_ms/templates/includes/.*|
-                foh_ms/public/js/lib/.*
+                bandofy/templates/includes/.*|
+                bandofy/public/js/lib/.*
             )$
 
 
@@ -55,12 +55,12 @@ repos:
         # Ignore any files that might contain jinja / bundles
         exclude: |
             (?x)^(
-                foh_ms/public/dist/.*|
+                bandofy/public/dist/.*|
                 cypress/.*|
                 .*node_modules.*|
                 .*boilerplate.*|
-                foh_ms/templates/includes/.*|
-                foh_ms/public/js/lib/.*
+                bandofy/templates/includes/.*|
+                bandofy/public/js/lib/.*
             )$
 
 ci:

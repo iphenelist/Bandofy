@@ -1,0 +1,173 @@
+{
+ "actions": [],
+ "autoname": "HTX-.#####",
+ "creation": "2026-08-12 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "site",
+  "status",
+  "column_break_1",
+  "reference_id",
+  "customer_section",
+  "phone_number",
+  "client_mac",
+  "ap_mac",
+  "ssid_name",
+  "radio_id",
+  "package_section",
+  "package_name",
+  "amount",
+  "column_break_2",
+  "duration_minutes",
+  "omada_authorized",
+  "radius_section",
+  "radius_token",
+  "authorized_until"
+ ],
+ "fields": [
+  {
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Hotspot Site",
+   "options": "Hotspot Site",
+   "reqd": 1
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Pending\nPaid\nFailed",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reference_id",
+   "fieldtype": "Data",
+   "label": "Payment Reference ID"
+  },
+  {
+   "fieldname": "customer_section",
+   "fieldtype": "Section Break",
+   "label": "Customer & Device"
+  },
+  {
+   "description": "Mobile Money number for STK Push payments, or \"Voucher\" for voucher redemptions.",
+   "fieldname": "phone_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Phone Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "client_mac",
+   "fieldtype": "Data",
+   "label": "Client MAC Address",
+   "reqd": 1
+  },
+  {
+   "fieldname": "ap_mac",
+   "fieldtype": "Data",
+   "label": "AP MAC Address"
+  },
+  {
+   "description": "From the portal redirect's ssidName param -- required by the Omada Controller hotspot/login authorize call.",
+   "fieldname": "ssid_name",
+   "fieldtype": "Data",
+   "label": "SSID Name"
+  },
+  {
+   "description": "From the portal redirect's radioId param -- required by the Omada Controller hotspot/login authorize call.",
+   "fieldname": "radio_id",
+   "fieldtype": "Data",
+   "label": "Radio ID"
+  },
+  {
+   "fieldname": "package_section",
+   "fieldtype": "Section Break",
+   "label": "Package & Payment"
+  },
+  {
+   "fieldname": "package_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Package Name"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "duration_minutes",
+   "fieldtype": "Int",
+   "label": "Duration (Minutes)"
+  },
+  {
+   "default": "0",
+   "description": "Set once authorize_mac_on_omada has successfully authorized this client's MAC on the Omada controller -- checked by get_omada_connection_status, which the portal page polls to know when it can redirect the browser out of the captive portal. Unused for 'Local RADIUS Server' sites.",
+   "fieldname": "omada_authorized",
+   "fieldtype": "Check",
+   "label": "Omada Authorized",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.radius_token",
+   "fieldname": "radius_section",
+   "fieldtype": "Section Break",
+   "label": "Local RADIUS Session"
+  },
+  {
+   "description": "One-time credential issued when this transaction is Paid on a 'Local RADIUS Server' site -- checked by bandofy.radius_server against what the EAP submits in its Access-Request. Unused for 'Omada Controller API' sites.",
+   "fieldname": "radius_token",
+   "fieldtype": "Data",
+   "label": "RADIUS Token",
+   "read_only": 1
+  },
+  {
+   "fieldname": "authorized_until",
+   "fieldtype": "Datetime",
+   "label": "Authorized Until",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-12 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Bandofy",
+ "name": "Hotspot Transaction",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

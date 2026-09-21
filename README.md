@@ -1,4 +1,4 @@
-### FOH-MS
+### Bandofy
 
 Frappe Omada Hotspot Management System — a Frappe custom app for running paid
 Wi-Fi hotspots on TP-Link Omada-managed access points, or standalone TP-Link
@@ -85,7 +85,7 @@ You can install this app using the [bench](https://github.com/frappe/bench) CLI:
 ```bash
 cd $PATH_TO_YOUR_BENCH
 bench get-app $URL_OF_THIS_REPO --branch main
-bench install-app foh_ms
+bench install-app bandofy
 ```
 
 ### Configuration
@@ -98,18 +98,18 @@ bench install-app foh_ms
 - **Hotspot Radius Settings** (single) — enables/configures the built-in
   local RADIUS server for standalone-EAP sites.
 - **Payment network logos** — drop the real brand images into
-  `foh_ms/public/images/payment_logos/` as `mixx_by_yas.png`,
+  `bandofy/public/images/payment_logos/` as `mixx_by_yas.png`,
   `airtel_money.png`, `halopesa.png`, and `mpesa.png`; a text badge is
   shown as a fallback for any file that's missing.
 - **Lipa Namba card** — drop the site's manual pay QR/till-number image at
-  `foh_ms/public/images/lipanamba/lipa_namba.jpeg`.
+  `bandofy/public/images/lipanamba/lipa_namba.jpeg`.
 
 ### Contributing
 
 This app uses `pre-commit` for code formatting and linting. Please [install pre-commit](https://pre-commit.com/#installation) and enable it for this repository:
 
 ```bash
-cd apps/foh_ms
+cd apps/bandofy
 pre-commit install
 ```
 

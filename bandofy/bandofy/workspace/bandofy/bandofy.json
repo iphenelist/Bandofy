@@ -1,0 +1,241 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"fms_hdr_shortcuts\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"fms_sc_site\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Hotspot Site\",\"col\":3}},{\"id\":\"fms_sc_txn\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Hotspot Transaction\",\"col\":3}},{\"id\":\"fms_sc_batch\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Voucher Batch\",\"col\":3}},{\"id\":\"fms_sc_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Network Dashboard\",\"col\":3}},{\"id\":\"fms_spacer_1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fms_hdr_masters\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Masters</b></span>\",\"col\":12}},{\"id\":\"fms_card_sites\",\"type\":\"card\",\"data\":{\"card_name\":\"Sites & Packages\",\"col\":3}},{\"id\":\"fms_card_vouchers\",\"type\":\"card\",\"data\":{\"card_name\":\"Vouchers & Payments\",\"col\":3}},{\"id\":\"fms_card_ads\",\"type\":\"card\",\"data\":{\"card_name\":\"Ads\",\"col\":3}},{\"id\":\"fms_card_chat\",\"type\":\"card\",\"data\":{\"card_name\":\"Chat\",\"col\":3}},{\"id\":\"fms_spacer_2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fms_hdr_settings\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Settings &amp; Reports</b></span>\",\"col\":12}},{\"id\":\"fms_card_settings\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings\",\"col\":6}},{\"id\":\"fms_card_reports\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports & Tools\",\"col\":6}}]",
+ "creation": "2026-08-26 00:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "dialpad",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Bandofy",
+ "links": [
+  {
+   "hidden": 0,
+   "icon": "organization",
+   "is_query_report": 0,
+   "label": "Sites & Packages",
+   "link_count": 0,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Hotspot Site",
+   "link_count": 0,
+   "link_to": "Hotspot Site",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Hotspot Package",
+   "link_count": 0,
+   "link_to": "Hotspot Package",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "icon": "card",
+   "is_query_report": 0,
+   "label": "Vouchers & Payments",
+   "link_count": 0,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Hotspot Voucher Batch",
+   "link_count": 0,
+   "link_to": "Hotspot Voucher Batch",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Hotspot Voucher",
+   "link_count": 0,
+   "link_to": "Hotspot Voucher",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Hotspot Transaction",
+   "link_count": 0,
+   "link_to": "Hotspot Transaction",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "icon": "notification",
+   "is_query_report": 0,
+   "label": "Ads",
+   "link_count": 0,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Hotspot Ad",
+   "link_count": 0,
+   "link_to": "Hotspot Ad",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Hotspot Ad View Log",
+   "link_count": 0,
+   "link_to": "Hotspot Ad View Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "icon": "chat",
+   "is_query_report": 0,
+   "label": "Chat",
+   "link_count": 0,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Hotspot Chat Message",
+   "link_count": 0,
+   "link_to": "Hotspot Chat Message",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "icon": "setting",
+   "is_query_report": 0,
+   "label": "Settings",
+   "link_count": 0,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Hotspot Payment Settings",
+   "link_count": 0,
+   "link_to": "Hotspot Payment Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Hotspot Radius Settings",
+   "link_count": 0,
+   "link_to": "Hotspot Radius Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "icon": "chart",
+   "is_query_report": 0,
+   "label": "Reports & Tools",
+   "link_count": 0,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Hotspot Sales Report",
+   "link_count": 0,
+   "link_to": "Hotspot Sales Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "report_ref_doctype": "Hotspot Transaction",
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Network Dashboard",
+   "link_count": 0,
+   "link_to": "network-dashboard",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-08-26 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Bandofy",
+ "name": "Bandofy",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [],
+ "sequence_id": 5.0,
+ "shortcuts": [
+  {
+   "label": "Hotspot Site",
+   "link_to": "Hotspot Site",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "format": "{} Paid",
+   "label": "Hotspot Transaction",
+   "link_to": "Hotspot Transaction",
+   "stats_filter": "{\"status\": \"Paid\"}",
+   "type": "DocType"
+  },
+  {
+   "label": "Voucher Batch",
+   "link_to": "Hotspot Voucher Batch",
+   "type": "DocType"
+  },
+  {
+   "label": "Network Dashboard",
+   "link_to": "network-dashboard",
+   "type": "Page"
+  }
+ ],
+ "title": "Bandofy"
+}
