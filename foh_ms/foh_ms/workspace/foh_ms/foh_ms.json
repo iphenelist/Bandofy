@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"fms_hdr_shortcuts\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"fms_sc_site\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Hotspot Site\",\"col\":3}},{\"id\":\"fms_sc_txn\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Hotspot Transaction\",\"col\":3}},{\"id\":\"fms_sc_batch\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Voucher Batch\",\"col\":3}},{\"id\":\"fms_sc_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Network Dashboard\",\"col\":3}},{\"id\":\"fms_spacer_1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fms_hdr_masters\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Masters</b></span>\",\"col\":12}},{\"id\":\"fms_card_sites\",\"type\":\"card\",\"data\":{\"card_name\":\"Sites & Packages\",\"col\":4}},{\"id\":\"fms_card_vouchers\",\"type\":\"card\",\"data\":{\"card_name\":\"Vouchers & Payments\",\"col\":4}},{\"id\":\"fms_card_ads\",\"type\":\"card\",\"data\":{\"card_name\":\"Ads\",\"col\":4}},{\"id\":\"fms_spacer_2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fms_hdr_settings\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Settings &amp; Reports</b></span>\",\"col\":12}},{\"id\":\"fms_card_settings\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings\",\"col\":6}},{\"id\":\"fms_card_reports\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports & Tools\",\"col\":6}}]",
+ "content": "[{\"id\":\"fms_hdr_shortcuts\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"fms_sc_site\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Hotspot Site\",\"col\":3}},{\"id\":\"fms_sc_txn\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Hotspot Transaction\",\"col\":3}},{\"id\":\"fms_sc_batch\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Voucher Batch\",\"col\":3}},{\"id\":\"fms_sc_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Network Dashboard\",\"col\":3}},{\"id\":\"fms_spacer_1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fms_hdr_masters\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Masters</b></span>\",\"col\":12}},{\"id\":\"fms_card_sites\",\"type\":\"card\",\"data\":{\"card_name\":\"Sites & Packages\",\"col\":3}},{\"id\":\"fms_card_vouchers\",\"type\":\"card\",\"data\":{\"card_name\":\"Vouchers & Payments\",\"col\":3}},{\"id\":\"fms_card_ads\",\"type\":\"card\",\"data\":{\"card_name\":\"Ads\",\"col\":3}},{\"id\":\"fms_card_chat\",\"type\":\"card\",\"data\":{\"card_name\":\"Chat\",\"col\":3}},{\"id\":\"fms_spacer_2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fms_hdr_settings\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Settings &amp; Reports</b></span>\",\"col\":12}},{\"id\":\"fms_card_settings\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings\",\"col\":6}},{\"id\":\"fms_card_reports\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports & Tools\",\"col\":6}}]",
  "creation": "2026-08-26 00:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -114,6 +114,26 @@
    "link_to": "Hotspot Ad View Log",
    "link_type": "DocType",
    "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "icon": "chat",
+   "is_query_report": 0,
+   "label": "Chat",
+   "link_count": 0,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Hotspot Chat Message",
+   "link_count": 0,
+   "link_to": "Hotspot Chat Message",
+   "link_type": "DocType",
+   "onboard": 1,
    "type": "Link"
   },
   {

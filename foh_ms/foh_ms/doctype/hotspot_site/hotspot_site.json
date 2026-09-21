@@ -13,6 +13,8 @@
   "mobile_money_account",
   "is_active",
   "enable_online_payment",
+  "enable_free_trial",
+  "free_trial_minutes",
   "omada_credentials_section",
   "site_name",
   "ap_mac",
@@ -31,6 +33,14 @@
   "column_break_radius",
   "radius_secret",
   "ap_login_url_template",
+  "additional_devices_section",
+  "additional_devices",
+  "portal_branding_section",
+  "portal_logo",
+  "portal_tagline",
+  "column_break_portal_branding",
+  "portal_primary_color",
+  "portal_secondary_color",
   "packages_section",
   "packages",
   "lipa_namba_section",
@@ -89,6 +99,22 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Enable Online Payment (Mobile Money)"
+  },
+  {
+   "default": "1",
+   "description": "Shows a one-time free-trial button on the captive portal. Each device (by MAC address) can only claim it once per site -- claiming again is blocked automatically once used.",
+   "fieldname": "enable_free_trial",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enable Free Trial"
+  },
+  {
+   "default": "15",
+   "depends_on": "eval:doc.enable_free_trial",
+   "description": "How long a first-time device gets connected for free before it's disconnected. The device's MAC is then registered so it cannot claim the free trial again.",
+   "fieldname": "free_trial_minutes",
+   "fieldtype": "Int",
+   "label": "Free Trial Duration (Minutes)"
   },
   {
    "fieldname": "omada_credentials_section",
@@ -214,6 +240,53 @@
    "fieldname": "ap_login_url_template",
    "fieldtype": "Data",
    "label": "AP Login Redirect URL Template"
+  },
+  {
+   "fieldname": "additional_devices_section",
+   "fieldtype": "Section Break",
+   "label": "Additional Devices"
+  },
+  {
+   "description": "Extra Access Points whose captive-portal traffic and voucher redemptions should also count toward this site -- the AP MAC Address field above remains this site's primary device.",
+   "fieldname": "additional_devices",
+   "fieldtype": "Table",
+   "label": "Additional Devices",
+   "options": "Hotspot Site Device"
+  },
+  {
+   "fieldname": "portal_branding_section",
+   "fieldtype": "Section Break",
+   "label": "Portal Branding"
+  },
+  {
+   "description": "Shown in place of the default WiFi mark on this site's captive portal. Also editable live from the mobile app's Customize Portal screen.",
+   "fieldname": "portal_logo",
+   "fieldtype": "Attach Image",
+   "label": "Portal Logo"
+  },
+  {
+   "description": "Overrides the default \"Premium WiFi Access\" line on the captive portal. Leave blank to keep the default (translated EN/SW).",
+   "fieldname": "portal_tagline",
+   "fieldtype": "Data",
+   "label": "Portal Tagline"
+  },
+  {
+   "fieldname": "column_break_portal_branding",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#ec4899",
+   "description": "Captive portal's primary accent color.",
+   "fieldname": "portal_primary_color",
+   "fieldtype": "Color",
+   "label": "Portal Primary Color"
+  },
+  {
+   "default": "#6366f1",
+   "description": "Captive portal's secondary accent color.",
+   "fieldname": "portal_secondary_color",
+   "fieldtype": "Color",
+   "label": "Portal Secondary Color"
   },
   {
    "fieldname": "packages_section",

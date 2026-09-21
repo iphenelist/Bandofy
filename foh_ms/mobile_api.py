@@ -22,16 +22,16 @@ Website Users have no doctype-level read permission on any of these doctypes
 the code itself has already established which site(s) this user may see.
 """
 
+import json
+
 import frappe
 from frappe import _
 from frappe.utils import get_first_day, get_last_day, today
 
+from foh_ms import omada_service
 from foh_ms.dashboard_utils import get_omada_live_stats, get_revenue, get_revenue_trend
-
-
-def _is_admin(user=None):
-	user = user or frappe.session.user
-	return user == "Administrator" or "System Manager" in frappe.get_roles(user)
+from foh_ms.utils import is_admin_user as _is_admin
+from foh_ms.utils import normalize_mac
 
 
 def _own_site_name():
@@ -53,6 +53,19 @@ def _resolve_site(site=None):
 			frappe.throw(_("Site not found."))
 		return site
 	return _own_site_name()
+
+
+def _resolve_site_for_write(site=None):
+	"""Like _resolve_site, but for actions that always need exactly one
+	concrete site -- a vendor is forced to their own regardless of `site`;
+	an admin must pass one explicitly (there's no "all sites" write)."""
+	if not _is_admin():
+		return _own_site_name()
+	if not site:
+		frappe.throw(_("Please choose a site."))
+	if not frappe.db.exists("Hotspot Site", site):
+		frappe.throw(_("Site not found."))
+	return site
 
 
 @frappe.whitelist(allow_guest=True)
@@ -341,3 +354,380 @@ def get_voucher_batches(site=None):
 		)
 
 	return batches
+
+
+@frappe.whitelist()
+def get_packages():
+	"""Every Hotspot Package, for the voucher-creation form's picker."""
+	return frappe.get_all(
+		"Hotspot Package",
+		fields=["name", "package_type", "price", "duration_minutes"],
+		order_by="name",
+		ignore_permissions=True,
+	)
+
+
+@frappe.whitelist()
+def create_site(
+	vendor_name,
+	vendor_user,
+	site_name,
+	ap_mac,
+	authorization_method="Omada Controller API",
+	phone_number=None,
+	mobile_money_account=None,
+	enable_online_payment=0,
+	enable_free_trial=1,
+	free_trial_minutes=15,
+	controller_ip=None,
+	port=8043,
+	controller_id=None,
+	site_id="default",
+	omada_username=None,
+	omada_password=None,
+	success_redirect_url=None,
+	radius_client_ip=None,
+	radius_nas_id=None,
+	radius_secret=None,
+	ap_login_url_template=None,
+	packages=None,
+):
+	"""Admin-only: create a new Hotspot Site from the app. Field validation
+	(e.g. Omada credentials required when authorization_method is "Omada
+	Controller API") is left to the doctype's own mandatory_depends_on
+	rules, surfaced through the same error-message plumbing as any other
+	failure.
+
+	``packages`` is a JSON-encoded list of {package_name, package_type,
+	price, duration_minutes} -- the site's own captive-portal pricing plans
+	(Hotspot Package Item child rows), unrelated to the global Hotspot
+	Package doctype vouchers are generated from. HotspotSite.validate()
+	requires at least one, same as creating the site from Desk would."""
+	if not _is_admin():
+		frappe.throw(_("Not permitted."), frappe.PermissionError)
+
+	doc = frappe.get_doc(
+		{
+			"doctype": "Hotspot Site",
+			"vendor_name": vendor_name,
+			"vendor_user": vendor_user,
+			"site_name": site_name,
+			"ap_mac": ap_mac,
+			"authorization_method": authorization_method,
+			"phone_number": phone_number,
+			"mobile_money_account": mobile_money_account,
+			"is_active": 1,
+			"enable_online_payment": enable_online_payment,
+			"enable_free_trial": enable_free_trial,
+			"free_trial_minutes": free_trial_minutes,
+			"controller_ip": controller_ip,
+			"port": port,
+			"controller_id": controller_id,
+			"site_id": site_id,
+			"omada_username": omada_username,
+			"omada_password": omada_password,
+			"success_redirect_url": success_redirect_url,
+			"radius_client_ip": radius_client_ip,
+			"radius_nas_id": radius_nas_id,
+			"radius_secret": radius_secret,
+			"ap_login_url_template": ap_login_url_template,
+		}
+	)
+
+	package_rows = json.loads(packages) if isinstance(packages, str) else (packages or [])
+	for row in package_rows:
+		doc.append(
+			"packages",
+			{
+				"package_name": row.get("package_name"),
+				"package_type": row.get("package_type") or "Unlimited",
+				"price": row.get("price"),
+				"duration_minutes": row.get("duration_minutes"),
+			},
+		)
+
+	doc.insert(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return {"name": doc.name, "site_name": doc.site_name, "vendor_name": doc.vendor_name}
+
+
+@frappe.whitelist()
+def create_voucher_batch(site, package_name, quantity, prefix=None, expires_on=None, notes=None):
+	"""Creates a Hotspot Voucher Batch and immediately generates its vouchers
+	-- calls HotspotVoucherBatch.generate_vouchers() directly (see
+	foh_ms.foh_ms.doctype.hotspot_voucher_batch.hotspot_voucher_batch) rather
+	than the Desk-only generate_vouchers_for_batch wrapper, which requires a
+	"write" permission Website Users don't have; site ownership is already
+	verified by _resolve_site_for_write below."""
+	site_name = _resolve_site_for_write(site)
+
+	if not package_name or not frappe.db.exists("Hotspot Package", package_name):
+		frappe.throw(_("Please choose a valid package."))
+
+	quantity = frappe.utils.cint(quantity)
+	if quantity <= 0:
+		frappe.throw(_("Quantity must be at least 1."))
+
+	batch = frappe.get_doc(
+		{
+			"doctype": "Hotspot Voucher Batch",
+			"site": site_name,
+			"package_name": package_name,
+			"quantity": quantity,
+			"prefix": prefix,
+			"expires_on": expires_on,
+			"notes": notes,
+		}
+	)
+	batch.insert(ignore_permissions=True)
+	created = batch.generate_vouchers()  # saves + commits internally
+
+	return {"batch": batch.name, "created": created}
+
+
+@frappe.whitelist()
+def get_site_devices(site=None):
+	"""The site's primary AP plus any additional_devices, merged with live
+	Omada status (online/offline/model/ip) by MAC when the site is
+	Omada-managed. Fails soft to status "unknown" if the controller can't be
+	reached, same as get_omada_live_stats."""
+	site_name = _resolve_site(site)
+	if not site_name:
+		frappe.throw(_("Please choose a site."))
+
+	doc = frappe.get_doc("Hotspot Site", site_name)
+
+	devices = [{"ap_mac": doc.ap_mac, "label": doc.site_name, "is_primary": True, "is_active": True}]
+	for row in doc.additional_devices:
+		devices.append(
+			{
+				"ap_mac": row.ap_mac,
+				"label": row.label,
+				"is_primary": False,
+				"is_active": bool(row.is_active),
+			}
+		)
+
+	if doc.authorization_method == "Omada Controller API":
+		try:
+			live = omada_service.list_devices(
+				omada_host=f"https://{doc.controller_ip}:{doc.port}",
+				controller_id=doc.controller_id,
+				operator_username=doc.omada_username,
+				operator_password=doc.get_password("omada_password"),
+				site_id=doc.site_id,
+			)
+			live_by_mac = {normalize_mac(d["mac"]): d for d in live if d.get("mac")}
+			for device in devices:
+				match = live_by_mac.get(normalize_mac(device["ap_mac"]))
+				if match:
+					device.update(
+						{"status": match.get("status"), "model": match.get("model"), "ip": match.get("ip")}
+					)
+				else:
+					device["status"] = "unknown"
+		except Exception:
+			frappe.log_error(
+				title="FOH-MS Mobile: get_site_devices Omada fetch failed", message=frappe.get_traceback()
+			)
+			for device in devices:
+				device["status"] = "unknown"
+	else:
+		for device in devices:
+			device["status"] = "unknown"
+
+	return devices
+
+
+@frappe.whitelist()
+def add_site_device(site, ap_mac, label=None):
+	"""Registers another AP's MAC against this site -- its captive-portal
+	traffic/voucher redemptions then roll into this site's dashboard. The
+	physical AP still needs to be adopted into the Omada Controller itself
+	the normal way; this only teaches foh_ms to recognize it."""
+	site_name = _resolve_site_for_write(site)
+	if not ap_mac or not ap_mac.strip():
+		frappe.throw(_("AP MAC Address is required."))
+
+	doc = frappe.get_doc("Hotspot Site", site_name)
+	doc.append("additional_devices", {"ap_mac": ap_mac.strip(), "label": label, "is_active": 1})
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return {"ok": True}
+
+
+@frappe.whitelist()
+def remove_site_device(site, ap_mac):
+	site_name = _resolve_site_for_write(site)
+	target = normalize_mac(ap_mac)
+
+	doc = frappe.get_doc("Hotspot Site", site_name)
+	remaining = [row for row in doc.additional_devices if normalize_mac(row.ap_mac) != target]
+	if len(remaining) == len(doc.additional_devices):
+		frappe.throw(_("Device not found on this site."))
+
+	doc.set("additional_devices", remaining)
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return {"ok": True}
+
+
+@frappe.whitelist()
+def reboot_site_device(site, ap_mac):
+	"""Reboots one Omada-adopted device. Disconnects every client currently
+	on it -- the app requires an explicit confirmation before calling this."""
+	site_name = _resolve_site_for_write(site)
+	doc = frappe.get_doc("Hotspot Site", site_name)
+
+	if doc.authorization_method != "Omada Controller API":
+		frappe.throw(_("Device reboot is only available for sites using the Omada Controller API."))
+
+	omada_service.reboot_device(
+		omada_host=f"https://{doc.controller_ip}:{doc.port}",
+		controller_id=doc.controller_id,
+		operator_username=doc.omada_username,
+		operator_password=doc.get_password("omada_password"),
+		site_id=doc.site_id,
+		device_mac=ap_mac,
+	)
+
+	return {"ok": True}
+
+
+@frappe.whitelist()
+def get_chat_threads(site=None):
+	"""One row per guest device that's messaged this site, newest activity
+	first, with the last message preview and how many Guest messages are
+	still unread."""
+	site_name = _resolve_site(site)
+	if not site_name:
+		frappe.throw(_("Please choose a site."))
+
+	threads = frappe.db.sql(
+		"""
+		select client_mac,
+			max(creation) as last_message_at,
+			sum(case when direction='Guest' and is_read=0 then 1 else 0 end) as unread_count
+		from `tabHotspot Chat Message`
+		where site=%s
+		group by client_mac
+		order by last_message_at desc
+		""",
+		(site_name,),
+		as_dict=True,
+	)
+
+	for thread in threads:
+		last = frappe.db.get_value(
+			"Hotspot Chat Message",
+			{"site": site_name, "client_mac": thread.client_mac},
+			["message", "direction"],
+			order_by="creation desc",
+			as_dict=True,
+		)
+		thread["last_message"] = last.message if last else None
+		thread["last_direction"] = last.direction if last else None
+
+	return threads
+
+
+@frappe.whitelist()
+def get_chat_thread(site, client_mac):
+	"""Full message history with one guest device. Viewing a thread marks
+	its unread Guest messages read, mirroring what opening the equivalent
+	Desk form already does in hotspot_chat_message.js."""
+	site_name = _resolve_site_for_write(site)
+
+	messages = frappe.get_all(
+		"Hotspot Chat Message",
+		filters={"site": site_name, "client_mac": client_mac},
+		fields=["name", "direction", "message", "is_read", "creation"],
+		order_by="creation asc",
+		ignore_permissions=True,
+	)
+
+	unread_names = [m.name for m in messages if m.direction == "Guest" and not m.is_read]
+	if unread_names:
+		frappe.db.sql(
+			"update `tabHotspot Chat Message` set is_read=1 where name in %(names)s",
+			{"names": unread_names},
+		)
+		frappe.db.commit()  # nosemgrep
+
+	return messages
+
+
+@frappe.whitelist()
+def send_chat_reply(site, client_mac, message):
+	"""Admin/vendor reply to a guest's captive-portal chat thread -- same
+	shape the existing Desk "Reply" custom button produces via
+	frappe.client.insert (see hotspot_chat_message.js), as a properly
+	site-scoped endpoint a vendor (barred from Desk) can actually reach."""
+	site_name = _resolve_site_for_write(site)
+
+	message = (message or "").strip()
+	if not message:
+		frappe.throw(_("Message cannot be empty."))
+
+	doc = frappe.get_doc(
+		{
+			"doctype": "Hotspot Chat Message",
+			"site": site_name,
+			"client_mac": client_mac,
+			"direction": "Admin",
+			"is_read": 1,
+			"message": message[:500],
+		}
+	)
+	doc.insert(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return {"name": doc.name, "creation": frappe.utils.get_datetime_str(doc.creation)}
+
+
+@frappe.whitelist()
+def get_site_branding(site=None):
+	"""Current captive-portal branding for the Customize Portal screen, plus
+	the site's ap_mac -- the live preview needs it to build the real
+	wifi_login URL (see www/wifi_login.py's apply_preview_overrides)."""
+	site_name = _resolve_site(site)
+	if not site_name:
+		frappe.throw(_("Please choose a site."))
+
+	return frappe.db.get_value(
+		"Hotspot Site",
+		site_name,
+		["ap_mac", "portal_logo", "portal_tagline", "portal_primary_color", "portal_secondary_color"],
+		as_dict=True,
+	)
+
+
+@frappe.whitelist()
+def update_site_branding(
+	site=None,
+	portal_primary_color=None,
+	portal_secondary_color=None,
+	portal_tagline=None,
+	portal_logo=None,
+):
+	"""Saves the captive portal's branding. Uses targeted db.set_value calls
+	rather than a full doc.save() -- these fields are purely cosmetic and
+	shouldn't trip HotspotSite.validate()'s unrelated business rules (e.g.
+	requiring at least one pricing package)."""
+	site_name = _resolve_site_for_write(site)
+
+	values = {
+		"portal_primary_color": portal_primary_color,
+		"portal_secondary_color": portal_secondary_color,
+		"portal_tagline": portal_tagline,
+		"portal_logo": portal_logo,
+	}
+	for fieldname, value in values.items():
+		if value is not None:
+			frappe.db.set_value("Hotspot Site", site_name, fieldname, value)
+	frappe.db.commit()  # nosemgrep
+
+	return {"ok": True}

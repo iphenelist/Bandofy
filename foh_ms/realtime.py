@@ -91,3 +91,29 @@ def notify_transaction_paid(doc, method=None):
 		frappe.log_error(
 			title="FOH-MS Realtime: notify_transaction_paid failed", message=frappe.get_traceback()
 		)
+
+
+def notify_new_chat_message(doc, method=None):
+	"""doc_event: Hotspot Chat Message after_insert. Only guest-authored
+	messages need to reach the admin -- an admin's own reply obviously
+	doesn't need to notify anyone back."""
+	if doc.direction != "Guest":
+		return
+
+	try:
+		site = frappe.db.get_value(
+			"Hotspot Site", doc.site, ["vendor_user", "vendor_name", "site_name"], as_dict=True
+		)
+		payload = {
+			"site": doc.site,
+			"site_name": site.site_name if site else doc.site,
+			"vendor_name": site.vendor_name if site else None,
+			"client_mac": doc.client_mac,
+			"message": doc.message,
+			"creation": frappe.utils.get_datetime_str(doc.creation),
+		}
+		_notify("foh_new_chat_message", payload, extra_user=site.vendor_user if site else None)
+	except Exception:
+		frappe.log_error(
+			title="FOH-MS Realtime: notify_new_chat_message failed", message=frappe.get_traceback()
+		)

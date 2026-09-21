@@ -153,6 +153,7 @@ website_route_rules = [
 doc_events = {
 	"Hotspot Voucher": {"on_update": "foh_ms.realtime.notify_voucher_used"},
 	"Hotspot Transaction": {"on_update": "foh_ms.realtime.notify_transaction_paid"},
+	"Hotspot Chat Message": {"after_insert": "foh_ms.realtime.notify_new_chat_message"},
 }
 
 # Scheduled Tasks

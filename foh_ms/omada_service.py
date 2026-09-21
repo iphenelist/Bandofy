@@ -29,26 +29,11 @@ class OmadaAuthError(Exception):
 	authorization call, or the response doesn't have the expected shape."""
 
 
-def authorize_client(
-	omada_host,
-	controller_id,
-	operator_username,
-	operator_password,
-	client_mac,
-	ap_mac,
-	ssid_name,
-	site_name,
-	duration_minutes,
-	radio_id=0,
-	timeout=10,
-):
-	"""Log in as an Omada Hotspot Operator and authorize a client's MAC.
-
-	Returns the parsed JSON body of the extPortal/auth response on success
-	(errorCode 0). Raises OmadaAuthError on any failure.
-	"""
-	base_url = f"{omada_host.rstrip('/')}/{controller_id}"
-
+def _operator_login(base_url, operator_username, operator_password, timeout=10):
+	"""Log in as an Omada Hotspot Operator. Returns (session, csrf_token) for
+	the caller to make further authenticated calls with -- shared by
+	authorize_client, list_devices, and reboot_device. Raises OmadaAuthError
+	on any failure."""
 	session = requests.Session()
 	session.verify = False
 	urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -70,6 +55,30 @@ def authorize_client(
 	token = (login_data.get("result") or {}).get("token")
 	if not token:
 		raise OmadaAuthError(f"Omada login did not return a Csrf-Token: {login_data}")
+
+	return session, token
+
+
+def authorize_client(
+	omada_host,
+	controller_id,
+	operator_username,
+	operator_password,
+	client_mac,
+	ap_mac,
+	ssid_name,
+	site_name,
+	duration_minutes,
+	radio_id=0,
+	timeout=10,
+):
+	"""Log in as an Omada Hotspot Operator and authorize a client's MAC.
+
+	Returns the parsed JSON body of the extPortal/auth response on success
+	(errorCode 0). Raises OmadaAuthError on any failure.
+	"""
+	base_url = f"{omada_host.rstrip('/')}/{controller_id}"
+	session, token = _operator_login(base_url, operator_username, operator_password, timeout)
 
 	try:
 		auth_resp = session.post(
@@ -95,3 +104,86 @@ def authorize_client(
 		raise OmadaAuthError(f"Omada client authorization failed: {auth_data}")
 
 	return auth_data
+
+
+def list_devices(
+	omada_host, controller_id, operator_username, operator_password, site_id, timeout=10
+):
+	"""List the Access Points/switches/gateways adopted under an Omada site.
+
+	NOTE: unlike authorize_client and its extPortal/login endpoints (which
+	are TP-Link's officially documented External Portal Server API), this
+	endpoint pattern (`GET .../api/v2/sites/{siteId}/devices`) is inferred
+	from the same internal Omada Controller API family and hasn't been
+	exercised against a live controller in this project. Verify it against
+	your controller version before relying on it.
+
+	Returns a list of {mac, name, type, status, model, ip} dicts. Raises
+	OmadaAuthError on failure.
+	"""
+	base_url = f"{omada_host.rstrip('/')}/{controller_id}"
+	session, token = _operator_login(base_url, operator_username, operator_password, timeout)
+
+	try:
+		resp = session.get(
+			f"{base_url}/api/v2/sites/{site_id}/devices",
+			params={"token": token},
+			headers={"Csrf-Token": token},
+			timeout=timeout,
+		)
+		resp.raise_for_status()
+	except requests.RequestException as e:
+		raise OmadaAuthError(f"Omada device list request failed: {e}") from e
+
+	data = resp.json()
+	if data.get("errorCode") not in (0, None):
+		raise OmadaAuthError(f"Omada device list failed: {data}")
+
+	result = data.get("result")
+	devices = result if isinstance(result, list) else (result or {}).get("data") or []
+
+	return [
+		{
+			"mac": device.get("mac"),
+			"name": device.get("name"),
+			"type": device.get("type"),
+			"status": device.get("status"),
+			"model": device.get("model") or device.get("showModel"),
+			"ip": device.get("ip"),
+		}
+		for device in devices
+	]
+
+
+def reboot_device(
+	omada_host, controller_id, operator_username, operator_password, site_id, device_mac, timeout=10
+):
+	"""Reboot a single adopted device by MAC. Disconnects every client
+	currently on it -- callers should confirm with the operator before
+	calling this.
+
+	NOTE: same caveat as list_devices -- this endpoint pattern
+	(`POST .../api/v2/sites/{siteId}/devices/{mac}/reboot`) hasn't been
+	verified against a live controller in this project. Test it against a
+	device with no active customers before relying on it in production.
+
+	Raises OmadaAuthError on failure.
+	"""
+	base_url = f"{omada_host.rstrip('/')}/{controller_id}"
+	session, token = _operator_login(base_url, operator_username, operator_password, timeout)
+
+	try:
+		resp = session.post(
+			f"{base_url}/api/v2/sites/{site_id}/devices/{device_mac}/reboot",
+			headers={"Csrf-Token": token},
+			timeout=timeout,
+		)
+		resp.raise_for_status()
+	except requests.RequestException as e:
+		raise OmadaAuthError(f"Omada device reboot request failed: {e}") from e
+
+	data = resp.json()
+	if data.get("errorCode") not in (0, None):
+		raise OmadaAuthError(f"Omada device reboot failed: {data}")
+
+	return True

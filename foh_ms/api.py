@@ -8,14 +8,15 @@ import json
 import frappe
 import requests
 from frappe import _
-from frappe.utils import add_to_date, get_url, getdate, now_datetime, nowdate
+from frappe.utils import add_to_date, cint, get_datetime_str, get_url, getdate, now_datetime, nowdate
 
 from foh_ms.omada_service import authorize_client
-from foh_ms.utils import find_site_by_ap_mac
+from foh_ms.utils import find_site_by_ap_mac, has_used_free_trial
 
 DEFAULT_SUCCESS_REDIRECT_URL = "https://www.google.com"
 PAYMENT_POLL_GRACE_SECONDS = 90  # give the webhook this long to arrive before polling
 PAYMENT_POLL_MAX_AGE_MINUTES = 60  # transactions still Pending after this are given up on
+CHAT_MESSAGE_MAX_LENGTH = 500
 
 
 @frappe.whitelist(allow_guest=True)
@@ -468,6 +469,83 @@ def get_radius_credentials(transaction_id):
 
 
 @frappe.whitelist(allow_guest=True)
+def claim_free_trial(ap_mac, client_mac, ssid_name=None, radio_id=None):
+	"""One-time free-trial connection: authorizes a brand-new device for
+	``Hotspot Site.free_trial_minutes`` (default 15), same as a paid voucher
+	but at zero cost and with no code to enter. The resulting Hotspot
+	Transaction (phone_number="Free Trial") doubles as the device's
+	registration -- :func:`foh_ms.utils.has_used_free_trial` checks it to
+	block a second claim from the same MAC, and the portal itself won't
+	render the button again once that check fails.
+	"""
+	if not (ap_mac and client_mac):
+		frappe.throw(_("Missing required parameters."))
+
+	found = find_site_by_ap_mac(ap_mac)
+	if not found:
+		frappe.throw(_("This access point is not registered or is currently inactive."))
+
+	site = frappe.get_doc("Hotspot Site", found.name)
+
+	if not site.enable_free_trial:
+		frappe.throw(_("Free trial is not available on this network."))
+
+	if has_used_free_trial(site.name, client_mac):
+		frappe.throw(_("This device has already used its free trial on this network."))
+
+	duration_minutes = cint(site.free_trial_minutes) or 15
+
+	txn = frappe.get_doc(
+		{
+			"doctype": "Hotspot Transaction",
+			"site": site.name,
+			"phone_number": "Free Trial",
+			"client_mac": client_mac,
+			"ap_mac": ap_mac,
+			"ssid_name": ssid_name,
+			"radio_id": radio_id,
+			"package_name": "Free Trial",
+			"amount": 0,
+			"duration_minutes": duration_minutes,
+			"status": "Paid",
+			"reference_id": f"FREE_TRIAL:{client_mac}",
+		}
+	)
+	if site.authorization_method == "Local RADIUS Server":
+		_issue_radius_token(txn)
+	txn.insert(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	result = {
+		"transaction_id": txn.name,
+		"status": "Paid",
+		"duration_minutes": duration_minutes,
+		"message": _("Free trial activated. You are now being connected."),
+	}
+
+	if site.authorization_method != "Local RADIUS Server":
+		# Same synchronous-authorize-now shortcut redeem_voucher uses: this
+		# is an immediate-response flow, not a payment waiting on a webhook,
+		# so authorize right away and hand back a redirect_url directly.
+		try:
+			_authorize_transaction_on_omada(txn, site)
+			result["redirect_url"] = site.success_redirect_url or DEFAULT_SUCCESS_REDIRECT_URL
+		except Exception:
+			frappe.log_error(
+				title=f"FOH-MS Free Trial Omada Authorization Failed: {txn.name}",
+				message=frappe.get_traceback(),
+			)
+			frappe.enqueue(
+				"foh_ms.api.authorize_mac_on_omada",
+				queue="short",
+				enqueue_after_commit=True,
+				transaction_id=txn.name,
+			)
+
+	return result
+
+
+@frappe.whitelist(allow_guest=True)
 def log_ad_view(ad, ap_mac=None, client_mac=None):
 	"""Record an ad impression on the captive portal and bump its view count."""
 	if not ad or not frappe.db.exists("Hotspot Ad", ad):
@@ -492,6 +570,72 @@ def log_ad_view(ad, ap_mac=None, client_mac=None):
 	frappe.db.commit()  # nosemgrep
 
 	return {"ok": True}
+
+
+@frappe.whitelist(allow_guest=True)
+def send_chat_message(ap_mac, client_mac, message):
+	"""Guest sends a chat message to the site's admin from the captive portal.
+
+	Guests are anonymous -- the thread is keyed on (site, client_mac), the
+	same identity every other guest-facing record in this app uses.
+	"""
+	if not (ap_mac and client_mac and message):
+		frappe.throw(_("Missing required parameters."))
+
+	message = message.strip()
+	if not message:
+		frappe.throw(_("Message cannot be empty."))
+	message = message[:CHAT_MESSAGE_MAX_LENGTH]
+
+	found = find_site_by_ap_mac(ap_mac, active_only=False)
+	if not found:
+		frappe.throw(_("This access point is not registered or is currently inactive."))
+
+	doc = frappe.get_doc(
+		{
+			"doctype": "Hotspot Chat Message",
+			"site": found.name,
+			"client_mac": client_mac,
+			"direction": "Guest",
+			"message": message,
+		}
+	)
+	doc.insert(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return {"name": doc.name, "creation": get_datetime_str(doc.creation)}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_chat_messages(ap_mac, client_mac, after=None):
+	"""Guest polls this to load/refresh their chat thread with the admin.
+
+	``after`` (a previously-seen message's name) limits the response to
+	messages created strictly after it, for cheap incremental polling once
+	the initial history has been loaded.
+	"""
+	if not (ap_mac and client_mac):
+		frappe.throw(_("Missing required parameters."))
+
+	found = find_site_by_ap_mac(ap_mac, active_only=False)
+	if not found:
+		return {"messages": []}
+
+	filters = {"site": found.name, "client_mac": client_mac}
+	if after and frappe.db.exists("Hotspot Chat Message", after):
+		filters["creation"] = [">", frappe.db.get_value("Hotspot Chat Message", after, "creation")]
+
+	rows = frappe.get_all(
+		"Hotspot Chat Message",
+		filters=filters,
+		fields=["name", "direction", "message", "creation"],
+		order_by="creation asc",
+		limit_page_length=200,
+	)
+	for row in rows:
+		row["creation"] = get_datetime_str(row["creation"])
+
+	return {"messages": rows}
 
 
 def _authorize_transaction_on_omada(txn, site):

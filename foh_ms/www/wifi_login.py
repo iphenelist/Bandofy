@@ -4,7 +4,7 @@
 import frappe
 from frappe.utils import getdate, nowdate
 
-from foh_ms.utils import find_site_by_ap_mac
+from foh_ms.utils import find_site_by_ap_mac, has_used_free_trial, is_admin_user
 
 no_cache = 1
 
@@ -58,10 +58,18 @@ def get_context(context):
 	context.ads = []
 	context.authorization_method = None
 	context.online_payment_enabled = False
+	context.free_trial_enabled = False
+	context.free_trial_available = False
+	context.free_trial_minutes = 15
 	context.lipa_images = []
 	context.lipa_default = None
 	context.currency = frappe.db.get_single_value("Hotspot Payment Settings", "default_currency") or "TZS"
 	context.payment_providers = PAYMENT_PROVIDERS
+	context.portal_logo = None
+	context.portal_tagline = None
+	context.portal_primary_color = "#ec4899"
+	context.portal_secondary_color = "#6366f1"
+	context.portal_mid_color = _mix_colors("#ec4899", "#6366f1")
 
 	if ap_mac:
 		site = find_site_by_ap_mac(
@@ -73,6 +81,13 @@ def get_context(context):
 				"authorization_method",
 				"phone_number",
 				"enable_online_payment",
+				"enable_free_trial",
+				"free_trial_minutes",
+				"vendor_user",
+				"portal_logo",
+				"portal_tagline",
+				"portal_primary_color",
+				"portal_secondary_color",
 			],
 		)
 
@@ -83,6 +98,17 @@ def get_context(context):
 			context.authorization_method = site.authorization_method
 			context.support_phone = site.phone_number
 			context.online_payment_enabled = bool(site.enable_online_payment)
+			context.free_trial_minutes = int(site.free_trial_minutes or 15)
+			context.free_trial_enabled = bool(site.enable_free_trial)
+			context.free_trial_available = context.free_trial_enabled and not has_used_free_trial(
+				site.name, client_mac
+			)
+			context.portal_logo = site.portal_logo
+			context.portal_tagline = site.portal_tagline
+			context.portal_primary_color = site.portal_primary_color or context.portal_primary_color
+			context.portal_secondary_color = site.portal_secondary_color or context.portal_secondary_color
+			apply_preview_overrides(context, site)
+			context.portal_mid_color = _mix_colors(context.portal_primary_color, context.portal_secondary_color)
 			context.lipa_images, context.lipa_default = get_lipa_images(site.name)
 			context.packages = frappe.get_all(
 				"Hotspot Package Item",
@@ -104,6 +130,47 @@ def get_context(context):
 			context.ads = get_active_ads(site.name)
 
 	return context
+
+
+def apply_preview_overrides(context, site):
+	"""Lets the site's own vendor (or an admin) preview unsaved portal
+	branding changes on this real template via query params, without ever
+	writing drafts to the database -- this is what the mobile app's
+	Customize Portal live preview is built on. Only honored for an
+	authenticated request that owns this site: a Guest hitting the real
+	portal URL with these query params can never spoof another vendor's
+	branding, so actual customers are completely unaffected.
+	"""
+	if frappe.form_dict.get("preview") != "1":
+		return
+	if frappe.session.user == "Guest":
+		return
+	if frappe.session.user != site.vendor_user and not is_admin_user():
+		return
+
+	if frappe.form_dict.get("preview_primary_color"):
+		context.portal_primary_color = frappe.form_dict.get("preview_primary_color")
+	if frappe.form_dict.get("preview_secondary_color"):
+		context.portal_secondary_color = frappe.form_dict.get("preview_secondary_color")
+	if frappe.form_dict.get("preview_tagline") is not None:
+		context.portal_tagline = frappe.form_dict.get("preview_tagline") or None
+	if frappe.form_dict.get("preview_logo"):
+		context.portal_logo = frappe.form_dict.get("preview_logo")
+
+
+def _mix_colors(hex_a, hex_b):
+	"""Simple RGB average of two '#rrggbb' colors, for the body gradient's
+	middle stop."""
+
+	def to_rgb(hex_color):
+		hex_color = (hex_color or "").lstrip("#")
+		if len(hex_color) != 6:
+			return (124, 58, 237)  # falls back to the original mid-purple
+		return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
+
+	a, b = to_rgb(hex_a), to_rgb(hex_b)
+	mixed = tuple((a[i] + b[i]) // 2 for i in range(3))
+	return "#{:02x}{:02x}{:02x}".format(*mixed)
 
 
 def format_duration(minutes):
