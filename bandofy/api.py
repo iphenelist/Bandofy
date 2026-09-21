@@ -118,7 +118,7 @@ def trigger_stk_push(phone, amount, transaction_id):
 		"customer": {
 			"firstname": "Hotspot",
 			"lastname": "Customer",
-			"email": "noreply@foh-ms.local",
+			"email": "noreply@bandofy.local",
 		},
 		"phone_number": phone,
 		"webhook_url": get_url("/api/method/bandofy.api.payment_callback"),
