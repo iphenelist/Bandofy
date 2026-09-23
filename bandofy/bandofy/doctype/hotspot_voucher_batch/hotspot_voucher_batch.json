@@ -2,6 +2,7 @@
  "actions": [],
  "autoname": "HVB-.YY.MM.-.#####",
  "creation": "2026-08-12 00:00:00.000000",
+ "default_print_format": "Hotspot Voucher Batch Cards",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

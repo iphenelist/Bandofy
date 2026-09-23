@@ -2,7 +2,6 @@
 # For license information, please see license.txt
 
 import secrets
-import string
 
 import frappe
 from frappe import _
@@ -24,12 +23,11 @@ class HotspotVoucherBatch(Document):
 		if not package:
 			frappe.throw(_("Could not find package {0}.").format(self.package_name))
 
-		prefix = (self.prefix or "").strip().upper().replace(" ", "")
 		created = 0
 
 		for _i in range(remaining):
 			voucher = frappe.new_doc("Hotspot Voucher")
-			voucher.voucher_code = _build_unique_voucher_code(prefix)
+			voucher.voucher_code = _build_unique_voucher_code()
 			voucher.status = "Unused"
 			voucher.site = self.site
 			voucher.batch = self.name
@@ -47,11 +45,10 @@ class HotspotVoucherBatch(Document):
 		return created
 
 
-def _build_unique_voucher_code(prefix=""):
-	alphabet = string.ascii_uppercase + string.digits
+def _build_unique_voucher_code():
+	"""6 random digits, no letters -- easy to key in on a phone keypad."""
 	for _i in range(20):
-		suffix = "".join(secrets.choice(alphabet) for _ in range(8))
-		code = f"{prefix}-{suffix}" if prefix else suffix
+		code = str(secrets.randbelow(900000) + 100000)
 		if not frappe.db.exists("Hotspot Voucher", {"voucher_code": code}):
 			return code
 
