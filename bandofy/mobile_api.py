@@ -486,6 +486,123 @@ def create_voucher_batch(site, package_name, quantity, prefix=None, expires_on=N
 	return {"batch": batch.name, "created": created}
 
 
+STAFF_VOUCHER_FIELDS = [
+	"name",
+	"staff_name",
+	"phone_number",
+	"site",
+	"status",
+	"valid_until",
+	"session_minutes",
+	"max_devices",
+	"use_count",
+	"last_used_on",
+	"notes",
+]
+
+
+def _get_own_staff_voucher(name):
+	"""Loads a Hotspot Staff Voucher, refusing one outside the caller's site."""
+	if not name or not frappe.db.exists("Hotspot Staff Voucher", name):
+		frappe.throw(_("Staff voucher not found."))
+
+	doc = frappe.get_doc("Hotspot Staff Voucher", name)
+	if not _is_admin() and doc.site != _own_site_name():
+		frappe.throw(_("Staff voucher not found."), frappe.PermissionError)
+	return doc
+
+
+def _staff_voucher_dict(doc):
+	data = {field: doc.get(field) for field in STAFF_VOUCHER_FIELDS}
+	data["devices"] = [
+		{"client_mac": d.client_mac, "first_used_on": d.first_used_on, "last_used_on": d.last_used_on}
+		for d in doc.devices
+	]
+	return data
+
+
+@frappe.whitelist()
+def get_staff_vouchers(site=None):
+	"""Free, reusable staff access codes (see Hotspot Staff Voucher), with
+	the devices each one has logged in."""
+	site_name = _resolve_site(site)
+
+	names = frappe.get_all(
+		"Hotspot Staff Voucher",
+		filters={"site": site_name} if site_name else {},
+		order_by="staff_name asc",
+		pluck="name",
+		ignore_permissions=True,
+	)
+	return [_staff_voucher_dict(frappe.get_doc("Hotspot Staff Voucher", name)) for name in names]
+
+
+@frappe.whitelist()
+def create_staff_voucher(
+	site,
+	staff_name,
+	phone_number=None,
+	session_minutes=1440,
+	max_devices=1,
+	valid_until=None,
+	notes=None,
+):
+	site_name = _resolve_site_for_write(site)
+	if not staff_name or not staff_name.strip():
+		frappe.throw(_("Staff name is required."))
+
+	doc = frappe.get_doc(
+		{
+			"doctype": "Hotspot Staff Voucher",
+			"site": site_name,
+			"staff_name": staff_name.strip(),
+			"phone_number": phone_number,
+			"session_minutes": frappe.utils.cint(session_minutes),
+			"max_devices": frappe.utils.cint(max_devices),
+			"valid_until": valid_until,
+			"notes": notes,
+		}
+	)
+	doc.insert(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return _staff_voucher_dict(doc)
+
+
+@frappe.whitelist()
+def set_staff_voucher_status(name, status):
+	if status not in ("Active", "Disabled"):
+		frappe.throw(_("Invalid status."))
+
+	doc = _get_own_staff_voucher(name)
+	doc.status = status
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return _staff_voucher_dict(doc)
+
+
+@frappe.whitelist()
+def reset_staff_voucher_devices(name):
+	"""Clears Registered Devices so the code can be used on new phones --
+	e.g. when a staff member changes their device."""
+	doc = _get_own_staff_voucher(name)
+	doc.set("devices", [])
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return _staff_voucher_dict(doc)
+
+
+@frappe.whitelist()
+def delete_staff_voucher(name):
+	doc = _get_own_staff_voucher(name)
+	frappe.delete_doc("Hotspot Staff Voucher", doc.name, ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return {"ok": True}
+
+
 @frappe.whitelist()
 def get_site_devices(site=None):
 	"""The site's primary AP plus any additional_devices, merged with live
