@@ -66,8 +66,8 @@ def notify_transaction_paid(doc, method=None):
 	Paid transition for Mobile Money (STK Push) payments. Voucher redemptions
 	insert their transaction already Paid (on_update never fires for that
 	insert) and are covered by notify_voucher_used instead, so they don't
-	double-notify."""
-	if doc.phone_number == "Voucher":
+	double-notify. Staff logins are free access, not payments."""
+	if doc.phone_number in ("Voucher", "Staff"):
 		return
 	if not doc.has_value_changed("status") or doc.status != "Paid":
 		return

@@ -12,7 +12,11 @@ def execute(filters=None):
 	to_date = getdate(filters.get("to_date"))
 	site = filters.get("site")
 
-	conditions = ["t.status = 'Paid'", "date(t.creation) between %(from_date)s and %(to_date)s"]
+	conditions = [
+		"t.status = 'Paid'",
+		"t.reference_id not like 'STAFF:%%'",  # free staff access, not a sale
+		"date(t.creation) between %(from_date)s and %(to_date)s",
+	]
 	params = {"from_date": from_date, "to_date": to_date}
 
 	if site:

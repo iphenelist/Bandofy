@@ -354,6 +354,9 @@ def redeem_voucher(voucher_code, client_mac, ap_mac, ssid_name=None, radio_id=No
 
 	voucher_code = voucher_code.strip().upper()
 
+	if frappe.db.exists("Hotspot Staff Voucher", voucher_code):
+		return _redeem_staff_voucher(voucher_code, site_name, client_mac, ap_mac, ssid_name, radio_id)
+
 	if not frappe.db.exists("Hotspot Voucher", voucher_code):
 		frappe.throw(_("Invalid voucher code."))
 
@@ -418,6 +421,75 @@ def redeem_voucher(voucher_code, client_mac, ap_mac, ssid_name=None, radio_id=No
 		except Exception:
 			frappe.log_error(
 				title=f"Bandofy Omada Authorization Failed: {txn.name}",
+				message=frappe.get_traceback(),
+			)
+			frappe.enqueue(
+				"bandofy.api.authorize_mac_on_omada",
+				queue="short",
+				enqueue_after_commit=True,
+				transaction_id=txn.name,
+			)
+
+	return result
+
+
+def _redeem_staff_voucher(voucher_code, site_name, client_mac, ap_mac, ssid_name=None, radio_id=None):
+	"""Free, reusable staff access: unlike a customer Hotspot Voucher the code
+	is never consumed -- each redemption logs the device in for the staff
+	voucher's ``session_minutes`` at zero cost, up to ``max_devices``
+	distinct devices. The zero-amount Hotspot Transaction
+	(phone_number="Staff") is what Omada/RADIUS authorize against."""
+	staff_voucher = frappe.get_doc("Hotspot Staff Voucher", voucher_code)
+
+	if staff_voucher.site != site_name:
+		frappe.throw(_("This voucher is not valid for this access point."))
+
+	device = staff_voucher.check_can_connect(client_mac)
+	site = frappe.get_doc("Hotspot Site", site_name)
+
+	txn = frappe.get_doc(
+		{
+			"doctype": "Hotspot Transaction",
+			"site": site_name,
+			"phone_number": "Staff",
+			"client_mac": client_mac,
+			"ap_mac": ap_mac,
+			"ssid_name": ssid_name,
+			"radio_id": radio_id,
+			"package_name": "Staff Access",
+			"amount": 0,
+			"duration_minutes": cint(staff_voucher.session_minutes),
+			"status": "Paid",
+			"reference_id": f"STAFF:{staff_voucher.name}",
+		}
+	)
+	if site.authorization_method == "Local RADIUS Server":
+		_issue_radius_token(txn)
+	txn.insert(ignore_permissions=True)
+
+	now = now_datetime()
+	if not device:
+		device = staff_voucher.append("devices", {"client_mac": client_mac, "first_used_on": now})
+	device.last_used_on = now
+	staff_voucher.last_used_on = now
+	staff_voucher.use_count = cint(staff_voucher.use_count) + 1
+	staff_voucher.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	result = {
+		"transaction_id": txn.name,
+		"status": "Paid",
+		"message": _("Welcome {0}. You are now being connected.").format(staff_voucher.staff_name),
+	}
+
+	if site.authorization_method != "Local RADIUS Server":
+		# Same synchronous-authorize-now shortcut redeem_voucher uses.
+		try:
+			_authorize_transaction_on_omada(txn, site)
+			result["redirect_url"] = site.success_redirect_url or DEFAULT_SUCCESS_REDIRECT_URL
+		except Exception:
+			frappe.log_error(
+				title=f"Bandofy Staff Omada Authorization Failed: {txn.name}",
 				message=frappe.get_traceback(),
 			)
 			frappe.enqueue(
