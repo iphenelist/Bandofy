@@ -6,30 +6,33 @@
 	<title id="page-title">{{ site_label or "Wi-Fi" }} - Ungana Sasa</title>
 	<style>
 		:root {
-			/* Fixed brand palette (AppColors) -- no longer driven by
+			/* Fixed green / white / black brand palette -- no longer driven by
 			   per-site portal_primary_color/portal_secondary_color. */
-			--primary-blue: #2F70F8;
-			--text-primary: #FFFFFF;
-			--text-secondary: #A39EB0;
-			--primary-button-bg: #EFEFF4;
-			--primary-button-text: #1A1A1D;
-			--glass-card-bg: rgba(59, 53, 72, 0.8);   /* AppColors.glassCardBg */
-			--glass-inner-bg: #2B2636;                /* AppColors.glassInnerBg */
+			--green: #16A34A;
+			--green-dark: #15803D;
+			--green-soft: #DCFCE7;
+			--primary-blue: var(--green);
+			--text-primary: #0A0A0A;
+			--text-secondary: #404040;
+			--primary-button-bg: var(--green);
+			--primary-button-text: #FFFFFF;
+			--glass-card-bg: #FFFFFF;
+			--glass-inner-bg: #F5F5F5;
 
-			--accent: var(--primary-blue);
-			--accent-2: #1E56D6;
-			--glass: rgba(59, 53, 72, 0.45);
+			--accent: var(--green);
+			--accent-2: var(--green-dark);
+			--glass: #FFFFFF;
 			--glass-strong: var(--glass-inner-bg);
-			--glass-border: rgba(90, 82, 106, 0.4);   /* AppColors.glassBorder */
+			--glass-border: #E5E5E5;
 			--text: var(--text-primary);
 			--text-dim: var(--text-secondary);
-			--text-faint: rgba(163, 158, 176, 0.6);
-			--danger-bg: rgba(248, 113, 113, 0.15);
-			--danger-text: #fecaca;
-			--danger-border: rgba(248, 113, 113, 0.4);
-			--success-bg: rgba(52, 211, 153, 0.15);
-			--success-text: #a7f3d0;
-			--success-border: rgba(52, 211, 153, 0.4);
+			--text-faint: #737373;
+			--danger-bg: #FEF2F2;
+			--danger-text: #B91C1C;
+			--danger-border: #FECACA;
+			--success-bg: var(--green-soft);
+			--success-text: #166534;
+			--success-border: #86EFAC;
 		}
 		* { box-sizing: border-box; margin: 0; padding: 0; }
 		html, body { height: 100%; }
@@ -38,14 +41,10 @@
 			min-height: 100vh;
 			display: flex;
 			justify-content: center;
-			padding: 24px 14px 40px;
+			/* bottom room so the stacked call/chat/lipa buttons never cover content */
+			padding: 24px 14px 150px;
 			color: var(--text);
-			background-color: #4338CA;
-			background-image:
-				radial-gradient(circle at 15% 10%, #DB2777e6, transparent 55%),
-				radial-gradient(circle at 85% 88%, #4338CAd9, transparent 55%),
-				linear-gradient(135deg, #DB2777 0%, #7C3AED 45%, #4338CA 100%);
-			background-attachment: fixed;
+			background: #FFFFFF;
 		}
 		.page { width: 100%; max-width: 430px; }
 
@@ -76,7 +75,7 @@
 			cursor: pointer;
 			transition: background 0.15s ease, color 0.15s ease;
 		}
-		.lang-btn.active { background: #fff; color: #12172b; }
+		.lang-btn.active { background: var(--green); color: #fff; }
 
 		.card {
 			background: var(--glass-card-bg);
@@ -86,7 +85,7 @@
 			border-radius: 26px;
 			padding: 28px 22px 22px;
 			text-align: center;
-			box-shadow: 0 25px 60px -18px rgba(0, 0, 0, 0.6);
+			box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.12);
 		}
 		.hero-icon {
 			width: 64px;
@@ -98,11 +97,11 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			box-shadow: 0 10px 30px rgba(47, 112, 248, 0.45);
+			box-shadow: 0 10px 26px rgba(22, 163, 74, 0.3);
 		}
 		.hero-icon svg { width: 30px; height: 30px; }
 		.hero-icon img { width: 100%; height: 100%; object-fit: cover; }
-		.card h1 { font-size: 20px; font-weight: 800; color: #fff; }
+		.card h1 { font-size: 20px; font-weight: 800; color: var(--text); }
 		.card p.tagline { font-size: 12.5px; color: var(--text-dim); margin-top: 4px; }
 		.card p.premium-tag { font-size: 11px; color: var(--text-faint); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.6px; }
 
@@ -114,7 +113,7 @@
 			margin: 18px 0 16px;
 			font-size: 12px;
 			font-weight: 700;
-			color: #fff;
+			color: var(--text);
 			letter-spacing: 0.3px;
 		}
 		.steps .chevron { color: var(--text-faint); font-size: 11px; }
@@ -147,7 +146,7 @@
 			min-width: 0;
 		}
 		.voucher-input-wrap input::placeholder {
-			color: rgba(255, 255, 255, 0.5);
+			color: var(--text-faint);
 			font-weight: 500;
 			text-transform: none;
 			letter-spacing: normal;
@@ -164,7 +163,7 @@
 			font-size: 15px;
 			font-weight: 800;
 			cursor: pointer;
-			box-shadow: 0 10px 26px rgba(0, 0, 0, 0.15);
+			box-shadow: 0 8px 20px rgba(22, 163, 74, 0.25);
 		}
 		.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
@@ -205,7 +204,7 @@
 			padding: 5px 12px;
 			border: 1px solid var(--glass-border);
 			border-radius: 10px;
-			background: rgba(10, 8, 25, 0.5);
+			background: #FFFFFF;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -216,7 +215,7 @@
 			align-items: center;
 			font-size: 10.5px;
 			font-weight: 800;
-			color: #fff;
+			color: var(--text);
 			white-space: nowrap;
 		}
 
@@ -232,7 +231,7 @@
 			align-items: center;
 			justify-content: center;
 			height: 88px;
-			background: rgba(0, 0, 0, 0.15);
+			background: var(--glass-strong);
 			padding: 10px;
 		}
 		.ad-banner {
@@ -247,7 +246,7 @@
 			overflow: hidden;
 			white-space: nowrap;
 			border-top: 1px solid var(--glass-border);
-			background: rgba(255, 255, 255, 0.05);
+			background: var(--green-soft);
 			padding: 7px 0;
 		}
 		.ad-marquee-track {
@@ -262,7 +261,7 @@
 			padding: 0 20px;
 			font-size: 12px;
 			font-weight: 600;
-			color: #fff;
+			color: var(--success-text);
 		}
 		@keyframes ad-marquee-scroll {
 			from { transform: translateX(0); }
@@ -287,20 +286,20 @@
 			align-items: center;
 			gap: 6px;
 			padding: 9px 0;
-			background: rgba(255, 255, 255, 0.03);
+			background: #FFFFFF;
 			border-top: 1px solid var(--glass-border);
 		}
 		.ad-dot {
 			width: 6px;
 			height: 6px;
 			border-radius: 50%;
-			background: var(--glass-border);
+			background: #D4D4D4;
 			border: none;
 			padding: 0;
 			cursor: pointer;
 			transition: width 0.15s ease, border-radius 0.15s ease, background 0.15s ease;
 		}
-		.ad-dot.active { width: 16px; border-radius: 4px; background: #fff; }
+		.ad-dot.active { width: 16px; border-radius: 4px; background: var(--green); }
 
 		.section { margin-top: 22px; }
 
@@ -308,8 +307,8 @@
 			display: flex;
 			align-items: center;
 			gap: 12px;
-			background: linear-gradient(120deg, rgba(52, 211, 153, 0.16), rgba(56, 189, 248, 0.1));
-			border: 1.5px solid rgba(52, 211, 153, 0.4);
+			background: var(--green-soft);
+			border: 1.5px solid var(--success-border);
 			border-radius: 18px;
 			padding: 14px 16px;
 			margin-bottom: 14px;
@@ -324,23 +323,23 @@
 			width: 40px;
 			height: 40px;
 			border-radius: 50%;
-			background: rgba(52, 211, 153, 0.2);
+			background: var(--green);
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			color: #34d399;
+			color: #fff;
 		}
 		.free-trial-card.used .free-trial-icon { background: var(--glass-strong); color: var(--text-dim); }
 		.free-trial-icon svg { width: 20px; height: 20px; }
 		.free-trial-text { flex: 1; min-width: 0; text-align: left; }
-		.free-trial-title { font-size: 13.5px; font-weight: 800; color: #fff; }
+		.free-trial-title { font-size: 13.5px; font-weight: 800; color: var(--text); }
 		.free-trial-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
 		.free-trial-btn {
 			flex-shrink: 0;
 			border: none;
 			border-radius: 12px;
-			background: #34d399;
-			color: #0b2b1e;
+			background: var(--green);
+			color: #fff;
 			font-size: 12.5px;
 			font-weight: 800;
 			padding: 10px 14px;
@@ -386,12 +385,12 @@
 			justify-content: center;
 			flex-shrink: 0;
 		}
-		.section-header .badge svg { width: 14px; height: 14px; color: #fff; }
-		.section-header h2 { font-size: 15px; font-weight: 800; color: #fff; text-align: left; }
+		.section-header .badge svg { width: 14px; height: 14px; color: var(--green); }
+		.section-header h2 { font-size: 15px; font-weight: 800; color: var(--text); text-align: left; }
 		.plans-chip {
 			font-size: 10.5px;
 			font-weight: 800;
-			color: #fff;
+			color: var(--text);
 			background: var(--glass-strong);
 			border: 1px solid var(--glass-border);
 			border-radius: 999px;
@@ -421,11 +420,11 @@
 			cursor: pointer;
 			transition: border-color 0.15s ease, transform 0.1s ease;
 		}
-		.package-card:hover { border-color: rgba(255, 255, 255, 0.4); }
+		.package-card:hover { border-color: var(--green); }
 		.package-card:active { transform: scale(0.98); }
 		.package-info { min-width: 0; }
 		.package-name { font-size: 13.5px; font-weight: 800; color: var(--text-primary); }
-		.package-meta { font-size: 10.5px; color: var(--text-primary); margin-top: 2px; }
+		.package-meta { font-size: 10.5px; color: var(--text-dim); margin-top: 2px; }
 		.price-tag {
 			display: inline-block;
 			margin-top: 8px;
@@ -485,68 +484,10 @@
 			margin-top: 26px;
 		}
 
-		.help-bar {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 10px;
-			margin-top: 20px;
-			background: var(--glass);
-			border: 1.5px solid var(--glass-border);
-			border-radius: 14px;
-			padding: 11px 12px 11px 14px;
-			cursor: pointer;
-		}
-		.help-info { display: flex; align-items: center; gap: 8px; min-width: 0; }
-		.help-info svg { width: 17px; height: 17px; color: #fff; flex-shrink: 0; }
-		.help-info .help-text { font-size: 12px; color: var(--text-dim); line-height: 1.3; text-align: left; }
-		.help-info .help-text strong {
-			display: block;
-			font-size: 14px;
-			font-weight: 800;
-			color: #fff;
-			letter-spacing: 0.3px;
-		}
-		.copy-btn {
-			flex-shrink: 0;
-			width: 34px;
-			height: 34px;
-			border-radius: 10px;
-			border: 1px solid var(--glass-border);
-			background: var(--glass-strong);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			color: #fff;
-			transition: background 0.15s ease;
-		}
-		.copy-btn svg { width: 15px; height: 15px; }
-		.copy-btn.copied { background: #34d399; color: #12172b; border-color: #34d399; }
-
-		.copy-toast {
-			position: fixed;
-			left: 50%;
-			bottom: 88px;
-			transform: translateX(-50%) translateY(12px);
-			background: #14201a;
-			color: #fff;
-			padding: 10px 18px;
-			border-radius: 999px;
-			font-size: 12.5px;
-			font-weight: 600;
-			opacity: 0;
-			pointer-events: none;
-			transition: opacity 0.2s ease, transform 0.2s ease;
-			z-index: 1100;
-			box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
-			white-space: nowrap;
-		}
-		.copy-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
 		.modal-overlay {
 			position: fixed;
 			inset: 0;
-			background: rgba(4, 6, 16, 0.65);
+			background: rgba(0, 0, 0, 0.5);
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -558,14 +499,13 @@
 		}
 		.modal-overlay.show { opacity: 1; pointer-events: auto; }
 		.modal-box {
-			background: #171233;
-			background-image: radial-gradient(circle at 20% 0%, rgba(99, 102, 241, 0.25), transparent 60%);
+			background: #FFFFFF;
 			border: 1px solid var(--glass-border);
 			border-radius: 22px;
 			width: 100%;
 			max-width: 360px;
 			padding: 24px 20px 20px;
-			box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+			box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
 			position: relative;
 		}
 		.modal-close {
@@ -581,7 +521,7 @@
 			align-items: center;
 			justify-content: center;
 			cursor: pointer;
-			color: #fff;
+			color: var(--text);
 			font-size: 18px;
 			line-height: 1;
 		}
@@ -593,7 +533,7 @@
 			text-transform: uppercase;
 			letter-spacing: 0.5px;
 		}
-		.modal-pkg .name { font-size: 17px; font-weight: 800; color: #fff; margin-top: 4px; }
+		.modal-pkg .name { font-size: 17px; font-weight: 800; color: var(--text); margin-top: 4px; }
 		.modal-pkg .meta { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
 		.modal-box label.field-label {
 			display: block;
@@ -612,18 +552,18 @@
 			border-radius: 14px;
 			padding: 12px 16px;
 		}
-		.phone-pill svg { width: 18px; height: 18px; flex-shrink: 0; color: #fff; }
+		.phone-pill svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--green); }
 		.phone-pill input {
 			flex: 1;
 			background: transparent;
 			border: none;
 			outline: none;
-			color: #fff;
+			color: var(--text);
 			font-size: 15px;
 			font-weight: 600;
 			min-width: 0;
 		}
-		.phone-pill input::placeholder { color: rgba(255, 255, 255, 0.45); font-weight: 500; }
+		.phone-pill input::placeholder { color: var(--text-faint); font-weight: 500; }
 		.modal-hint {
 			font-size: 11.5px;
 			color: var(--text-dim);
@@ -669,7 +609,7 @@
 			padding: 13px 20px 13px 16px;
 			font-size: 13.5px;
 			font-weight: 800;
-			box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+			box-shadow: 0 10px 24px rgba(22, 163, 74, 0.3);
 			cursor: pointer;
 		}
 		.fab-lipa svg { width: 20px; height: 20px; flex-shrink: 0; }
@@ -688,7 +628,7 @@
 			color: #fff;
 			border: none;
 			border-radius: 50%;
-			box-shadow: 0 10px 26px rgba(56, 189, 248, 0.4);
+			box-shadow: 0 10px 24px rgba(22, 163, 74, 0.3);
 			cursor: pointer;
 		}
 		.fab-chat svg { width: 24px; height: 24px; }
@@ -699,15 +639,33 @@
 			width: 12px;
 			height: 12px;
 			border-radius: 50%;
-			background: #f87171;
-			border: 2px solid #0b0f2a;
+			background: #EF4444;
+			border: 2px solid #FFFFFF;
 			display: none;
 		}
 		.fab-chat .chat-unread-dot.show { display: block; }
 
+		/* Call-for-help button, stacked directly above the chat button */
+		.fab-call {
+			position: fixed;
+			left: 18px;
+			bottom: 82px;
+			z-index: 900;
+			width: 52px;
+			height: 52px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: linear-gradient(135deg, var(--accent), var(--accent-2));
+			color: #fff;
+			border-radius: 50%;
+			box-shadow: 0 10px 24px rgba(22, 163, 74, 0.3);
+			text-decoration: none;
+		}
+		.fab-call svg { width: 22px; height: 22px; }
+
 		.chat-box {
-			background: #171233;
-			background-image: radial-gradient(circle at 20% 0%, rgba(99, 102, 241, 0.25), transparent 60%);
+			background: #FFFFFF;
 			border: 1px solid var(--glass-border);
 			border-radius: 22px;
 			width: 100%;
@@ -715,7 +673,7 @@
 			height: min(560px, 80vh);
 			padding: 0;
 			position: relative;
-			box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+			box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
 			display: flex;
 			flex-direction: column;
 			overflow: hidden;
@@ -728,7 +686,7 @@
 			padding: 16px 50px 14px 20px;
 			border-bottom: 1px solid var(--glass-border);
 		}
-		.chat-header h3 { font-size: 15px; font-weight: 800; color: #fff; }
+		.chat-header h3 { font-size: 15px; font-weight: 800; color: var(--text); }
 		.chat-header p { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
 		.chat-box .modal-close { top: 14px; right: 14px; }
 		.chat-messages {
@@ -763,7 +721,7 @@
 		.chat-bubble.admin {
 			align-self: flex-start;
 			background: var(--glass-strong);
-			color: #fff;
+			color: var(--text);
 			border: 1px solid var(--glass-border);
 			border-bottom-left-radius: 4px;
 		}
@@ -780,12 +738,12 @@
 			border: 1.5px solid var(--glass-border);
 			border-radius: 999px;
 			padding: 11px 16px;
-			color: #fff;
+			color: var(--text);
 			font-size: 13.5px;
 			outline: none;
 			min-width: 0;
 		}
-		.chat-input-row input::placeholder { color: rgba(255, 255, 255, 0.45); }
+		.chat-input-row input::placeholder { color: var(--text-faint); }
 		.chat-send-btn {
 			flex-shrink: 0;
 			width: 42px;
@@ -803,8 +761,7 @@
 		.chat-send-btn svg { width: 18px; height: 18px; }
 
 		.lipa-box {
-			background: #171233;
-			background-image: radial-gradient(circle at 20% 0%, rgba(99, 102, 241, 0.25), transparent 60%);
+			background: #FFFFFF;
 			border: 1px solid var(--glass-border);
 			border-radius: 22px;
 			width: 100%;
@@ -812,9 +769,9 @@
 			padding: 22px 20px 20px;
 			text-align: center;
 			position: relative;
-			box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+			box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
 		}
-		.lipa-box h3 { font-size: 16px; font-weight: 800; color: #fff; }
+		.lipa-box h3 { font-size: 16px; font-weight: 800; color: var(--text); }
 		.lipa-box p { font-size: 12.5px; color: var(--text-dim); margin-top: 6px; }
 		.lipa-box img {
 			width: 100%;
@@ -835,13 +792,13 @@
 			border: 1.5px solid var(--glass-border);
 			border-radius: 12px;
 			background: var(--glass-strong);
-			color: #fff;
+			color: var(--text);
 			font-size: 14px;
 			font-weight: 700;
 			cursor: pointer;
 			text-align: center;
 		}
-		.lipa-option:hover { border-color: rgba(255, 255, 255, 0.4); }
+		.lipa-option:hover { border-color: var(--green); }
 
 		.maintenance-icon, .info-icon {
 			width: 58px;
@@ -1054,31 +1011,10 @@
 
 		<div class="msg" id="status-msg"></div>
 
-		{% if support_phone %}
-		<div class="help-bar" id="help-bar">
-			<div class="help-info">
-				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C11.4 21 3 12.6 3 2.7c0-.6.4-1 1-1H7.7c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.2 1.1L6.6 10.8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-				</svg>
-				<div class="help-text">
-					<span data-i18n="help_prefix"></span>
-					<strong id="support-phone-text">{{ support_phone }}</strong>
-				</div>
-			</div>
-			<button type="button" class="copy-btn" id="copy-phone-btn" data-i18n-aria-label="copy_label">
-				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.7"/>
-					<path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.7"/>
-				</svg>
-			</button>
-		</div>
-		{% endif %}
 		{% endif %}
 
 		<div class="footer-note" data-i18n="footer_powered"></div>
 	</div>
-
-	<div class="copy-toast" id="copy-toast"></div>
 
 	{% if site_found %}
 	<div class="modal-overlay" id="buy-modal">
@@ -1127,6 +1063,14 @@
 			<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
 		</svg>
 	</button>
+
+	{% if support_phone %}
+	<a href="tel:{{ support_phone }}" class="fab-call" id="call-fab-btn" data-i18n-aria-label="call_label">
+		<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+			<path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C11.4 21 3 12.6 3 2.7c0-.6.4-1 1-1H7.7c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.2 1.1L6.6 10.8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+		</svg>
+	</a>
+	{% endif %}
 
 	<div class="modal-overlay" id="chat-modal">
 		<div class="chat-box">
@@ -1252,8 +1196,6 @@
 					buy_now_btn: "Nunua Sasa",
 					empty_packages: "Hakuna vifurushi kwa sasa. Tafadhali wasiliana na msimamizi wa mtandao.",
 					no_site: "Hatukuweza kutambua kifaa hiki cha mtandao. Tafadhali unganisha tena kwenye Wi-Fi na ujaribu tena.",
-					help_prefix: "Una tatizo? Wasiliana nasi",
-					copy_label: "Nakili Nambari",
 					footer_powered: "Inaendeshwa na Bandofy",
 					modal_pkg_label: "Kifurushi Ulichochagua",
 					modal_phone_label: "Nambari ya Simu ya Malipo",
@@ -1264,6 +1206,7 @@
 					find_voucher_modal_title: "Tafuta Voucher Yangu",
 					find_voucher_modal_body: "Angalia ujumbe wa SMS ulioupokea baada ya kulipa, au kadi yako ya voucher, kwa nambari yako ya siri. Kama huwezi kuipata, piga simu kwa msaada.",
 					find_voucher_call_btn: "Piga Simu kwa Msaada",
+					call_label: "Piga Simu kwa Msaada",
 					lipa_select_title: "Chagua Njia ya Lipa",
 					lipa_select_hint: "Chagua mtandao unaotaka kulipia ili uone namba/QR yake.",
 					lipa_default_hint: "Tumia namba hii au scan QR kulipa moja kwa moja kupitia mtandao wowote au benki.",
@@ -1285,7 +1228,6 @@
 					msg_sending_request: "Inatuma ombi...",
 					msg_processing: "Inachakata...",
 					msg_stk_sent_default: "Ombi la STK limetumwa. Angalia simu yako.",
-					msg_copied_prefix: "Nambari imenakiliwa: ",
 					unit_day: "Siku",
 					unit_hour: "Saa",
 					unit_minute: "Dakika",
@@ -1320,8 +1262,6 @@
 					buy_now_btn: "Buy Now",
 					empty_packages: "No plans available right now. Please contact the network admin.",
 					no_site: "We couldn't identify this network device. Please reconnect to the Wi-Fi and try again.",
-					help_prefix: "Need help? Call",
-					copy_label: "Copy Number",
 					footer_powered: "Powered by Bandofy",
 					modal_pkg_label: "Selected Plan",
 					modal_phone_label: "Payment Phone Number",
@@ -1332,6 +1272,7 @@
 					find_voucher_modal_title: "Find My Voucher",
 					find_voucher_modal_body: "Check the SMS you received after paying, or your physical voucher card, for your code. If you can't find it, call for help.",
 					find_voucher_call_btn: "Call for Help",
+					call_label: "Call for Help",
 					lipa_select_title: "Choose Payment Method",
 					lipa_select_hint: "Choose the network you want to pay via to see its number/QR.",
 					lipa_default_hint: "Use this number or scan the QR to pay directly via any network or bank.",
@@ -1353,7 +1294,6 @@
 					msg_sending_request: "Sending request...",
 					msg_processing: "Processing...",
 					msg_stk_sent_default: "STK request sent. Check your phone.",
-					msg_copied_prefix: "Number copied: ",
 					unit_day: "Day",
 					unit_hour: "Hour",
 					unit_minute: "Minute",
@@ -1935,62 +1875,6 @@
 				if (findVoucherModal && findVoucherModal.classList.contains("show")) closeFindVoucherModal();
 				if (chatModal && chatModal.classList.contains("show")) closeChatModal();
 			});
-
-			// Support number: tap the help bar to copy the site's contact
-			// number to the clipboard, for customers who hit a problem.
-			var helpBar = document.getElementById("help-bar");
-			var supportPhoneText = document.getElementById("support-phone-text");
-			var copyToast = document.getElementById("copy-toast");
-			var copyToastTimer = null;
-
-			function showCopyToast(text) {
-				if (!copyToast) return;
-				copyToast.textContent = text;
-				copyToast.classList.add("show");
-				clearTimeout(copyToastTimer);
-				copyToastTimer = setTimeout(function () { copyToast.classList.remove("show"); }, 2200);
-			}
-
-			function fallbackCopy(text) {
-				var input = document.createElement("textarea");
-				input.value = text;
-				input.style.position = "fixed";
-				input.style.opacity = "0";
-				document.body.appendChild(input);
-				input.focus();
-				input.select();
-				var copied = false;
-				try { copied = document.execCommand("copy"); } catch (e) { copied = false; }
-				document.body.removeChild(input);
-				return copied;
-			}
-
-			function copySupportNumber() {
-				var copyBtn = document.getElementById("copy-phone-btn");
-				var number = supportPhoneText ? supportPhoneText.textContent.trim() : "";
-				if (!number) return;
-
-				function onCopied() {
-					showCopyToast(t("msg_copied_prefix") + number);
-					if (copyBtn) {
-						copyBtn.classList.add("copied");
-						setTimeout(function () { copyBtn.classList.remove("copied"); }, 1200);
-					}
-				}
-
-				// Clipboard API needs a secure context; captive portals are
-				// often plain HTTP on the local network, so fall back to the
-				// hidden-textarea + execCommand trick when it's unavailable.
-				if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
-					navigator.clipboard.writeText(number).then(onCopied).catch(function () {
-						if (fallbackCopy(number)) onCopied();
-					});
-				} else if (fallbackCopy(number)) {
-					onCopied();
-				}
-			}
-
-			if (helpBar) helpBar.addEventListener("click", copySupportNumber);
 
 			if (modalSubmitBtn) {
 				modalSubmitBtn.addEventListener("click", function () {
