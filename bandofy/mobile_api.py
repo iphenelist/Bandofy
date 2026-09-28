@@ -102,6 +102,9 @@ def whoami():
 
 
 def _profile():
+	"""`realtime_site` is this Frappe site's name: Frappe's Socket.IO server
+	only delivers events on the `/<site name>` namespace, so the app needs
+	it to connect (see the app's RealtimeService)."""
 	user = frappe.session.user
 	admin = _is_admin(user)
 
@@ -112,7 +115,7 @@ def _profile():
 			order_by="vendor_name",
 			ignore_permissions=True,
 		)
-		return {"user": user, "role": "admin", "sites": sites}
+		return {"user": user, "role": "admin", "sites": sites, "realtime_site": frappe.local.site}
 
 	site = frappe.db.get_value(
 		"Hotspot Site",
@@ -125,7 +128,7 @@ def _profile():
 			_("No Hotspot Site is linked to your account. Please contact the administrator."),
 			frappe.PermissionError,
 		)
-	return {"user": user, "role": "vendor", "sites": [site]}
+	return {"user": user, "role": "vendor", "sites": [site], "realtime_site": frappe.local.site}
 
 
 @frappe.whitelist()
@@ -354,6 +357,33 @@ def get_voucher_batches(site=None):
 		)
 
 	return batches
+
+
+VOUCHER_BATCH_PRINT_FORMAT = "Hotspot Voucher Batch Cards"
+
+
+@frappe.whitelist()
+def download_voucher_batch_pdf(batch):
+	"""The batch's printable voucher cards (the "Hotspot Voucher Batch Cards"
+	print format) as a PDF download, for the app's Batch Stock tab. A vendor
+	can only download batches of their own site."""
+	site = frappe.db.get_value("Hotspot Voucher Batch", batch, "site")
+	if not site or (not _is_admin() and site != _own_site_name()):
+		frappe.throw(_("Voucher batch not found."), frappe.PermissionError)
+
+	# Website Users have no print permission on the doctype; access was
+	# checked above, exactly like every other endpoint in this module.
+	frappe.flags.ignore_print_permissions = True
+	try:
+		pdf = frappe.get_print(
+			"Hotspot Voucher Batch", batch, print_format=VOUCHER_BATCH_PRINT_FORMAT, as_pdf=True
+		)
+	finally:
+		frappe.flags.ignore_print_permissions = False
+
+	frappe.local.response.filename = f"{batch}.pdf"
+	frappe.local.response.filecontent = pdf
+	frappe.local.response.type = "pdf"
 
 
 @frappe.whitelist()
