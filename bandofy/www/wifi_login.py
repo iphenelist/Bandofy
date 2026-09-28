@@ -127,9 +127,42 @@ def get_context(context):
 			)
 			for pkg in context.packages:
 				pkg["duration_label"] = format_duration(pkg.duration_minutes)
+				pkg["price_label"] = "{} {:,.0f}".format(context.currency, pkg.price or 0)
 			context.ads = get_active_ads(site.name)
 
+	context.portal_data = build_portal_data(context)
 	return context
+
+
+def build_portal_data(context):
+	"""Everything the Vue portal app (public/js/wifi_portal) needs, handed to
+	it as a single JSON blob on window.PORTAL."""
+	keys = [
+		"ap_mac",
+		"client_mac",
+		"target",
+		"orig_url",
+		"ssid_name",
+		"radio_id",
+		"site_found",
+		"vendor_name",
+		"site_label",
+		"support_phone",
+		"packages",
+		"ads",
+		"authorization_method",
+		"online_payment_enabled",
+		"free_trial_enabled",
+		"free_trial_available",
+		"free_trial_minutes",
+		"lipa_images",
+		"lipa_default",
+		"currency",
+		"payment_providers",
+		"portal_logo",
+		"portal_tagline",
+	]
+	return {key: context.get(key) for key in keys}
 
 
 def apply_preview_overrides(context, site):
