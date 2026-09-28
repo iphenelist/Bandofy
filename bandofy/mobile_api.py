@@ -378,6 +378,16 @@ def download_voucher_batch_pdf(batch):
 		pdf = frappe.get_print(
 			"Hotspot Voucher Batch", batch, print_format=VOUCHER_BATCH_PRINT_FORMAT, as_pdf=True
 		)
+	except OSError:
+		# pdfkit raises OSError when the wkhtmltopdf binary isn't installed on
+		# the server -- its raw message is meaningless to a vendor.
+		frappe.log_error(title="Bandofy Mobile: voucher PDF generation failed", message=frappe.get_traceback())
+		frappe.throw(
+			_(
+				"The server can't create PDFs yet because wkhtmltopdf isn't installed on it. "
+				"Please ask the server administrator to install it."
+			)
+		)
 	finally:
 		frappe.flags.ignore_print_permissions = False
 
@@ -742,6 +752,26 @@ def reboot_site_device(site, ap_mac):
 	)
 
 	return {"ok": True}
+
+
+@frappe.whitelist()
+def check_omada_connection(site=None):
+	"""Step-by-step Omada Controller check run from the server (reachability,
+	Controller ID, operator login, client and device lists), so a vendor who
+	can't open the controller UI can still see exactly what works. Read-only."""
+	site_name = _resolve_site_for_write(site)
+	doc = frappe.get_doc("Hotspot Site", site_name)
+
+	if doc.authorization_method != "Omada Controller API":
+		return [{"step": "Authorization method", "ok": False, "detail": _("This site doesn't use an Omada Controller.")}]
+
+	return omada_service.diagnose(
+		omada_host=f"https://{doc.controller_ip}:{doc.port}",
+		controller_id=doc.controller_id,
+		operator_username=doc.omada_username,
+		operator_password=doc.get_password("omada_password"),
+		site_id=doc.site_id,
+	)
 
 
 @frappe.whitelist()

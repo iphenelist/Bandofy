@@ -48,54 +48,28 @@ def get_revenue_trend(site_name, days=7):
 
 
 def get_omada_live_stats(site):
-	"""Fetch live client count / bandwidth usage from the Omada Controller.
+	"""Controller status and live client count / bandwidth usage.
 
 	Fails soft: dashboard should still render if the controller is
 	unreachable, just marked as disconnected. `site` needs at least `name`.
 	"""
-	import requests
+	from bandofy import omada_service
 
 	stats = {"connected": False, "client_count": 0, "tx_rate": 0, "rx_rate": 0, "error": None}
 
+	hotspot_site = frappe.get_doc("Hotspot Site", site.name)
+	if hotspot_site.authorization_method != "Omada Controller API":
+		stats["error"] = "This site doesn't use an Omada Controller"
+		return stats
+
 	try:
-		requests.packages.urllib3.disable_warnings()  # noqa: RUF100
-
-		hotspot_site = frappe.get_doc("Hotspot Site", site.name)
-		base_url = f"https://{hotspot_site.controller_ip}:{hotspot_site.port}"
-
-		session = requests.Session()
-		session.verify = False
-
-		login_resp = session.post(
-			f"{base_url}/api/v2/hotspot/login",
-			json={
-				"username": hotspot_site.omada_username,
-				"password": hotspot_site.get_password("omada_password"),
-			},
-			timeout=5,
+		stats = omada_service.get_live_stats(
+			omada_host=f"https://{hotspot_site.controller_ip}:{hotspot_site.port}",
+			controller_id=hotspot_site.controller_id,
+			operator_username=hotspot_site.omada_username,
+			operator_password=hotspot_site.get_password("omada_password"),
+			site_id=hotspot_site.site_id,
 		)
-		login_resp.raise_for_status()
-		token = (login_resp.json().get("result") or {}).get("token")
-
-		if not token:
-			raise Exception("No auth token returned by Omada controller")
-
-		clients_resp = session.get(
-			f"{base_url}/api/v2/sites/{hotspot_site.site_id}/clients",
-			params={"token": token, "currentPage": 1, "currentPageSize": 100},
-			headers={"Csrf-Token": token},
-			timeout=5,
-		)
-		clients_resp.raise_for_status()
-		result = clients_resp.json().get("result") or {}
-		clients = result.get("data") or []
-
-		stats["connected"] = True
-		stats["client_count"] = result.get("totalRows", len(clients))
-		for client in clients:
-			stats["tx_rate"] += client.get("trafficDown", 0) or 0
-			stats["rx_rate"] += client.get("trafficUp", 0) or 0
-
 	except Exception as e:
 		stats["error"] = str(e)
 		frappe.log_error(title="Bandofy Omada Live Stats Fetch Failed", message=frappe.get_traceback())

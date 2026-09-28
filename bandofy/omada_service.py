@@ -187,3 +187,143 @@ def reboot_device(
 		raise OmadaAuthError(f"Omada device reboot failed: {data}")
 
 	return True
+
+
+def get_live_stats(
+	omada_host, controller_id, operator_username, operator_password, site_id, timeout=5
+):
+	"""Controller status plus best-effort live client/traffic numbers for the
+	dashboards.
+
+	`connected` means the Hotspot Operator login succeeded -- the same login
+	authorize_client depends on, so it matches whether customers can actually
+	get online. The client list is fetched from the Hotspot Manager API
+	(`.../api/v2/hotspot/sites/{siteId}/clients`), which is not part of
+	TP-Link's documented External Portal API; if it fails, `connected` stays
+	True and `error` explains why the numbers are missing.
+
+	Raises OmadaAuthError if the login itself fails.
+	"""
+	base_url = f"{omada_host.rstrip('/')}/{controller_id}"
+	session, token = _operator_login(base_url, operator_username, operator_password, timeout)
+
+	stats = {"connected": True, "client_count": 0, "tx_rate": 0, "rx_rate": 0, "error": None}
+	try:
+		resp = session.get(
+			f"{base_url}/api/v2/hotspot/sites/{site_id}/clients",
+			params={"currentPage": 1, "currentPageSize": 100},
+			headers={"Csrf-Token": token},
+			timeout=timeout,
+		)
+		resp.raise_for_status()
+		data = resp.json()
+		if data.get("errorCode") not in (0, None):
+			raise OmadaAuthError(data.get("msg") or f"errorCode {data.get('errorCode')}")
+
+		result = data.get("result") or {}
+		clients = result.get("data") or []
+		stats["client_count"] = result.get("totalRows", len(clients))
+		for client in clients:
+			stats["tx_rate"] += client.get("trafficDown", 0) or 0
+			stats["rx_rate"] += client.get("trafficUp", 0) or 0
+	except (requests.RequestException, ValueError, OmadaAuthError) as e:
+		stats["error"] = f"Live traffic unavailable: {e}"
+
+	return stats
+
+
+def _probe(session, method, url, **kwargs):
+	"""One diagnostic request -> (ok, detail, json body or None). Never raises."""
+	try:
+		resp = session.request(method, url, **kwargs)
+	except requests.RequestException as e:
+		return False, f"Request failed: {e}", None
+
+	try:
+		data = resp.json()
+	except ValueError:
+		return False, f"HTTP {resp.status_code}, not a JSON response: {resp.text[:160]!r}", None
+
+	error_code = data.get("errorCode")
+	ok = resp.ok and error_code in (0, None)
+	detail = f"HTTP {resp.status_code}, errorCode {error_code}"
+	if data.get("msg"):
+		detail += f": {data['msg']}"
+	return ok, detail, data
+
+
+def diagnose(omada_host, controller_id, operator_username, operator_password, site_id, timeout=8):
+	"""Step-by-step connectivity check against a site's Omada Controller, for
+	operators who can't open the controller UI themselves. Read-only -- it
+	never authorizes a client or reboots anything.
+
+	Returns a list of {"step", "ok", "detail"} dicts. Credentials are never
+	included in the output.
+	"""
+	steps = []
+
+	def add(step, ok, detail):
+		steps.append({"step": step, "ok": bool(ok), "detail": detail})
+
+	host = omada_host.rstrip("/")
+	session = requests.Session()
+	session.verify = False
+	urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+	# 1. Reachability + the controller's real Omadac ID, from its public info endpoint.
+	ok, detail, data = _probe(session, "GET", f"{host}/api/info", timeout=timeout)
+	if data is None:
+		add("Reach controller", False, f"{host}: {detail}")
+		return steps
+
+	info = data.get("result") or {}
+	real_id = info.get("omadacId")
+	version = info.get("controllerVer")
+	add("Reach controller", True, f"{host} answered (controller version {version or 'unknown'})")
+
+	if real_id:
+		if real_id == controller_id:
+			add("Controller ID", True, "Matches the controller")
+		else:
+			add(
+				"Controller ID",
+				False,
+				f"Site has '{controller_id}' but the controller reports '{real_id}'. Update the site's Controller ID.",
+			)
+			controller_id = real_id
+
+	base_url = f"{host}/{controller_id}"
+
+	# 2. Hotspot Operator login -- what client authorization depends on.
+	try:
+		session, token = _operator_login(base_url, operator_username, operator_password, timeout)
+	except OmadaAuthError as e:
+		add("Operator login", False, str(e))
+		return steps
+	add("Operator login", True, f"Logged in as '{operator_username}'")
+
+	headers = {"Csrf-Token": token}
+
+	# 3. Live client list (dashboard traffic numbers).
+	ok, detail, _ = _probe(
+		session,
+		"GET",
+		f"{base_url}/api/v2/hotspot/sites/{site_id}/clients",
+		params={"currentPage": 1, "currentPageSize": 1},
+		headers=headers,
+		timeout=timeout,
+	)
+	add(f"Client list (site '{site_id}')", ok, detail)
+
+	# 4. Device list (Devices screen status, and what reboot relies on).
+	ok, detail, _ = _probe(
+		session,
+		"GET",
+		f"{base_url}/api/v2/sites/{site_id}/devices",
+		params={"token": token},
+		headers=headers,
+		timeout=timeout,
+	)
+	add("Device list", ok, detail)
+
+	return steps
