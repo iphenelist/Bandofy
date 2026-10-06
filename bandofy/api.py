@@ -4,6 +4,7 @@
 import hashlib
 import hmac
 import json
+import time
 
 import frappe
 import requests
@@ -17,6 +18,8 @@ DEFAULT_SUCCESS_REDIRECT_URL = "https://www.google.com"
 PAYMENT_POLL_GRACE_SECONDS = 90  # give the webhook this long to arrive before polling
 PAYMENT_POLL_MAX_AGE_MINUTES = 60  # transactions still Pending after this are given up on
 CHAT_MESSAGE_MAX_LENGTH = 500
+DEFAULT_GATEWAY_BASE_URL = "https://abliner.net/api/v1"
+WEBHOOK_MAX_AGE_SECONDS = 300  # Abliner: reject webhook timestamps older than 5 minutes
 
 
 @frappe.whitelist(allow_guest=True)
@@ -108,41 +111,53 @@ def trigger_stk_push(phone, amount, transaction_id):
 			"message": _("STK push sent. Please check your phone to complete the payment."),
 		}
 
-	base_url = (settings.base_url or "https://api.snippe.sh").strip().rstrip("/")
+	base_url = _gateway_base_url(settings)
 	timeout = max(5, min(int(settings.request_timeout or 30), 120))
 	currency = (settings.default_currency or "TZS").strip().upper()
 
-	payload = {
-		"payment_type": "mobile",
-		"details": {"amount": int(round(amount)), "currency": currency},
-		"customer": {
-			"firstname": "Hotspot",
-			"lastname": "Customer",
-			"email": "noreply@bandofy.local",
+	# Abliner echoes `reference` back as `customer_reference` on the deposit,
+	# the webhook and the transactions lookup — that's how we find the txn.
+	body = json.dumps(
+		{
+			"amount": int(round(amount)),
+			"method": "mobile",
+			"currency": currency,
+			"phone": phone,
+			"reference": transaction_id,
+			"callback_url": get_url("/api/method/bandofy.api.payment_callback"),
 		},
-		"phone_number": phone,
-		"webhook_url": get_url("/api/method/bandofy.api.payment_callback"),
-		"metadata": {"transaction_id": transaction_id},
+		separators=(",", ":"),
+	)
+	headers = {
+		"Authorization": f"Bearer {api_key}",
+		"Content-Type": "application/json",
+		"Idempotency-Key": transaction_id,
 	}
 
-	response = requests.post(
-		f"{base_url}/v1/payments",
-		headers={
-			"Authorization": f"Bearer {api_key}",
-			"Content-Type": "application/json",
-			"Idempotency-Key": transaction_id,
-		},
-		json=payload,
-		timeout=timeout,
-	)
-	response.raise_for_status()
-	body = response.json()
+	# API keys created from 5 Oct 2026 must sign deposits with the whsec_
+	# secret: HMAC-SHA256 of "<timestamp>.<raw body>".
+	signing_secret = (settings.get_password("webhook_secret", raise_exception=False) or "").strip()
+	if signing_secret:
+		timestamp = str(int(time.time()))
+		headers["x-abliner-timestamp"] = timestamp
+		headers["x-abliner-signature"] = hmac.new(
+			signing_secret.encode(), f"{timestamp}.{body}".encode(), hashlib.sha256
+		).hexdigest()
 
-	if body.get("status") == "error":
-		frappe.throw(body.get("message") or _("Payment gateway returned an error."))
+	response = requests.post(f"{base_url}/deposits", headers=headers, data=body, timeout=timeout)
+	try:
+		result = response.json() or {}
+	except ValueError:
+		result = {}
 
-	data = body.get("data") or {}
-	reference = data.get("reference") or data.get("id")
+	if not response.ok or result.get("status") == "error":
+		raise Exception(
+			f"Abliner deposit failed (HTTP {response.status_code}): "
+			f"{result.get('code') or ''} {result.get('message') or response.text[:500]}"
+		)
+
+	data = result.get("data") or {}
+	reference = data.get("id")
 
 	return {
 		"reference_id": reference,
@@ -162,7 +177,7 @@ def payment_callback():
 	settings = frappe.get_single("Hotspot Payment Settings")
 	raw_body = frappe.request.get_data(as_text=True) or ""
 
-	webhook_secret = (settings.get_password("webhook_secret") or "").strip()
+	webhook_secret = (settings.get_password("webhook_secret", raise_exception=False) or "").strip()
 	if webhook_secret and not _verify_webhook_signature(webhook_secret, raw_body):
 		frappe.local.response["http_status_code"] = 401
 		return {"status": "error", "message": "Invalid webhook signature"}
@@ -173,12 +188,12 @@ def payment_callback():
 		frappe.local.response["http_status_code"] = 400
 		return {"status": "error", "message": "Invalid JSON payload"}
 
-	event_type = (payload.get("type") or frappe.get_request_header("X-Webhook-Event") or "").strip().lower()
-	data = payload.get("data") or payload
-	metadata = data.get("metadata") if isinstance(data.get("metadata"), dict) else {}
+	# Abliner events: transaction.completed / transaction.failed (deposits).
+	event_type = str(payload.get("event") or "").strip().lower()
+	data = payload.get("data") or {}
 
-	transaction_id = (metadata.get("transaction_id") or data.get("transaction_id") or "").strip()
-	reference_id = (data.get("reference") or data.get("id") or data.get("reference_id") or "").strip()
+	transaction_id = str(data.get("customer_reference") or "").strip()
+	reference_id = str(data.get("id") or "").strip()
 	gateway_status = str(data.get("status") or "").strip().lower()
 
 	txn_name = None
@@ -201,11 +216,11 @@ def payment_callback():
 		# fallback poller — avoid double-authorizing the client.
 		return {"status": "ok", "message": "Already processed"}
 
-	if event_type == "payment.completed" or gateway_status in ("completed", "success", "successful", "paid"):
+	if event_type == "transaction.completed" or gateway_status == "completed":
 		_mark_transaction_paid(txn, reference_id, settings)
 		return {"status": "success"}
 
-	if event_type == "payment.failed" or gateway_status in ("failed", "voided", "expired", "cancelled"):
+	if event_type == "transaction.failed" or gateway_status == "failed":
 		txn.status = "Failed"
 		txn.save(ignore_permissions=True)
 		frappe.db.commit()  # nosemgrep
@@ -251,35 +266,23 @@ def _issue_radius_token(txn):
 	txn.authorized_until = add_to_date(now_datetime(), minutes=txn.duration_minutes or 0)
 
 
-def _extract_signature(signature_header):
-	signature = (signature_header or "").strip()
-	if not signature:
-		return ""
-	if "," in signature:
-		for part in signature.split(","):
-			token = part.strip()
-			if token.startswith("v1="):
-				return token.split("=", 1)[1].strip()
-	if "=" in signature:
-		return signature.split("=", 1)[1].strip()
-	return signature
+def _gateway_base_url(settings):
+	return (settings.base_url or DEFAULT_GATEWAY_BASE_URL).strip().rstrip("/")
 
 
 def _verify_webhook_signature(webhook_secret, raw_body):
-	signature = _extract_signature(frappe.get_request_header("X-Webhook-Signature") or "")
-	if not signature:
+	"""Abliner signs webhooks as hex HMAC-SHA256 of "<timestamp>.<raw body>"."""
+	signature = (frappe.get_request_header("X-Webhook-Signature") or "").strip()
+	timestamp = (frappe.get_request_header("X-Webhook-Timestamp") or "").strip()
+	if not (signature and timestamp.isdigit()):
 		return False
 
-	timestamp = (frappe.get_request_header("X-Webhook-Timestamp") or "").strip()
-	if timestamp:
-		signed_payload = f"{timestamp}.{raw_body}".encode()
-		expected = hmac.new(webhook_secret.encode(), signed_payload, hashlib.sha256).hexdigest()
-		if hmac.compare_digest(expected, signature):
-			return True
+	if abs(time.time() - int(timestamp)) > WEBHOOK_MAX_AGE_SECONDS:
+		return False
 
-	# Fallback for gateways that sign the raw body without a timestamp.
-	expected_legacy = hmac.new(webhook_secret.encode(), raw_body.encode(), hashlib.sha256).hexdigest()
-	return hmac.compare_digest(expected_legacy, signature)
+	signed_payload = f"{timestamp}.{raw_body}".encode()
+	expected = hmac.new(webhook_secret.encode(), signed_payload, hashlib.sha256).hexdigest()
+	return hmac.compare_digest(expected, signature)
 
 
 @frappe.whitelist()
@@ -306,34 +309,35 @@ def sync_pending_payments():
 		limit_page_length=200,
 	)
 
-	base_url = (settings.base_url or "https://api.snippe.sh").strip().rstrip("/")
+	base_url = _gateway_base_url(settings)
 	timeout = max(5, min(int(settings.request_timeout or 30), 120))
 
 	for row in pending:
-		if not row.reference_id:
-			if row.creation <= cutoff_old:
-				frappe.db.set_value("Hotspot Transaction", row.name, "status", "Failed")
-			continue
-
+		# Look up by Abliner's id when we have it, otherwise by the reference
+		# we sent (the txn name) — covers a deposit whose response was lost.
+		params = {"id": row.reference_id} if row.reference_id else {"customer_reference": row.name}
 		try:
 			response = requests.get(
-				f"{base_url}/v1/payments/{row.reference_id}",
+				f"{base_url}/transactions",
 				headers={"Authorization": f"Bearer {api_key}"},
+				params=params,
 				timeout=timeout,
 			)
 			response.raise_for_status()
-			data = (response.json() or {}).get("data") or {}
-			gateway_status = str(data.get("status") or "").strip().lower()
+			matches = (response.json() or {}).get("data") or []
+			match = matches[0] if matches else {}
+			gateway_status = str(match.get("status") or "").strip().lower()
+			reference_id = row.reference_id or str(match.get("id") or "")
 		except Exception:
 			frappe.log_error(
 				title=f"Bandofy Payment Poll Failed: {row.name}", message=frappe.get_traceback()
 			)
 			continue
 
-		if gateway_status in ("completed", "success", "successful", "paid"):
+		if gateway_status == "completed":
 			txn = frappe.get_doc("Hotspot Transaction", row.name)
-			_mark_transaction_paid(txn, row.reference_id, settings)
-		elif gateway_status in ("failed", "voided", "expired", "cancelled"):
+			_mark_transaction_paid(txn, reference_id, settings)
+		elif gateway_status == "failed":
 			frappe.db.set_value("Hotspot Transaction", row.name, "status", "Failed")
 		elif row.creation <= cutoff_old:
 			frappe.db.set_value("Hotspot Transaction", row.name, "status", "Failed")

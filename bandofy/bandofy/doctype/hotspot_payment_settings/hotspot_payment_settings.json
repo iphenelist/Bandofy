@@ -31,11 +31,11 @@
    "label": "Enabled"
   },
   {
-   "default": "Snippe",
+   "default": "Abliner",
    "fieldname": "gateway_provider",
    "fieldtype": "Select",
    "label": "Gateway Provider",
-   "options": "Snippe"
+   "options": "Abliner"
   },
   {
    "fieldname": "column_break_1",
@@ -59,7 +59,7 @@
    "label": "API Configuration"
   },
   {
-   "default": "https://api.snippe.sh",
+   "default": "https://abliner.net/api/v1",
    "fieldname": "base_url",
    "fieldtype": "Data",
    "label": "Base URL"
@@ -71,7 +71,8 @@
   {
    "fieldname": "api_key",
    "fieldtype": "Password",
-   "label": "API Key"
+   "label": "API Key",
+   "description": "Abliner API key (starts with tsl_live_). Sent as the Bearer token."
   },
   {
    "fieldname": "webhook_section",
@@ -79,7 +80,7 @@
    "label": "Webhook"
   },
   {
-   "description": "Used to verify the X-Webhook-Signature header on incoming payment_callback requests (HMAC-SHA256).",
+   "description": "Abliner webhook signing secret (starts with whsec_). Signs outgoing deposit requests (x-abliner-signature) and verifies the X-Webhook-Signature header on incoming payment_callback requests (HMAC-SHA256).",
    "fieldname": "webhook_secret",
    "fieldtype": "Password",
    "label": "Webhook Secret"
@@ -122,7 +123,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-08-16 00:00:00.000000",
+ "modified": "2026-10-06 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Payment Settings",
