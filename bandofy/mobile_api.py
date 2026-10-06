@@ -251,6 +251,27 @@ def get_transactions(site=None, status=None, limit=50, start=0):
 	)
 
 
+VOUCHER_FIELDS = [
+	"name",
+	"voucher_code",
+	"status",
+	"site",
+	"batch",
+	"package_name",
+	"price",
+	"duration_minutes",
+	"generated_on",
+	"expires_on",
+	"used_on",
+	"used_by_mac",
+]
+
+# Statuses the app may set by hand. "Used" is only ever set by an actual
+# redemption (api.redeem_voucher), which also creates the Paid transaction
+# and fires the voucher-used alert.
+MANUAL_VOUCHER_STATUSES = ("Unused", "Blocked", "Expired")
+
+
 @frappe.whitelist()
 def get_vouchers(
 	site=None,
@@ -290,20 +311,7 @@ def get_vouchers(
 	vouchers = frappe.get_all(
 		"Hotspot Voucher",
 		filters=filters,
-		fields=[
-			"name",
-			"voucher_code",
-			"status",
-			"site",
-			"batch",
-			"package_name",
-			"price",
-			"duration_minutes",
-			"generated_on",
-			"expires_on",
-			"used_on",
-			"used_by_mac",
-		],
+		fields=VOUCHER_FIELDS,
 		order_by="generated_on desc",
 		limit_page_length=limit,
 		limit_start=start,
@@ -334,6 +342,39 @@ def get_vouchers(
 
 
 @frappe.whitelist()
+def set_voucher_status(name, status):
+	"""Block, unblock, or expire a single voucher -- e.g. block a code that
+	was lost or sold by mistake. A Used voucher is a record of access already
+	granted and can't be changed, so it can never be made redeemable again."""
+	if status not in MANUAL_VOUCHER_STATUSES:
+		frappe.throw(_("Invalid status."))
+
+	if not name or not frappe.db.exists("Hotspot Voucher", name):
+		frappe.throw(_("Voucher not found."))
+
+	doc = frappe.get_doc("Hotspot Voucher", name)
+	if not _is_admin() and doc.site != _own_site_name():
+		frappe.throw(_("Voucher not found."), frappe.PermissionError)
+
+	if doc.status == "Used":
+		frappe.throw(_("This voucher has already been used, so its status can't be changed."))
+
+	if (
+		status == "Unused"
+		and doc.expires_on
+		and frappe.utils.getdate(doc.expires_on) < frappe.utils.getdate(today())
+	):
+		frappe.throw(_("This voucher's expiry date has passed, so it can't be made usable again."))
+
+	if doc.status != status:
+		doc.status = status
+		doc.save(ignore_permissions=True)
+		frappe.db.commit()  # nosemgrep
+
+	return {field: doc.get(field) for field in VOUCHER_FIELDS}
+
+
+@frappe.whitelist()
 def get_voucher_batches(site=None):
 	"""Stock view: quantity vs generated vs how many are still Unused, so the
 	maintainer can see at a glance which batches are running low."""
@@ -343,7 +384,7 @@ def get_voucher_batches(site=None):
 	batches = frappe.get_all(
 		"Hotspot Voucher Batch",
 		filters=filters,
-		fields=["name", "site", "package_name", "status", "quantity", "generated_count", "expires_on"],
+		fields=["name", "site", "package_name", "status", "quantity", "generated_count", "expires_on", "notes"],
 		order_by="creation desc",
 		ignore_permissions=True,
 	)
@@ -908,3 +949,548 @@ def update_site_branding(
 	frappe.db.commit()  # nosemgrep
 
 	return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Full record editing -- everything a System Manager can edit in Desk, with
+# vendors limited to their own site's business settings. Every write goes
+# through doc.save() so each doctype's own validate() rules still apply.
+# ---------------------------------------------------------------------------
+
+
+def _json_arg(value, default=None):
+	"""Lists/dicts arrive JSON-encoded from the app's form-encoded POST."""
+	if value is None or value == "":
+		return default
+	return json.loads(value) if isinstance(value, str) else value
+
+
+def _blank_to_none(value):
+	return None if value in ("", None) else value
+
+
+def _require_admin():
+	if not _is_admin():
+		frappe.throw(_("Not permitted."), frappe.PermissionError)
+
+
+# What a vendor may change on their own Hotspot Site. Everything else on the
+# site (hardware credentials, linkage, activation) is admin-only.
+SITE_VENDOR_FIELDS = [
+	"vendor_name",
+	"site_name",
+	"phone_number",
+	"mobile_money_account",
+	"enable_online_payment",
+	"enable_free_trial",
+	"free_trial_minutes",
+	"enable_sabbath_mode",
+	"success_redirect_url",
+]
+SITE_ADMIN_FIELDS = [
+	*SITE_VENDOR_FIELDS,
+	"vendor_user",
+	"is_active",
+	"ap_mac",
+	"authorization_method",
+	"controller_ip",
+	"port",
+	"controller_id",
+	"site_id",
+	"omada_username",
+	"radius_client_ip",
+	"radius_nas_id",
+	"ap_login_url_template",
+]
+# Write-only: never sent back to the app, and a blank value means "unchanged".
+SITE_PASSWORD_FIELDS = ["omada_password", "radius_secret"]
+SITE_READ_ONLY_FOR_VENDOR = ["ap_mac", "authorization_method", "is_active"]
+PACKAGE_ITEM_FIELDS = [
+	"package_name",
+	"package_type",
+	"price",
+	"duration_minutes",
+	"bandwidth_down_kbps",
+	"bandwidth_up_kbps",
+]
+
+
+def _site_settings_dict(doc):
+	admin = _is_admin()
+	fields = SITE_ADMIN_FIELDS if admin else [*SITE_VENDOR_FIELDS, *SITE_READ_ONLY_FOR_VENDOR]
+	data = {"name": doc.name, "can_edit_admin_fields": admin}
+	data.update({field: doc.get(field) for field in fields})
+	if admin:
+		data["password_set"] = {field: bool(doc.get(field)) for field in SITE_PASSWORD_FIELDS}
+	data["packages"] = [{field: row.get(field) for field in PACKAGE_ITEM_FIELDS} for row in doc.packages]
+	data["lipa_namba_images"] = [
+		{"label": row.label, "image": row.image, "is_default": row.is_default} for row in doc.lipa_namba_images
+	]
+	return data
+
+
+@frappe.whitelist()
+def get_site_settings(site=None):
+	"""Every editable Hotspot Site setting the caller is allowed to see,
+	with its Pricing Packages and Lipa Namba Images tables."""
+	site_name = _resolve_site_for_write(site)
+	return _site_settings_dict(frappe.get_doc("Hotspot Site", site_name))
+
+
+@frappe.whitelist()
+def update_site_settings(site=None, values=None, packages=None, lipa_namba_images=None):
+	"""Saves site settings. ``values`` is a JSON object of fieldname ->
+	value; ``packages`` / ``lipa_namba_images`` (JSON lists), when passed,
+	replace that whole child table."""
+	site_name = _resolve_site_for_write(site)
+	admin = _is_admin()
+	allowed = SITE_ADMIN_FIELDS if admin else SITE_VENDOR_FIELDS
+
+	doc = frappe.get_doc("Hotspot Site", site_name)
+
+	for fieldname, value in (_json_arg(values, {}) or {}).items():
+		if fieldname in allowed:
+			doc.set(fieldname, value)
+		elif admin and fieldname in SITE_PASSWORD_FIELDS:
+			if value:
+				doc.set(fieldname, value)
+		else:
+			frappe.throw(_("You are not allowed to change {0}.").format(fieldname), frappe.PermissionError)
+
+	package_rows = _json_arg(packages)
+	if package_rows is not None:
+		doc.set("packages", [])
+		for row in package_rows:
+			if not (row.get("package_name") or "").strip():
+				frappe.throw(_("Every package needs a name."))
+			doc.append(
+				"packages",
+				{
+					"package_name": row["package_name"].strip(),
+					"package_type": row.get("package_type") or "Unlimited",
+					"price": row.get("price") or 0,
+					"duration_minutes": row.get("duration_minutes") or 0,
+					"bandwidth_down_kbps": row.get("bandwidth_down_kbps") or 0,
+					"bandwidth_up_kbps": row.get("bandwidth_up_kbps") or 0,
+				},
+			)
+
+	lipa_rows = _json_arg(lipa_namba_images)
+	if lipa_rows is not None:
+		doc.set("lipa_namba_images", [])
+		for row in lipa_rows:
+			if not (row.get("label") and row.get("image")):
+				frappe.throw(_("Every Lipa Namba row needs a label and an image."))
+			doc.append(
+				"lipa_namba_images",
+				{"label": row["label"], "image": row["image"], "is_default": 1 if row.get("is_default") else 0},
+			)
+
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return _site_settings_dict(doc)
+
+
+@frappe.whitelist()
+def update_site_device(site, ap_mac, label=None, is_active=None):
+	"""Rename or (de)activate one of the site's additional access points."""
+	site_name = _resolve_site_for_write(site)
+	target = normalize_mac(ap_mac)
+
+	doc = frappe.get_doc("Hotspot Site", site_name)
+	row = next((r for r in doc.additional_devices if normalize_mac(r.ap_mac) == target), None)
+	if not row:
+		frappe.throw(_("Device not found on this site."))
+
+	if label is not None:
+		row.label = label
+	if is_active is not None:
+		row.is_active = frappe.utils.cint(is_active)
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return {"ok": True}
+
+
+# --- Global voucher packages (admin) ---------------------------------------
+
+
+@frappe.whitelist()
+def save_package(package_name, package_type, price, duration_minutes, name=None):
+	"""Create a Hotspot Package, or update an existing one (``name``). The
+	package name is the record's ID, so it can't be renamed here."""
+	_require_admin()
+
+	if name:
+		doc = frappe.get_doc("Hotspot Package", name)
+	else:
+		doc = frappe.new_doc("Hotspot Package")
+		doc.package_name = (package_name or "").strip()
+
+	doc.package_type = package_type
+	doc.price = frappe.utils.flt(price)
+	doc.duration_minutes = frappe.utils.cint(duration_minutes)
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return {"name": doc.name, "package_type": doc.package_type, "price": doc.price, "duration_minutes": doc.duration_minutes}
+
+
+@frappe.whitelist()
+def delete_package(name):
+	"""Fails with Frappe's own message if vouchers or batches still use it."""
+	_require_admin()
+	frappe.delete_doc("Hotspot Package", name, ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+	return {"ok": True}
+
+
+# --- Portal ads -------------------------------------------------------------
+
+AD_FIELDS = [
+	"name",
+	"title",
+	"is_active",
+	"site",
+	"display_order",
+	"image",
+	"target_url",
+	"description",
+	"phone_number",
+	"start_date",
+	"end_date",
+	"views_count",
+]
+AD_EDITABLE_FIELDS = [f for f in AD_FIELDS if f not in ("name", "views_count")]
+
+
+def _get_own_ad(name):
+	if not name or not frappe.db.exists("Hotspot Ad", name):
+		frappe.throw(_("Ad not found."))
+	doc = frappe.get_doc("Hotspot Ad", name)
+	if not _is_admin() and doc.site != _own_site_name():
+		frappe.throw(_("Ad not found."), frappe.PermissionError)
+	return doc
+
+
+@frappe.whitelist()
+def get_ads(site=None):
+	"""Captive-portal ads. A vendor sees their own site's ads; an admin sees
+	the chosen site's ads plus global ones (no site), or every ad."""
+	site_name = _resolve_site(site)
+	filters = {"site": ["in", [site_name, ""]]} if site_name else {}
+	if not _is_admin():
+		filters = {"site": site_name}
+
+	ads = frappe.get_all(
+		"Hotspot Ad",
+		filters=filters,
+		fields=AD_FIELDS,
+		order_by="display_order asc, creation asc",
+		ignore_permissions=True,
+	)
+	for ad in ads:
+		ad["views_count"] = frappe.db.count("Hotspot Ad View Log", {"ad": ad.name})
+	return ads
+
+
+@frappe.whitelist()
+def save_ad(values, name=None):
+	"""Create or update an ad from a JSON object of its fields. A vendor's ad
+	is always pinned to their own site; only an admin can make a global ad
+	(blank site) or place one on another site."""
+	data = _json_arg(values, {}) or {}
+	doc = _get_own_ad(name) if name else frappe.new_doc("Hotspot Ad")
+
+	for fieldname in AD_EDITABLE_FIELDS:
+		if fieldname in data:
+			value = data[fieldname]
+			doc.set(fieldname, _blank_to_none(value) if fieldname in ("start_date", "end_date", "site") else value)
+
+	if not _is_admin():
+		doc.site = _own_site_name()
+	elif doc.site and not frappe.db.exists("Hotspot Site", doc.site):
+		frappe.throw(_("Site not found."))
+
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return {field: doc.get(field) for field in AD_FIELDS}
+
+
+@frappe.whitelist()
+def delete_ad(name):
+	doc = _get_own_ad(name)
+	frappe.db.delete("Hotspot Ad View Log", {"ad": doc.name})
+	frappe.delete_doc("Hotspot Ad", doc.name, ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+	return {"ok": True}
+
+
+# --- Staff vouchers, vouchers, batches --------------------------------------
+
+
+@frappe.whitelist()
+def update_staff_voucher(
+	name,
+	staff_name=None,
+	phone_number=None,
+	session_minutes=None,
+	max_devices=None,
+	valid_until=None,
+	notes=None,
+):
+	"""Edit a staff voucher's details. An empty string clears an optional
+	field (the app can't send null)."""
+	doc = _get_own_staff_voucher(name)
+
+	if staff_name is not None:
+		if not staff_name.strip():
+			frappe.throw(_("Staff name is required."))
+		doc.staff_name = staff_name.strip()
+	if phone_number is not None:
+		doc.phone_number = phone_number
+	if session_minutes is not None:
+		doc.session_minutes = frappe.utils.cint(session_minutes)
+	if max_devices is not None:
+		doc.max_devices = frappe.utils.cint(max_devices)
+	if valid_until is not None:
+		doc.valid_until = _blank_to_none(valid_until)
+	if notes is not None:
+		doc.notes = notes
+
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return _staff_voucher_dict(doc)
+
+
+@frappe.whitelist()
+def set_voucher_expiry(name, expires_on=None):
+	"""Change (or clear, with "") one unused voucher's expiry date."""
+	if not name or not frappe.db.exists("Hotspot Voucher", name):
+		frappe.throw(_("Voucher not found."))
+
+	doc = frappe.get_doc("Hotspot Voucher", name)
+	if not _is_admin() and doc.site != _own_site_name():
+		frappe.throw(_("Voucher not found."), frappe.PermissionError)
+	if doc.status == "Used":
+		frappe.throw(_("This voucher has already been used, so it can't be changed."))
+
+	doc.expires_on = _blank_to_none(expires_on)
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return {field: doc.get(field) for field in VOUCHER_FIELDS}
+
+
+@frappe.whitelist()
+def update_voucher_batch(name, notes=None, expires_on=None):
+	"""Edit a batch's notes and expiry date. A new expiry date is also
+	applied to the batch's still-Unused vouchers -- they were generated with
+	the old one, and the portal checks each voucher's own date."""
+	site = frappe.db.get_value("Hotspot Voucher Batch", name, "site")
+	if not site or (not _is_admin() and site != _own_site_name()):
+		frappe.throw(_("Voucher batch not found."), frappe.PermissionError)
+
+	doc = frappe.get_doc("Hotspot Voucher Batch", name)
+	if notes is not None:
+		doc.notes = notes
+	if expires_on is not None:
+		doc.expires_on = _blank_to_none(expires_on)
+		frappe.db.set_value(
+			"Hotspot Voucher", {"batch": doc.name, "status": "Unused"}, "expires_on", doc.expires_on
+		)
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return {"name": doc.name, "notes": doc.notes, "expires_on": doc.expires_on}
+
+
+# --- Transactions -----------------------------------------------------------
+
+TRANSACTION_DETAIL_FIELDS = [
+	"name",
+	"site",
+	"status",
+	"reference_id",
+	"phone_number",
+	"client_mac",
+	"ap_mac",
+	"ssid_name",
+	"package_name",
+	"amount",
+	"duration_minutes",
+	"omada_authorized",
+	"authorized_until",
+	"creation",
+	"modified",
+]
+
+
+@frappe.whitelist()
+def get_transaction(name):
+	site = frappe.db.get_value("Hotspot Transaction", name, "site")
+	if not site or (not _is_admin() and site != _own_site_name()):
+		frappe.throw(_("Transaction not found."), frappe.PermissionError)
+	return frappe.db.get_value("Hotspot Transaction", name, TRANSACTION_DETAIL_FIELDS, as_dict=True)
+
+
+@frappe.whitelist()
+def set_transaction_status(name, status):
+	"""Admin-only manual reconciliation of a stuck Pending transaction.
+	Marking it Paid goes through the same path as a confirmed payment, so
+	the customer's device is authorized too."""
+	_require_admin()
+	if status not in ("Paid", "Failed"):
+		frappe.throw(_("Invalid status."))
+
+	txn = frappe.get_doc("Hotspot Transaction", name)
+	if txn.status != "Pending":
+		frappe.throw(_("Only Pending transactions can be changed."))
+
+	if status == "Paid":
+		from bandofy.api import _mark_transaction_paid
+
+		_mark_transaction_paid(txn, txn.reference_id, frappe.get_single("Hotspot Payment Settings"))
+	else:
+		txn.status = "Failed"
+		txn.save(ignore_permissions=True)
+		frappe.db.commit()  # nosemgrep
+
+	return get_transaction(name)
+
+
+# --- Global settings singles (admin) ----------------------------------------
+
+SETTINGS_DOCTYPES = {
+	"payment": "Hotspot Payment Settings",
+	"radius": "Hotspot RADIUS Settings",
+}
+SETTINGS_SKIP_TYPES = ("Section Break", "Column Break", "Tab Break", "HTML", "Button")
+
+
+def _settings_dict(doctype):
+	meta = frappe.get_meta(doctype)
+	doc = frappe.get_single(doctype)
+	fields = []
+	for df in meta.fields:
+		if df.fieldtype in SETTINGS_SKIP_TYPES:
+			continue
+		is_password = df.fieldtype == "Password"
+		fields.append(
+			{
+				"fieldname": df.fieldname,
+				"label": df.label,
+				"fieldtype": df.fieldtype,
+				"options": df.options,
+				"description": df.description,
+				"read_only": bool(df.read_only),
+				"value": None if is_password else doc.get(df.fieldname),
+				"is_set": bool(doc.get(df.fieldname)) if is_password else None,
+			}
+		)
+	return {"doctype": doctype, "fields": fields}
+
+
+@frappe.whitelist()
+def get_settings(kind):
+	"""Payment gateway or RADIUS server settings, with field metadata so the
+	app can render the form. Passwords are never sent back."""
+	_require_admin()
+	if kind not in SETTINGS_DOCTYPES:
+		frappe.throw(_("Unknown settings."))
+	return _settings_dict(SETTINGS_DOCTYPES[kind])
+
+
+@frappe.whitelist()
+def update_settings(kind, values):
+	"""A blank Password value leaves the stored secret unchanged."""
+	_require_admin()
+	if kind not in SETTINGS_DOCTYPES:
+		frappe.throw(_("Unknown settings."))
+
+	doctype = SETTINGS_DOCTYPES[kind]
+	meta = frappe.get_meta(doctype)
+	doc = frappe.get_single(doctype)
+	for fieldname, value in (_json_arg(values, {}) or {}).items():
+		df = meta.get_field(fieldname)
+		if not df or df.read_only or df.fieldtype in SETTINGS_SKIP_TYPES:
+			continue
+		if df.fieldtype == "Password" and not value:
+			continue
+		doc.set(fieldname, value)
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
+
+	return _settings_dict(doctype)
+
+
+# --- Reports ----------------------------------------------------------------
+
+
+@frappe.whitelist()
+def get_sales_report(site=None, from_date=None, to_date=None):
+	"""The Desk "Hotspot Sales Report" (same numbers, same rules: Paid only,
+	staff logins excluded) plus a revenue-by-package breakdown, shaped for
+	the app's report screen. A vendor always gets their own site."""
+	from bandofy.bandofy.report.hotspot_sales_report.hotspot_sales_report import execute
+
+	site_name = _resolve_site(site)
+	to_date = to_date or today()
+	from_date = from_date or frappe.utils.add_days(to_date, -29)
+
+	_columns, data, _message, chart, summary = execute(
+		{"from_date": from_date, "to_date": to_date, "site": site_name}
+	)
+
+	rows = [r for r in data if not r.get("bold")]
+	totals = {
+		"transactions": sum(frappe.utils.cint(r.get("total_transactions")) for r in rows),
+		"mobile_money": sum(frappe.utils.cint(r.get("mobile_money_transactions")) for r in rows),
+		"vouchers": sum(frappe.utils.cint(r.get("voucher_transactions")) for r in rows),
+		"revenue": sum(frappe.utils.flt(r.get("total_revenue")) for r in rows),
+	}
+	totals["avg_per_day"] = next(
+		(s["value"] for s in summary if s.get("label") == _("Avg Revenue / Day")), 0
+	)
+
+	by_package = frappe.db.sql(
+		f"""
+		select coalesce(package_name, '') as package_name, count(name) as transactions, sum(amount) as revenue
+		from `tabHotspot Transaction`
+		where status = 'Paid'
+			and coalesce(reference_id, '') not like 'STAFF:%%'
+			and date(creation) between %(from_date)s and %(to_date)s
+			{"and site = %(site)s" if site_name else ""}
+		group by package_name
+		order by revenue desc
+		""",
+		{"from_date": from_date, "to_date": to_date, "site": site_name},
+		as_dict=True,
+	)
+
+	labels = chart["data"]["labels"]
+	values = chart["data"]["datasets"][0]["values"]
+
+	return {
+		"from_date": str(from_date),
+		"to_date": str(to_date),
+		"site": site_name,
+		"totals": totals,
+		"trend": [{"date": d, "revenue": v} for d, v in zip(labels, values, strict=False)],
+		"rows": [
+			{
+				"date": str(r.get("date")),
+				"site": r.get("site"),
+				"vendor_name": r.get("vendor_name"),
+				"transactions": r.get("total_transactions"),
+				"mobile_money": r.get("mobile_money_transactions"),
+				"vouchers": r.get("voucher_transactions"),
+				"revenue": r.get("total_revenue"),
+			}
+			for r in rows
+		],
+		"by_package": by_package,
+	}

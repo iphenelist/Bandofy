@@ -14,7 +14,7 @@ def execute(filters=None):
 
 	conditions = [
 		"t.status = 'Paid'",
-		"t.reference_id not like 'STAFF:%%'",  # free staff access, not a sale
+		"coalesce(t.reference_id, '') not like 'STAFF:%%'",  # free staff access, not a sale; NULL-safe
 		"date(t.creation) between %(from_date)s and %(to_date)s",
 	]
 	params = {"from_date": from_date, "to_date": to_date}
