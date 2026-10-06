@@ -342,10 +342,12 @@ def get_vouchers(
 
 
 @frappe.whitelist()
-def set_voucher_status(name, status):
+def set_voucher_status(name, status, expires_on=None):
 	"""Block, unblock, or expire a single voucher -- e.g. block a code that
 	was lost or sold by mistake. A Used voucher is a record of access already
-	granted and can't be changed, so it can never be made redeemable again."""
+	granted and can't be changed, so it can never be made redeemable again.
+	``expires_on`` (a date, or "" for none) is applied first, so a voucher
+	whose old expiry has passed can be made Unused in the same call."""
 	if status not in MANUAL_VOUCHER_STATUSES:
 		frappe.throw(_("Invalid status."))
 
@@ -359,17 +361,21 @@ def set_voucher_status(name, status):
 	if doc.status == "Used":
 		frappe.throw(_("This voucher has already been used, so its status can't be changed."))
 
+	if expires_on is not None:
+		doc.expires_on = _blank_to_none(expires_on)
+
 	if (
 		status == "Unused"
 		and doc.expires_on
 		and frappe.utils.getdate(doc.expires_on) < frappe.utils.getdate(today())
 	):
-		frappe.throw(_("This voucher's expiry date has passed, so it can't be made usable again."))
+		frappe.throw(
+			_("This voucher's expiry date has passed. Choose a new expiry date to make it usable again.")
+		)
 
-	if doc.status != status:
-		doc.status = status
-		doc.save(ignore_permissions=True)
-		frappe.db.commit()  # nosemgrep
+	doc.status = status
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()  # nosemgrep
 
 	return {field: doc.get(field) for field in VOUCHER_FIELDS}
 
@@ -815,33 +821,50 @@ def check_omada_connection(site=None):
 	)
 
 
+def _resolve_chat_site(site, client_mac):
+	"""The site a chat thread belongs to: a vendor's own site; for an admin
+	the given site, or -- when browsing "All sites" -- the site this guest
+	device last messaged."""
+	if not _is_admin():
+		return _own_site_name()
+	if site:
+		if not frappe.db.exists("Hotspot Site", site):
+			frappe.throw(_("Site not found."))
+		return site
+	found = frappe.db.get_value(
+		"Hotspot Chat Message", {"client_mac": client_mac}, "site", order_by="creation desc"
+	)
+	if not found:
+		frappe.throw(_("Conversation not found."))
+	return found
+
+
 @frappe.whitelist()
 def get_chat_threads(site=None):
-	"""One row per guest device that's messaged this site, newest activity
+	"""One row per guest device (per site) that's messaged, newest activity
 	first, with the last message preview and how many Guest messages are
-	still unread."""
+	still unread. An admin with no site chosen gets every site's threads."""
 	site_name = _resolve_site(site)
-	if not site_name:
-		frappe.throw(_("Please choose a site."))
 
 	threads = frappe.db.sql(
-		"""
-		select client_mac,
-			max(creation) as last_message_at,
-			sum(case when direction='Guest' and is_read=0 then 1 else 0 end) as unread_count
-		from `tabHotspot Chat Message`
-		where site=%s
-		group by client_mac
+		f"""
+		select m.site, s.site_name, m.client_mac,
+			max(m.creation) as last_message_at,
+			sum(case when m.direction='Guest' and m.is_read=0 then 1 else 0 end) as unread_count
+		from `tabHotspot Chat Message` m
+		left join `tabHotspot Site` s on s.name = m.site
+		{"where m.site=%(site)s" if site_name else ""}
+		group by m.site, s.site_name, m.client_mac
 		order by last_message_at desc
 		""",
-		(site_name,),
+		{"site": site_name},
 		as_dict=True,
 	)
 
 	for thread in threads:
 		last = frappe.db.get_value(
 			"Hotspot Chat Message",
-			{"site": site_name, "client_mac": thread.client_mac},
+			{"site": thread.site, "client_mac": thread.client_mac},
 			["message", "direction"],
 			order_by="creation desc",
 			as_dict=True,
@@ -853,11 +876,11 @@ def get_chat_threads(site=None):
 
 
 @frappe.whitelist()
-def get_chat_thread(site, client_mac):
+def get_chat_thread(client_mac, site=None):
 	"""Full message history with one guest device. Viewing a thread marks
 	its unread Guest messages read, mirroring what opening the equivalent
 	Desk form already does in hotspot_chat_message.js."""
-	site_name = _resolve_site_for_write(site)
+	site_name = _resolve_chat_site(site, client_mac)
 
 	messages = frappe.get_all(
 		"Hotspot Chat Message",
@@ -879,12 +902,12 @@ def get_chat_thread(site, client_mac):
 
 
 @frappe.whitelist()
-def send_chat_reply(site, client_mac, message):
+def send_chat_reply(client_mac, message, site=None):
 	"""Admin/vendor reply to a guest's captive-portal chat thread -- same
 	shape the existing Desk "Reply" custom button produces via
 	frappe.client.insert (see hotspot_chat_message.js), as a properly
 	site-scoped endpoint a vendor (barred from Desk) can actually reach."""
-	site_name = _resolve_site_for_write(site)
+	site_name = _resolve_chat_site(site, client_mac)
 
 	message = (message or "").strip()
 	if not message:
@@ -1494,3 +1517,62 @@ def get_sales_report(site=None, from_date=None, to_date=None):
 		],
 		"by_package": by_package,
 	}
+
+
+# --- Alert catch-up feed ----------------------------------------------------
+
+ACTIVITY_MAX_AGE_HOURS = 24
+
+
+@frappe.whitelist()
+def get_activity(since=None, limit=50):
+	"""Voucher redemptions, mobile money payments and guest chat messages
+	after ``since`` (server-time datetime string), oldest first -- the same
+	payloads the realtime socket pushes (see bandofy.realtime), so the app's
+	background service can catch up on anything it missed while it was
+	disconnected. Never looks back more than ACTIVITY_MAX_AGE_HOURS."""
+	from bandofy.realtime import chat_message_payload, payment_received_payload, voucher_used_payload
+
+	site_name = _resolve_site(site=None)
+	floor = frappe.utils.add_to_date(frappe.utils.now_datetime(), hours=-ACTIVITY_MAX_AGE_HOURS)
+	since = max(frappe.utils.get_datetime(since), floor) if since else floor
+	limit = min(frappe.utils.cint(limit) or 50, 200)
+	scope = {"site": site_name} if site_name else {}
+
+	events = []
+	for name in frappe.get_all(
+		"Hotspot Voucher",
+		filters={**scope, "status": "Used", "used_on": [">", since]},
+		pluck="name",
+		order_by="used_on desc",
+		limit_page_length=limit,
+		ignore_permissions=True,
+	):
+		events.append({"type": "voucherUsed", "payload": voucher_used_payload(frappe.get_doc("Hotspot Voucher", name))})
+
+	for name in frappe.get_all(
+		"Hotspot Transaction",
+		filters={**scope, "status": "Paid", "modified": [">", since], "phone_number": ["not in", ["Voucher", "Staff", "Free Trial"]]},
+		pluck="name",
+		order_by="modified desc",
+		limit_page_length=limit,
+		ignore_permissions=True,
+	):
+		events.append(
+			{"type": "paymentReceived", "payload": payment_received_payload(frappe.get_doc("Hotspot Transaction", name))}
+		)
+
+	for name in frappe.get_all(
+		"Hotspot Chat Message",
+		filters={**scope, "direction": "Guest", "creation": [">", since]},
+		pluck="name",
+		order_by="creation desc",
+		limit_page_length=limit,
+		ignore_permissions=True,
+	):
+		events.append(
+			{"type": "newChatMessage", "payload": chat_message_payload(frappe.get_doc("Hotspot Chat Message", name))}
+		)
+
+	events.sort(key=lambda e: e["payload"]["timestamp"] or "")
+	return {"server_time": frappe.utils.get_datetime_str(frappe.utils.now_datetime()), "events": events[-limit:]}

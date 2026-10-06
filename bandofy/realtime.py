@@ -35,6 +35,60 @@ def _notify(event, payload, extra_user=None):
 		frappe.publish_realtime(event=event, message=payload, user=user)
 
 
+def _site_info(site_name):
+	return frappe.db.get_value(
+		"Hotspot Site", site_name, ["vendor_user", "vendor_name", "site_name"], as_dict=True
+	)
+
+
+def _base_payload(doc, site, event_id, timestamp):
+	"""Fields every alert shares. ``event_id`` is stable per event, so the
+	app can de-duplicate one that arrives both live and via the catch-up
+	feed (bandofy.mobile_api.get_activity)."""
+	return {
+		"event_id": event_id,
+		"timestamp": frappe.utils.get_datetime_str(timestamp) if timestamp else None,
+		"site": doc.site,
+		"site_name": site.site_name if site else doc.site,
+		"vendor_name": site.vendor_name if site else None,
+	}
+
+
+def voucher_used_payload(doc, site=None):
+	site = site or _site_info(doc.site)
+	return {
+		**_base_payload(doc, site, f"voucher:{doc.name}", doc.used_on or doc.modified),
+		"voucher_code": doc.name,
+		"package_name": doc.package_name,
+		"price": doc.price,
+		"duration_minutes": doc.duration_minutes,
+		"used_on": frappe.utils.get_datetime_str(doc.used_on) if doc.used_on else None,
+		"used_by_mac": doc.used_by_mac,
+	}
+
+
+def payment_received_payload(doc, site=None):
+	site = site or _site_info(doc.site)
+	return {
+		**_base_payload(doc, site, f"txn:{doc.name}", doc.modified),
+		"transaction": doc.name,
+		"phone_number": doc.phone_number,
+		"package_name": doc.package_name,
+		"amount": doc.amount,
+		"duration_minutes": doc.duration_minutes,
+	}
+
+
+def chat_message_payload(doc, site=None):
+	site = site or _site_info(doc.site)
+	return {
+		**_base_payload(doc, site, f"chat:{doc.name}", doc.creation),
+		"client_mac": doc.client_mac,
+		"message": doc.message,
+		"creation": frappe.utils.get_datetime_str(doc.creation),
+	}
+
+
 def notify_voucher_used(doc, method=None):
 	"""doc_event: Hotspot Voucher on_update. Fires only on the actual
 	Unused -> Used transition, not on every save of the voucher."""
@@ -42,21 +96,8 @@ def notify_voucher_used(doc, method=None):
 		return
 
 	try:
-		site = frappe.db.get_value(
-			"Hotspot Site", doc.site, ["vendor_user", "vendor_name", "site_name"], as_dict=True
-		)
-		payload = {
-			"site": doc.site,
-			"site_name": site.site_name if site else doc.site,
-			"vendor_name": site.vendor_name if site else None,
-			"voucher_code": doc.name,
-			"package_name": doc.package_name,
-			"price": doc.price,
-			"duration_minutes": doc.duration_minutes,
-			"used_on": frappe.utils.get_datetime_str(doc.used_on) if doc.used_on else None,
-			"used_by_mac": doc.used_by_mac,
-		}
-		_notify("foh_voucher_used", payload, extra_user=site.vendor_user if site else None)
+		site = _site_info(doc.site)
+		_notify("foh_voucher_used", voucher_used_payload(doc, site), extra_user=site.vendor_user if site else None)
 	except Exception:
 		frappe.log_error(title="Bandofy Realtime: notify_voucher_used failed", message=frappe.get_traceback())
 
@@ -73,20 +114,8 @@ def notify_transaction_paid(doc, method=None):
 		return
 
 	try:
-		site = frappe.db.get_value(
-			"Hotspot Site", doc.site, ["vendor_user", "vendor_name", "site_name"], as_dict=True
-		)
-		payload = {
-			"site": doc.site,
-			"site_name": site.site_name if site else doc.site,
-			"vendor_name": site.vendor_name if site else None,
-			"transaction": doc.name,
-			"phone_number": doc.phone_number,
-			"package_name": doc.package_name,
-			"amount": doc.amount,
-			"duration_minutes": doc.duration_minutes,
-		}
-		_notify("foh_payment_received", payload, extra_user=site.vendor_user if site else None)
+		site = _site_info(doc.site)
+		_notify("foh_payment_received", payment_received_payload(doc, site), extra_user=site.vendor_user if site else None)
 	except Exception:
 		frappe.log_error(
 			title="Bandofy Realtime: notify_transaction_paid failed", message=frappe.get_traceback()
@@ -101,18 +130,8 @@ def notify_new_chat_message(doc, method=None):
 		return
 
 	try:
-		site = frappe.db.get_value(
-			"Hotspot Site", doc.site, ["vendor_user", "vendor_name", "site_name"], as_dict=True
-		)
-		payload = {
-			"site": doc.site,
-			"site_name": site.site_name if site else doc.site,
-			"vendor_name": site.vendor_name if site else None,
-			"client_mac": doc.client_mac,
-			"message": doc.message,
-			"creation": frappe.utils.get_datetime_str(doc.creation),
-		}
-		_notify("foh_new_chat_message", payload, extra_user=site.vendor_user if site else None)
+		site = _site_info(doc.site)
+		_notify("foh_new_chat_message", chat_message_payload(doc, site), extra_user=site.vendor_user if site else None)
 	except Exception:
 		frappe.log_error(
 			title="Bandofy Realtime: notify_new_chat_message failed", message=frappe.get_traceback()
