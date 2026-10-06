@@ -12,7 +12,7 @@ from frappe import _
 from frappe.utils import add_to_date, cint, get_datetime_str, get_url, getdate, now_datetime, nowdate
 
 from bandofy.omada_service import authorize_client
-from bandofy.utils import find_site_by_ap_mac, has_used_free_trial
+from bandofy.utils import find_site_by_ap_mac, has_used_free_trial, is_sabbath_now
 
 DEFAULT_SUCCESS_REDIRECT_URL = "https://www.google.com"
 PAYMENT_POLL_GRACE_SECONDS = 90  # give the webhook this long to arrive before polling
@@ -20,6 +20,10 @@ PAYMENT_POLL_MAX_AGE_MINUTES = 60  # transactions still Pending after this are g
 CHAT_MESSAGE_MAX_LENGTH = 500
 DEFAULT_GATEWAY_BASE_URL = "https://abliner.net/api/v1"
 WEBHOOK_MAX_AGE_SECONDS = 300  # Abliner: reject webhook timestamps older than 5 minutes
+SABBATH_MESSAGE = (
+	"Ni Sabato — hatupokei malipo wala vocha hadi Jumamosi saa 12 jioni. "
+	"/ It is the Sabbath — payments and vouchers resume Saturday 18:00."
+)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -40,6 +44,9 @@ def initiate_payment(phone, package_idx, client_mac, ap_mac, ssid_name=None, rad
 
 	if not site.enable_online_payment:
 		frappe.throw(_("Mfumo wa kulipa kwa pesa upo katika matengenezo."))
+
+	if is_sabbath_now(site):
+		frappe.throw(_(SABBATH_MESSAGE))
 
 	package = None
 	for row in site.packages:
@@ -360,6 +367,11 @@ def redeem_voucher(voucher_code, client_mac, ap_mac, ssid_name=None, radio_id=No
 
 	if frappe.db.exists("Hotspot Staff Voucher", voucher_code):
 		return _redeem_staff_voucher(voucher_code, site_name, client_mac, ap_mac, ssid_name, radio_id)
+
+	# Staff vouchers (free access) stay usable; customer vouchers wait
+	# until the Sabbath ends and remain Unused meanwhile.
+	if is_sabbath_now(site_name):
+		frappe.throw(_(SABBATH_MESSAGE))
 
 	if not frappe.db.exists("Hotspot Voucher", voucher_code):
 		frappe.throw(_("Invalid voucher code."))

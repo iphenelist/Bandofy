@@ -4,6 +4,10 @@
 import re
 
 import frappe
+from frappe.utils import now_datetime
+
+SABBATH_START_HOUR = 18  # Friday 18:00 ...
+SABBATH_END_HOUR = 18  # ... to Saturday 18:00, system timezone
 
 
 def normalize_mac(mac):
@@ -76,3 +80,21 @@ def is_admin_user(user=None):
 	branding preview override both check against."""
 	user = user or frappe.session.user
 	return user == "Administrator" or "System Manager" in frappe.get_roles(user)
+
+
+def is_sabbath_now(site, now=None):
+	"""Whether purchases are paused for the weekly Sabbath on this site:
+	``enable_sabbath_mode`` is ticked and it is Friday 18:00 - Saturday
+	18:00 (system timezone). Only new sales are blocked -- devices already
+	authorized keep their remaining time. ``site`` is a Hotspot Site name,
+	doc or dict carrying ``enable_sabbath_mode``."""
+	if isinstance(site, str):
+		enabled = frappe.db.get_value("Hotspot Site", site, "enable_sabbath_mode")
+	else:
+		enabled = site.get("enable_sabbath_mode")
+	if not enabled:
+		return False
+
+	now = now or now_datetime()
+	weekday = now.weekday()  # Monday=0 ... Friday=4, Saturday=5
+	return (weekday == 4 and now.hour >= SABBATH_START_HOUR) or (weekday == 5 and now.hour < SABBATH_END_HOUR)

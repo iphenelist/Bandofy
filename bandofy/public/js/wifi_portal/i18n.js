@@ -68,7 +68,14 @@ const MESSAGES = {
 		free_trial_title: "Jaribu Bure - Dakika {minutes}",
 		free_trial_subtitle: "Unganisha bila malipo, mara moja kwa kila kifaa",
 		free_trial_btn: "Anza Bure",
-		free_trial_used_badge: "Imekwisha Tumika"
+		free_trial_used_badge: "Imekwisha Tumika",
+		sabbath_title: "Sabato Njema 🕊️",
+		sabbath_verse: "Ikumbuke siku ya Sabato, uitakase.",
+		sabbath_verse_ref: "Kutoka 20:8",
+		sabbath_body: "Leo ni siku ya pumziko takatifu. Kuanzia Ijumaa saa 12 jioni hadi Jumamosi saa 12 jioni hatupokei malipo wala vocha. Huduma zitarejea Jumamosi saa 12 jioni.",
+		sabbath_connected: "Kama tayari umeunganishwa, endelea kufurahia intaneti hadi muda wako uishe. Mungu akubariki!",
+		sabbath_verse_2: "Sabato ilifanyika kwa ajili ya mwanadamu, si mwanadamu kwa ajili ya Sabato.",
+		sabbath_verse_2_ref: "Marko 2:27"
 	},
 	en: {
 		title_suffix: "Connect Now",
@@ -134,7 +141,14 @@ const MESSAGES = {
 		free_trial_title: "Free Trial - {minutes} Minutes",
 		free_trial_subtitle: "Connect for free, once per device",
 		free_trial_btn: "Start Free",
-		free_trial_used_badge: "Already Used"
+		free_trial_used_badge: "Already Used",
+		sabbath_title: "Happy Sabbath 🕊️",
+		sabbath_verse: "Remember the Sabbath day, to keep it holy.",
+		sabbath_verse_ref: "Exodus 20:8",
+		sabbath_body: "Today is a holy day of rest. From Friday 18:00 until Saturday 18:00 we are not accepting payments or vouchers. Service resumes Saturday at 18:00.",
+		sabbath_connected: "If you are already connected, keep enjoying the internet until your time ends. God bless you!",
+		sabbath_verse_2: "The Sabbath was made for man, not man for the Sabbath.",
+		sabbath_verse_2_ref: "Mark 2:27"
 	}
 };
 

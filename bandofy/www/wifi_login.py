@@ -4,7 +4,7 @@
 import frappe
 from frappe.utils import getdate, nowdate
 
-from bandofy.utils import find_site_by_ap_mac, has_used_free_trial, is_admin_user
+from bandofy.utils import find_site_by_ap_mac, has_used_free_trial, is_admin_user, is_sabbath_now
 
 no_cache = 1
 
@@ -61,6 +61,7 @@ def get_context(context):
 	context.free_trial_enabled = False
 	context.free_trial_available = False
 	context.free_trial_minutes = 15
+	context.sabbath_active = False
 	context.lipa_images = []
 	context.lipa_default = None
 	context.currency = frappe.db.get_single_value("Hotspot Payment Settings", "default_currency") or "TZS"
@@ -83,6 +84,7 @@ def get_context(context):
 				"enable_online_payment",
 				"enable_free_trial",
 				"free_trial_minutes",
+				"enable_sabbath_mode",
 				"vendor_user",
 				"portal_logo",
 				"portal_tagline",
@@ -103,6 +105,7 @@ def get_context(context):
 			context.free_trial_available = context.free_trial_enabled and not has_used_free_trial(
 				site.name, client_mac
 			)
+			context.sabbath_active = is_sabbath_now(site)
 			context.portal_logo = site.portal_logo
 			context.portal_tagline = site.portal_tagline
 			context.portal_primary_color = site.portal_primary_color or context.portal_primary_color
@@ -155,6 +158,7 @@ def build_portal_data(context):
 		"free_trial_enabled",
 		"free_trial_available",
 		"free_trial_minutes",
+		"sabbath_active",
 		"lipa_images",
 		"lipa_default",
 		"currency",

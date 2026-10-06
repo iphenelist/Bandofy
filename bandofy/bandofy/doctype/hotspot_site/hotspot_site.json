@@ -15,6 +15,7 @@
   "enable_online_payment",
   "enable_free_trial",
   "free_trial_minutes",
+  "enable_sabbath_mode",
   "omada_credentials_section",
   "site_name",
   "ap_mac",
@@ -115,6 +116,13 @@
    "fieldname": "free_trial_minutes",
    "fieldtype": "Int",
    "label": "Free Trial Duration (Minutes)"
+  },
+  {
+   "default": "0",
+   "description": "Every week from Friday 18:00 to Saturday 18:00 the portal stops sales (mobile money, Lipa Namba, vouchers) and shows a Sabbath message. Connected devices keep their remaining time.",
+   "fieldname": "enable_sabbath_mode",
+   "fieldtype": "Check",
+   "label": "Enable Sabbath Mode (Fri 18:00 – Sat 18:00)"
   },
   {
    "fieldname": "omada_credentials_section",
@@ -314,7 +322,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-12 00:00:00.000000",
+ "modified": "2026-10-06 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Site",

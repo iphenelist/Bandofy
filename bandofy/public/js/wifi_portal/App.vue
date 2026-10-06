@@ -32,27 +32,30 @@
 			<p class="premium-tag">{{ portal.portal_tagline || t("premium_tag") }}</p>
 
 			<template v-if="portal.site_found">
-				<div class="steps">
+				<div v-if="!portal.sabbath_active" class="steps">
 					<span>{{ t("step_choose") }}</span><span class="chevron">&#8250;</span>
 					<span>{{ t("step_pay") }}</span><span class="chevron">&#8250;</span>
 					<span>{{ t("step_connect") }}</span>
 				</div>
 
+				<SabbathCard v-if="portal.sabbath_active" />
 				<FreeTrialCard v-if="portal.free_trial_enabled" />
-				<VoucherForm @find="modal = 'find'" />
+				<template v-if="!portal.sabbath_active">
+					<VoucherForm @find="modal = 'find'" />
 
-				<div class="pay-label">{{ t("pay_label") }}</div>
-				<div class="pay-logos">
-					<div v-for="p in portal.payment_providers" :key="p.file" class="pay-logo" :title="p.name">
-						<img
-							v-if="!brokenLogos[p.file]"
-							:src="`/assets/bandofy/images/payment_logos/${p.file}.png`"
-							:alt="p.name"
-							@error="brokenLogos[p.file] = true"
-						/>
-						<span v-else class="pay-fallback" style="display: flex">{{ p.name }}</span>
+					<div class="pay-label">{{ t("pay_label") }}</div>
+					<div class="pay-logos">
+						<div v-for="p in portal.payment_providers" :key="p.file" class="pay-logo" :title="p.name">
+							<img
+								v-if="!brokenLogos[p.file]"
+								:src="`/assets/bandofy/images/payment_logos/${p.file}.png`"
+								:alt="p.name"
+								@error="brokenLogos[p.file] = true"
+							/>
+							<span v-else class="pay-fallback" style="display: flex">{{ p.name }}</span>
+						</div>
 					</div>
-				</div>
+				</template>
 			</template>
 		</div>
 
@@ -60,7 +63,7 @@
 
 		<div v-if="!portal.site_found" class="no-site">{{ t("no_site") }}</div>
 		<template v-else>
-			<PackageList :packages="portal.packages || []" @select="selectPackage" />
+			<PackageList v-if="!portal.sabbath_active" :packages="portal.packages || []" @select="selectPackage" />
 			<div v-if="status.text" class="msg show" :class="status.type">{{ status.text }}</div>
 		</template>
 
@@ -119,7 +122,7 @@
 				<path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C11.4 21 3 12.6 3 2.7c0-.6.4-1 1-1H7.7c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.2 1.1L6.6 10.8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
 			</svg>
 		</a>
-		<LipaWidget />
+		<LipaWidget v-if="!portal.sabbath_active" />
 	</template>
 </template>
 
@@ -132,6 +135,7 @@ import ChatWidget from "./components/ChatWidget.vue";
 import FreeTrialCard from "./components/FreeTrialCard.vue";
 import LipaWidget from "./components/LipaWidget.vue";
 import PackageList from "./components/PackageList.vue";
+import SabbathCard from "./components/SabbathCard.vue";
 import VoucherForm from "./components/VoucherForm.vue";
 import { lang, setLang, t } from "./i18n";
 import { status, success } from "./login";
@@ -143,6 +147,7 @@ const buyingPackage = ref(null);
 const brokenLogos = reactive({});
 
 function selectPackage(pkg) {
+	if (portal.sabbath_active) return;
 	if (portal.online_payment_enabled) buyingPackage.value = pkg;
 	else modal.value = "maintenance";
 }
