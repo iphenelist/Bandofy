@@ -17,7 +17,9 @@ class HotspotOmadaSettings(Document):
 			if not self.controller_url.startswith(("http://", "https://")):
 				self.controller_url = f"https://{self.controller_url}"
 
-		password = self.get_password("device_password", raise_exception=False) if self.device_password else None
+		password = (
+			self.get_password("device_password", raise_exception=False) if self.device_password else None
+		)
 		if password and not _is_strong_device_password(password):
 			frappe.throw(
 				_(

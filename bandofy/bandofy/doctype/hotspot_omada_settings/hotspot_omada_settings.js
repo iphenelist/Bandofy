@@ -14,13 +14,19 @@ frappe.ui.form.on("Hotspot Omada Settings", {
 				freeze_message: __("Contacting the Omada Controller..."),
 				callback: (r) => {
 					const m = r.message || {};
-					const sites = (m.sites || []).map((s) => frappe.utils.escape_html(s.name)).join(", ");
+					const sites = (m.sites || [])
+						.map((s) => frappe.utils.escape_html(s.name))
+						.join(", ");
 					const op = m.operator
 						? m.operator.found
-							? __("Operator {0} found ({1} site(s)).", [m.operator.name, m.operator.sites])
-							: __("Operator {0} not found yet -- it will be created with the first site.", [
+							? __("Operator {0} found ({1} site(s)).", [
 									m.operator.name,
+									m.operator.sites,
 							  ])
+							: __(
+									"Operator {0} not found yet -- it will be created with the first site.",
+									[m.operator.name]
+							  )
 						: "";
 					frappe.msgprint({
 						title: __("Connected"),

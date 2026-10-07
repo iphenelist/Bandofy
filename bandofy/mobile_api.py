@@ -398,15 +398,22 @@ def get_voucher_batches(site=None):
 	batches = frappe.get_all(
 		"Hotspot Voucher Batch",
 		filters=filters,
-		fields=["name", "site", "package_name", "status", "quantity", "generated_count", "expires_on", "notes"],
+		fields=[
+			"name",
+			"site",
+			"package_name",
+			"status",
+			"quantity",
+			"generated_count",
+			"expires_on",
+			"notes",
+		],
 		order_by="creation desc",
 		ignore_permissions=True,
 	)
 
 	for batch in batches:
-		batch["redeemed_count"] = frappe.db.count(
-			"Hotspot Voucher", {"batch": batch.name, "status": "Used"}
-		)
+		batch["redeemed_count"] = frappe.db.count("Hotspot Voucher", {"batch": batch.name, "status": "Used"})
 		batch["remaining_unused"] = frappe.db.count(
 			"Hotspot Voucher", {"batch": batch.name, "status": "Unused"}
 		)
@@ -436,7 +443,9 @@ def download_voucher_batch_pdf(batch):
 	except OSError:
 		# pdfkit raises OSError when the wkhtmltopdf binary isn't installed on
 		# the server -- its raw message is meaningless to a vendor.
-		frappe.log_error(title="Bandofy Mobile: voucher PDF generation failed", message=frappe.get_traceback())
+		frappe.log_error(
+			title="Bandofy Mobile: voucher PDF generation failed", message=frappe.get_traceback()
+		)
 		frappe.throw(
 			_(
 				"The server can't create PDFs yet because wkhtmltopdf isn't installed on it. "
@@ -1097,7 +1106,12 @@ def save_package(package_name, package_type, price, duration_minutes, name=None)
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()  # nosemgrep
 
-	return {"name": doc.name, "package_type": doc.package_type, "price": doc.price, "duration_minutes": doc.duration_minutes}
+	return {
+		"name": doc.name,
+		"package_type": doc.package_type,
+		"price": doc.price,
+		"duration_minutes": doc.duration_minutes,
+	}
 
 
 @frappe.whitelist()
@@ -1169,7 +1183,9 @@ def save_ad(values, name=None):
 	for fieldname in AD_EDITABLE_FIELDS:
 		if fieldname in data:
 			value = data[fieldname]
-			doc.set(fieldname, _blank_to_none(value) if fieldname in ("start_date", "end_date", "site") else value)
+			doc.set(
+				fieldname, _blank_to_none(value) if fieldname in ("start_date", "end_date", "site") else value
+			)
 
 	if not _is_admin():
 		doc.site = _own_site_name()
@@ -1414,9 +1430,7 @@ def get_sales_report(site=None, from_date=None, to_date=None):
 		"vouchers": sum(frappe.utils.cint(r.get("voucher_transactions")) for r in rows),
 		"revenue": sum(frappe.utils.flt(r.get("total_revenue")) for r in rows),
 	}
-	totals["avg_per_day"] = next(
-		(s["value"] for s in summary if s.get("label") == _("Avg Revenue / Day")), 0
-	)
+	totals["avg_per_day"] = next((s["value"] for s in summary if s.get("label") == _("Avg Revenue / Day")), 0)
 
 	by_package = frappe.db.sql(
 		f"""
@@ -1487,18 +1501,28 @@ def get_activity(since=None, limit=50):
 		limit_page_length=limit,
 		ignore_permissions=True,
 	):
-		events.append({"type": "voucherUsed", "payload": voucher_used_payload(frappe.get_doc("Hotspot Voucher", name))})
+		events.append(
+			{"type": "voucherUsed", "payload": voucher_used_payload(frappe.get_doc("Hotspot Voucher", name))}
+		)
 
 	for name in frappe.get_all(
 		"Hotspot Transaction",
-		filters={**scope, "status": "Paid", "modified": [">", since], "phone_number": ["not in", ["Voucher", "Staff", "Free Trial"]]},
+		filters={
+			**scope,
+			"status": "Paid",
+			"modified": [">", since],
+			"phone_number": ["not in", ["Voucher", "Staff", "Free Trial"]],
+		},
 		pluck="name",
 		order_by="modified desc",
 		limit_page_length=limit,
 		ignore_permissions=True,
 	):
 		events.append(
-			{"type": "paymentReceived", "payload": payment_received_payload(frappe.get_doc("Hotspot Transaction", name))}
+			{
+				"type": "paymentReceived",
+				"payload": payment_received_payload(frappe.get_doc("Hotspot Transaction", name)),
+			}
 		)
 
 	for name in frappe.get_all(
@@ -1510,11 +1534,17 @@ def get_activity(since=None, limit=50):
 		ignore_permissions=True,
 	):
 		events.append(
-			{"type": "newChatMessage", "payload": chat_message_payload(frappe.get_doc("Hotspot Chat Message", name))}
+			{
+				"type": "newChatMessage",
+				"payload": chat_message_payload(frappe.get_doc("Hotspot Chat Message", name)),
+			}
 		)
 
 	events.sort(key=lambda e: e["payload"]["timestamp"] or "")
-	return {"server_time": frappe.utils.get_datetime_str(frappe.utils.now_datetime()), "events": events[-limit:]}
+	return {
+		"server_time": frappe.utils.get_datetime_str(frappe.utils.now_datetime()),
+		"events": events[-limit:],
+	}
 
 
 # --- Central Omada Controller (bandofy.omada_provisioning) -----------------

@@ -78,9 +78,7 @@ def initiate_payment(phone, package_idx, client_mac, ap_mac, ssid_name=None, rad
 	try:
 		stk_result = trigger_stk_push(phone=phone, amount=package.price, transaction_id=txn.name)
 	except Exception:
-		frappe.log_error(
-			title=f"Bandofy STK Push Failed: {txn.name}", message=frappe.get_traceback()
-		)
+		frappe.log_error(title=f"Bandofy STK Push Failed: {txn.name}", message=frappe.get_traceback())
 		txn.db_set("status", "Failed", commit=True)
 		frappe.throw(_("Could not reach the payment gateway. Please try again in a moment."))
 
@@ -126,7 +124,7 @@ def trigger_stk_push(phone, amount, transaction_id):
 	# the webhook and the transactions lookup — that's how we find the txn.
 	body = json.dumps(
 		{
-			"amount": int(round(amount)),
+			"amount": round(amount),
 			"method": "mobile",
 			"currency": currency,
 			"phone": phone,
@@ -326,9 +324,7 @@ def sync_pending_payments():
 			gateway_status = str(match.get("status") or "").strip().lower()
 			reference_id = row.reference_id or str(match.get("id") or "")
 		except Exception:
-			frappe.log_error(
-				title=f"Bandofy Payment Poll Failed: {row.name}", message=frappe.get_traceback()
-			)
+			frappe.log_error(title=f"Bandofy Payment Poll Failed: {row.name}", message=frappe.get_traceback())
 			continue
 
 		if gateway_status == "completed":

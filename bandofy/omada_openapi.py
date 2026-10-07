@@ -88,11 +88,11 @@ def _token(force=False):
 	result = data.get("result") or {}
 	token = result.get("accessToken")
 	if data.get("errorCode") != 0 or not token:
-		raise OmadaApiError(
-			_("Omada refused the Open API credentials: {0}").format(data.get("msg") or data)
-		)
+		raise OmadaApiError(_("Omada refused the Open API credentials: {0}").format(data.get("msg") or data))
 	# Refresh a few minutes before the controller expires it.
-	frappe.cache.set_value(TOKEN_CACHE_KEY, token, expires_in_sec=max(60, int(result.get("expiresIn") or 7200) - 300))
+	frappe.cache.set_value(
+		TOKEN_CACHE_KEY, token, expires_in_sec=max(60, int(result.get("expiresIn") or 7200) - 300)
+	)
 	return token
 
 
@@ -319,7 +319,9 @@ def find_operator(name):
 	for site in list_sites():
 		try:
 			operators = _rows(
-				request("GET", f"/sites/{site['siteId']}/hotspot/operators", params={**_page(), "searchKey": name})
+				request(
+					"GET", f"/sites/{site['siteId']}/hotspot/operators", params={**_page(), "searchKey": name}
+				)
 			)
 		except OmadaApiError:
 			continue
@@ -385,7 +387,11 @@ def test_connection():
 	settings = frappe.get_doc("Hotspot Omada Settings")
 	if sites and not (settings.default_timezone and settings.default_scenario):
 		first = get_site(sites[0]["siteId"]) or sites[0]
-		for field, key in (("default_timezone", "timeZone"), ("default_scenario", "scenario"), ("default_region", "region")):
+		for field, key in (
+			("default_timezone", "timeZone"),
+			("default_scenario", "scenario"),
+			("default_region", "region"),
+		):
 			if not settings.get(field) and first.get(key):
 				filled[field] = first[key]
 		if filled:
@@ -395,7 +401,11 @@ def test_connection():
 	operator = None
 	if settings.operator_name:
 		op, _site = find_operator(settings.operator_name)
-		operator = {"name": settings.operator_name, "found": bool(op), "sites": len((op or {}).get("selectedSites") or [])}
+		operator = {
+			"name": settings.operator_name,
+			"found": bool(op),
+			"sites": len((op or {}).get("selectedSites") or []),
+		}
 
 	return {
 		"controller_version": info.get("controllerVer"),

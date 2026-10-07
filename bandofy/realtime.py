@@ -97,7 +97,9 @@ def notify_voucher_used(doc, method=None):
 
 	try:
 		site = _site_info(doc.site)
-		_notify("foh_voucher_used", voucher_used_payload(doc, site), extra_user=site.vendor_user if site else None)
+		_notify(
+			"foh_voucher_used", voucher_used_payload(doc, site), extra_user=site.vendor_user if site else None
+		)
 	except Exception:
 		frappe.log_error(title="Bandofy Realtime: notify_voucher_used failed", message=frappe.get_traceback())
 
@@ -115,7 +117,11 @@ def notify_transaction_paid(doc, method=None):
 
 	try:
 		site = _site_info(doc.site)
-		_notify("foh_payment_received", payment_received_payload(doc, site), extra_user=site.vendor_user if site else None)
+		_notify(
+			"foh_payment_received",
+			payment_received_payload(doc, site),
+			extra_user=site.vendor_user if site else None,
+		)
 	except Exception:
 		frappe.log_error(
 			title="Bandofy Realtime: notify_transaction_paid failed", message=frappe.get_traceback()
@@ -131,7 +137,11 @@ def notify_new_chat_message(doc, method=None):
 
 	try:
 		site = _site_info(doc.site)
-		_notify("foh_new_chat_message", chat_message_payload(doc, site), extra_user=site.vendor_user if site else None)
+		_notify(
+			"foh_new_chat_message",
+			chat_message_payload(doc, site),
+			extra_user=site.vendor_user if site else None,
+		)
 	except Exception:
 		frappe.log_error(
 			title="Bandofy Realtime: notify_new_chat_message failed", message=frappe.get_traceback()

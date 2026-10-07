@@ -98,9 +98,9 @@ def provision_site(site_name, ssid_name=None):
 				]
 				if missing:
 					raise OmadaApiError(
-						_("Fill in {0} in Hotspot Omada Settings (Test Connection can fill the first two).").format(
-							", ".join(missing)
-						)
+						_(
+							"Fill in {0} in Hotspot Omada Settings (Test Connection can fill the first two)."
+						).format(", ".join(missing))
 					)
 				omada_site = api.create_site(
 					name=site.site_name,
@@ -161,9 +161,11 @@ def provision_site(site_name, ssid_name=None):
 			}[result].format(settings.operator_name),
 		)
 	except OmadaApiError as e:
-		add(steps and _("Next step") or _("Omada site"), False, str(e))
+		add(_("Next step") if steps else _("Omada site"), False, str(e))
 	except Exception as e:
-		frappe.log_error(title=f"Bandofy Omada provisioning failed: {site.name}", message=frappe.get_traceback())
+		frappe.log_error(
+			title=f"Bandofy Omada provisioning failed: {site.name}", message=frappe.get_traceback()
+		)
 		add(_("Unexpected error"), False, str(e))
 
 	return steps
@@ -197,9 +199,16 @@ def adopt_device(site_name, mac, username=None, password=None):
 
 	settings = _settings()
 	username = username or settings.adopt_username
-	password = password or (settings.get_password("adopt_password", raise_exception=False) if username else None)
+	password = password or (
+		settings.get_password("adopt_password", raise_exception=False) if username else None
+	)
 	pending = next(
-		(d for d in api.pending_devices(site.omada_site_id) if normalize_mac(d.get("mac")) == normalize_mac(mac)), {}
+		(
+			d
+			for d in api.pending_devices(site.omada_site_id)
+			if normalize_mac(d.get("mac")) == normalize_mac(mac)
+		),
+		{},
 	)
 	api.start_adopt(site.omada_site_id, mac, username, password)
 
@@ -214,7 +223,11 @@ def adopt_device(site_name, mac, username=None, password=None):
 				_("Adoption failed: {0}").format(_(ADOPT_ERRORS.get(code, f"Omada error {code}.")))
 			)
 		device = next(
-			(d for d in api.site_devices(site.omada_site_id) if normalize_mac(d.get("mac")) == normalize_mac(mac)),
+			(
+				d
+				for d in api.site_devices(site.omada_site_id)
+				if normalize_mac(d.get("mac")) == normalize_mac(mac)
+			),
 			None,
 		)
 		if device and cint(device.get("status")) == DEVICE_CONNECTED:

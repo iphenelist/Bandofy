@@ -49,18 +49,23 @@ def site_controller(site):
 	settings = frappe.get_cached_doc("Hotspot Omada Settings")
 	password = settings.get_password("operator_password", raise_exception=False)
 	if not (settings.controller_url and settings.operator_name and password):
-		raise OmadaAuthError(
-			"Set the Controller URL and Hotspot Operator in Hotspot Omada Settings first."
-		)
+		raise OmadaAuthError("Set the Controller URL and Hotspot Operator in Hotspot Omada Settings first.")
 	site_id = site.get("omada_site_id")
 	if not site_id:
-		raise OmadaAuthError(f"{site.get('site_name') or site.get('name')} isn't set up on the Omada Controller yet.")
+		raise OmadaAuthError(
+			f"{site.get('site_name') or site.get('name')} isn't set up on the Omada Controller yet."
+		)
 
 	controller_id = settings.omadac_id
 	if not controller_id:
 		session = _new_session()
 		try:
-			controller_id = (session.get(f"{settings.controller_url}/api/info", timeout=_settings()[0]).json().get("result") or {}).get("omadacId")
+			controller_id = (
+				session.get(f"{settings.controller_url}/api/info", timeout=_settings()[0])
+				.json()
+				.get("result")
+				or {}
+			).get("omadacId")
 		except (requests.RequestException, ValueError) as e:
 			raise OmadaAuthError(f"Could not reach the Omada Controller: {e}") from e
 		if not controller_id:
@@ -164,9 +169,7 @@ def authorize_client(
 	return auth_data
 
 
-def list_devices(
-	omada_host, controller_id, operator_username, operator_password, site_id, timeout=None
-):
+def list_devices(omada_host, controller_id, operator_username, operator_password, site_id, timeout=None):
 	"""List the Access Points/switches/gateways adopted under an Omada site.
 
 	NOTE: unlike authorize_client and its extPortal/login endpoints (which
@@ -249,9 +252,7 @@ def reboot_device(
 	return True
 
 
-def get_live_stats(
-	omada_host, controller_id, operator_username, operator_password, site_id, timeout=5
-):
+def get_live_stats(omada_host, controller_id, operator_username, operator_password, site_id, timeout=5):
 	"""Controller status plus best-effort live client/traffic numbers for the
 	dashboards.
 

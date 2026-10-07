@@ -19,7 +19,9 @@ def execute():
 
 	for site in sites:
 		if site.site_id and not site.omada_site_id and site.site_id != "default":
-			frappe.db.set_value("Hotspot Site", site.name, "omada_site_id", site.site_id, update_modified=False)
+			frappe.db.set_value(
+				"Hotspot Site", site.name, "omada_site_id", site.site_id, update_modified=False
+			)
 
 	source = next((s for s in sites if s.controller_ip and s.omada_username), None)
 	if not source:
@@ -39,6 +41,10 @@ def execute():
 	if not settings.get_password("operator_password", raise_exception=False):
 		from frappe.utils.password import get_decrypted_password, set_encrypted_password
 
-		password = get_decrypted_password("Hotspot Site", source.name, "omada_password", raise_exception=False)
+		password = get_decrypted_password(
+			"Hotspot Site", source.name, "omada_password", raise_exception=False
+		)
 		if password:
-			set_encrypted_password("Hotspot Omada Settings", "Hotspot Omada Settings", password, "operator_password")
+			set_encrypted_password(
+				"Hotspot Omada Settings", "Hotspot Omada Settings", password, "operator_password"
+			)

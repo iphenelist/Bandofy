@@ -48,7 +48,10 @@ function bandofy_provision(frm) {
 				freeze: true,
 				freeze_message: __("Setting up the site on the Omada Controller..."),
 				callback: (r) => {
-					frappe.msgprint({ title: __("Omada Setup"), message: bandofy_steps_html(r.message) });
+					frappe.msgprint({
+						title: __("Omada Setup"),
+						message: bandofy_steps_html(r.message),
+					});
 					frm.reload_doc();
 				},
 			});
@@ -86,7 +89,10 @@ function bandofy_adopt(frm) {
 							label: [x.mac, x.model, x.ip].filter(Boolean).join(" · "),
 						})),
 					},
-					{ fieldtype: "Section Break", label: __("Device login (only if not factory default)") },
+					{
+						fieldtype: "Section Break",
+						label: __("Device login (only if not factory default)"),
+					},
 					{ fieldname: "username", fieldtype: "Data", label: __("Username") },
 					{ fieldname: "password", fieldtype: "Password", label: __("Password") },
 				],
@@ -103,9 +109,10 @@ function bandofy_adopt(frm) {
 							frappe.msgprint(
 								done
 									? __("{0} is adopted and connected.", [res.message.mac])
-									: __("{0} is still adopting. It will appear as Connected in a minute.", [
-											res.message.mac,
-									  ])
+									: __(
+											"{0} is still adopting. It will appear as Connected in a minute.",
+											[res.message.mac]
+									  )
 							);
 							frm.reload_doc();
 						},
@@ -151,7 +158,11 @@ function bandofy_ssids(frm) {
 				primary_action(values) {
 					frappe.call({
 						method: OMADA + "save_omada_ssid",
-						args: { site: frm.doc.name, name: values.name, ssid_id: frm.doc.omada_ssid_id },
+						args: {
+							site: frm.doc.name,
+							name: values.name,
+							ssid_id: frm.doc.omada_ssid_id,
+						},
 						freeze: true,
 						callback: () => {
 							d.hide();

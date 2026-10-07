@@ -48,7 +48,15 @@ def get_context(context):
 	context.transactions = frappe.get_all(
 		"Hotspot Transaction",
 		filters={"site": site.name, "status": "Paid"},
-		fields=["phone_number", "package_name", "amount", "duration_minutes", "client_mac", "creation", "reference_id"],
+		fields=[
+			"phone_number",
+			"package_name",
+			"amount",
+			"duration_minutes",
+			"client_mac",
+			"creation",
+			"reference_id",
+		],
 		order_by="creation desc",
 		limit_page_length=20,
 		ignore_permissions=True,

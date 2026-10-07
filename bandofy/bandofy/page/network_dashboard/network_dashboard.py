@@ -48,7 +48,9 @@ def get_dashboard_data():
 				"revenue_month": revenue_month,
 				"transactions_today": txns_today,
 				"vouchers_issued": frappe.db.count("Hotspot Voucher", {"site": site.name}),
-				"vouchers_redeemed": frappe.db.count("Hotspot Voucher", {"site": site.name, "status": "Used"}),
+				"vouchers_redeemed": frappe.db.count(
+					"Hotspot Voucher", {"site": site.name, "status": "Used"}
+				),
 			}
 		)
 

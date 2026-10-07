@@ -2,7 +2,12 @@
 	<button type="button" class="fab-chat" @click="openChat">
 		<span class="chat-unread-dot" :class="{ show: unread }"></span>
 		<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-			<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+			<path
+				d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"
+				stroke="currentColor"
+				stroke-width="1.8"
+				stroke-linejoin="round"
+			/>
 		</svg>
 	</button>
 
@@ -33,7 +38,13 @@
 				:placeholder="t('chat_placeholder')"
 				@keydown.enter="send"
 			/>
-			<button type="button" class="chat-send-btn" :disabled="sending" :aria-label="t('chat_send')" @click="send">
+			<button
+				type="button"
+				class="chat-send-btn"
+				:disabled="sending"
+				:aria-label="t('chat_send')"
+				@click="send"
+			>
 				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 					<path d="M4 20l16-8L4 4v6l10 2-10 2v6Z" fill="currentColor" />
 				</svg>
@@ -75,7 +86,8 @@ function poll() {
 	if (lastSeen) args.after = lastSeen;
 	call("get_chat_messages", args)
 		.then((result) => {
-			const incoming = (result.data && result.data.message && result.data.message.messages) || [];
+			const incoming =
+				(result.data && result.data.message && result.data.message.messages) || [];
 			if (!incoming.length) return;
 			for (const m of incoming) {
 				messages.value.push(m);

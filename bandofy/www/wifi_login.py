@@ -28,10 +28,7 @@ def get_context(context):
 	# Standalone EAP "External Web Portal" redirects use apMac/ap/ap_mac and
 	# clientMac/client_mac depending on firmware; accept all of them.
 	ap_mac = (
-		frappe.form_dict.get("apMac")
-		or frappe.form_dict.get("ap")
-		or frappe.form_dict.get("ap_mac")
-		or ""
+		frappe.form_dict.get("apMac") or frappe.form_dict.get("ap") or frappe.form_dict.get("ap_mac") or ""
 	)
 	client_mac = frappe.form_dict.get("clientMac") or frappe.form_dict.get("client_mac") or ""
 	# "origUrl" is where the client was headed before the captive portal.
