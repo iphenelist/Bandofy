@@ -702,9 +702,10 @@ def delete_staff_voucher(name):
 
 @frappe.whitelist()
 def get_site_devices(site=None):
-	"""Every AP in the site's Access Points table, merged with live Omada
-	status (online/offline/model/ip) by MAC. Fails soft to status "unknown" if the controller can't be
-	reached, same as get_omada_live_stats."""
+	"""Every AP in the site's Access Points table, merged with its live
+	status/model/IP from the Omada Open API device list. Fails soft to status
+	"unknown" if the controller can't be reached or the site isn't set up on
+	it yet, same as get_omada_live_stats."""
 	site_name = _resolve_site(site)
 	if not site_name:
 		frappe.throw(_("Please choose a site."))
@@ -718,13 +719,19 @@ def get_site_devices(site=None):
 		return devices
 
 	try:
-		live = omada_service.list_devices(**omada_service.site_controller(doc))
-		live_by_mac = {normalize_mac(d["mac"]): d for d in live if d.get("mac")}
+		from bandofy.omada_openapi import site_devices
+
+		site_id = omada_service.site_controller(doc)["site_id"]
+		live_by_mac = {normalize_mac(d["mac"]): d for d in site_devices(site_id) if d.get("mac")}
 		for device in devices:
 			match = live_by_mac.get(normalize_mac(device["ap_mac"]))
 			if match:
 				device.update(
-					{"status": match.get("status"), "model": match.get("model"), "ip": match.get("ip")}
+					{
+						"status": DEVICE_STATUS.get(match.get("status"), "unknown"),
+						"model": match.get("modelName") or match.get("model"),
+						"ip": match.get("ip"),
+					}
 				)
 			else:
 				device["status"] = "unknown"
@@ -736,6 +743,17 @@ def get_site_devices(site=None):
 			device["status"] = "unknown"
 
 	return devices
+
+
+# Open API DeviceInfo.status -> the words the app shows (it treats anything
+# containing "disconnect"/"offline" as Offline).
+DEVICE_STATUS = {
+	0: "disconnected",
+	1: "connected",
+	2: "pending",
+	3: "heartbeat missed (offline)",
+	4: "isolated (offline)",
+}
 
 
 @frappe.whitelist()
@@ -780,9 +798,13 @@ def reboot_site_device(site, ap_mac):
 	site_name = _resolve_site_for_write(site)
 	doc = frappe.get_doc("Hotspot Site", site_name)
 
+	from bandofy.omada_openapi import OmadaApiError, reboot_device
+
 	try:
-		omada_service.reboot_device(**omada_service.site_controller(doc), device_mac=ap_mac)
-	except omada_service.OmadaAuthError as e:
+		site_id = omada_service.site_controller(doc)["site_id"]
+		mac = "-".join(normalize_mac(ap_mac).upper()[i : i + 2] for i in range(0, 12, 2))
+		reboot_device(site_id, mac)
+	except (omada_service.OmadaAuthError, OmadaApiError) as e:
 		frappe.throw(str(e), title=_("Omada Controller"))
 
 	return {"ok": True}
@@ -791,8 +813,9 @@ def reboot_site_device(site, ap_mac):
 @frappe.whitelist()
 def check_omada_connection(site=None):
 	"""Step-by-step Omada Controller check run from the server (reachability,
-	Controller ID, operator login, client and device lists), so a vendor who
-	can't open the controller UI can still see exactly what works. Read-only."""
+	Controller ID, hotspot operator login and client list, then Open API
+	access and the device list), so a vendor who can't open the controller UI
+	can still see exactly what works. Read-only."""
 	site_name = _resolve_site_for_write(site)
 	doc = frappe.get_doc("Hotspot Site", site_name)
 
@@ -800,7 +823,24 @@ def check_omada_connection(site=None):
 		controller = omada_service.site_controller(doc)
 	except omada_service.OmadaAuthError as e:
 		return [{"step": _("Omada settings"), "ok": False, "detail": str(e)}]
-	return omada_service.diagnose(**controller)
+	steps = omada_service.diagnose(**controller)
+	if not all(step["ok"] for step in steps):
+		return steps
+
+	from bandofy.omada_openapi import OmadaApiError, site_devices
+
+	try:
+		devices = site_devices(controller["site_id"])
+		steps.append(
+			{
+				"step": _("Device list (Open API)"),
+				"ok": True,
+				"detail": _("{0} device(s) on this site").format(len(devices)),
+			}
+		)
+	except OmadaApiError as e:
+		steps.append({"step": _("Device list (Open API)"), "ok": False, "detail": str(e)})
+	return steps
 
 
 def _resolve_chat_site(site, client_mac):

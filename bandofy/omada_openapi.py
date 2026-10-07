@@ -186,6 +186,11 @@ def site_devices(site_id):
 	return _rows(request("GET", f"/sites/{site_id}/devices", params=_page()))
 
 
+def reboot_device(site_id, mac):
+	"""Reboots one adopted device -- disconnects every client on it."""
+	return request("POST", f"/sites/{site_id}/devices/{mac}/reboot")
+
+
 def start_adopt(site_id, mac, username=None, password=None):
 	body = {}
 	if username:

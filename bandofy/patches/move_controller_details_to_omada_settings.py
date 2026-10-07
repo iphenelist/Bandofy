@@ -1,5 +1,7 @@
 import frappe
 
+from bandofy.omada_service import OMADA_SITE_ID
+
 
 def execute():
 	"""Hotspot Site no longer stores the Omada controller and operator --
@@ -18,7 +20,10 @@ def execute():
 	)
 
 	for site in sites:
-		if site.site_id and not site.omada_site_id and site.site_id != "default":
+		# Only real Omada site IDs (24 hex chars); a stored site *name* such as
+		# "Orion" is resolved later (omada_service.site_controller) or linked
+		# by Create on Omada.
+		if site.site_id and not site.omada_site_id and OMADA_SITE_ID.match(site.site_id):
 			frappe.db.set_value(
 				"Hotspot Site", site.name, "omada_site_id", site.site_id, update_modified=False
 			)
