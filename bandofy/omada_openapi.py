@@ -290,6 +290,17 @@ def _portal_body(name, ssid_ids, portal_url, timeout_minutes):
 		"authTimeout": {"customTimeout": max(1, int(timeout_minutes)), "customTimeoutUnit": 1},
 		"httpsRedirectEnable": True,
 		"landingPage": 1,  # back to the original URL
+		"pageType": 1,
+		# Required by the API even for an External Portal, though customers
+		# only ever see Bandofy's own page: English fallback, no Omada
+		# logo/welcome/terms/copyright.
+		"portalCustomize": {
+			"defaultLanguage": 1,
+			"logoDisplay": False,
+			"welcomeEnable": False,
+			"termsOfServiceEnable": False,
+			"copyrightEnable": False,
+		},
 		"externalPortal": {
 			"hostType": 2,
 			"serverUrlScheme": parts.scheme or "https",
