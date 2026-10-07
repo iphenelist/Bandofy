@@ -4,6 +4,8 @@
 import frappe
 from frappe.utils import get_first_day, get_last_day, today
 
+from bandofy.utils import site_ap_macs
+
 
 @frappe.whitelist()
 def get_dashboard_data():
@@ -11,7 +13,7 @@ def get_dashboard_data():
 
 	sites = frappe.get_all(
 		"Hotspot Site",
-		fields=["name", "vendor_name", "site_name", "ap_mac", "is_active"],
+		fields=["name", "vendor_name", "site_name", "is_active"],
 		order_by="vendor_name asc",
 	)
 
@@ -40,13 +42,15 @@ def get_dashboard_data():
 				"name": site.name,
 				"vendor_name": site.vendor_name,
 				"site_name": site.site_name,
-				"ap_mac": site.ap_mac,
+				"ap_mac": ", ".join(site_ap_macs(site.name)),
 				"is_active": site.is_active,
 				"revenue_today": revenue_today,
 				"revenue_month": revenue_month,
 				"transactions_today": txns_today,
 				"vouchers_issued": frappe.db.count("Hotspot Voucher", {"site": site.name}),
-				"vouchers_redeemed": frappe.db.count("Hotspot Voucher", {"site": site.name, "status": "Used"}),
+				"vouchers_redeemed": frappe.db.count(
+					"Hotspot Voucher", {"site": site.name, "status": "Used"}
+				),
 			}
 		)
 

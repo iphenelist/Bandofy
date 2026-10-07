@@ -1,6 +1,6 @@
 {
  "actions": [],
- "creation": "2026-08-12 00:00:00.000000",
+ "creation": "2026-08-12 00:00:00",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -16,13 +16,15 @@
  "fields": [
   {
    "fieldname": "package_name",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Package Name",
+   "options": "Hotspot Package",
    "reqd": 1
   },
   {
    "default": "Unlimited",
+   "fetch_from": "package_name.package_type",
    "fieldname": "package_type",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -31,6 +33,7 @@
    "reqd": 1
   },
   {
+   "fetch_from": "package_name.price",
    "fieldname": "price",
    "fieldtype": "Currency",
    "in_list_view": 1,
@@ -38,6 +41,7 @@
    "reqd": 1
   },
   {
+   "fetch_from": "package_name.duration_minutes",
    "fieldname": "duration_minutes",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -65,12 +69,13 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-08-12 00:00:00.000000",
+ "modified": "2026-10-06 22:35:12.837448",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Package Item",
  "owner": "Administrator",
  "permissions": [],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

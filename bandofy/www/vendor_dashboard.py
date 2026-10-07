@@ -6,6 +6,7 @@ from frappe import _
 from frappe.utils import get_first_day, get_last_day, today
 
 from bandofy.dashboard_utils import get_omada_live_stats, get_revenue
+from bandofy.utils import site_ap_macs
 
 no_cache = 1
 
@@ -24,11 +25,7 @@ def get_context(context):
 			"name",
 			"vendor_name",
 			"site_name",
-			"ap_mac",
-			"controller_ip",
-			"port",
-			"site_id",
-			"omada_username",
+			"omada_site_id",
 			"is_active",
 		],
 		as_dict=True,
@@ -41,6 +38,7 @@ def get_context(context):
 		)
 
 	context.site = site
+	context.ap_count = len(site_ap_macs(site.name))
 
 	context.total_revenue_today = get_revenue(site.name, today(), today())
 	context.total_revenue_month = get_revenue(site.name, get_first_day(today()), get_last_day(today()))
@@ -50,7 +48,15 @@ def get_context(context):
 	context.transactions = frappe.get_all(
 		"Hotspot Transaction",
 		filters={"site": site.name, "status": "Paid"},
-		fields=["phone_number", "package_name", "amount", "duration_minutes", "client_mac", "creation", "reference_id"],
+		fields=[
+			"phone_number",
+			"package_name",
+			"amount",
+			"duration_minutes",
+			"client_mac",
+			"creation",
+			"reference_id",
+		],
 		order_by="creation desc",
 		limit_page_length=20,
 		ignore_permissions=True,

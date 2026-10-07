@@ -28,16 +28,10 @@ def get_context(context):
 	# Standalone EAP "External Web Portal" redirects use apMac/ap/ap_mac and
 	# clientMac/client_mac depending on firmware; accept all of them.
 	ap_mac = (
-		frappe.form_dict.get("apMac")
-		or frappe.form_dict.get("ap")
-		or frappe.form_dict.get("ap_mac")
-		or ""
+		frappe.form_dict.get("apMac") or frappe.form_dict.get("ap") or frappe.form_dict.get("ap_mac") or ""
 	)
 	client_mac = frappe.form_dict.get("clientMac") or frappe.form_dict.get("client_mac") or ""
-	# "target" (host:port to complete a Local RADIUS Server login against) and
-	# "origUrl" (where to send the client once authorized) are standalone-EAP
-	# specific and only meaningful for that flow; pass them through as-is.
-	target = frappe.form_dict.get("target") or ""
+	# "origUrl" is where the client was headed before the captive portal.
 	orig_url = frappe.form_dict.get("origUrl") or frappe.form_dict.get("orig_url") or ""
 	# ssidName/radioId are Omada-Controller-managed-site specific -- required
 	# by the hotspot/login authorize call in api.authorize_mac_on_omada.
@@ -46,7 +40,6 @@ def get_context(context):
 
 	context.ap_mac = ap_mac
 	context.client_mac = client_mac
-	context.target = target
 	context.orig_url = orig_url
 	context.ssid_name = ssid_name
 	context.radio_id = radio_id
@@ -56,7 +49,6 @@ def get_context(context):
 	context.packages = []
 	context.site_found = False
 	context.ads = []
-	context.authorization_method = None
 	context.online_payment_enabled = False
 	context.free_trial_enabled = False
 	context.free_trial_available = False
@@ -68,9 +60,6 @@ def get_context(context):
 	context.payment_providers = PAYMENT_PROVIDERS
 	context.portal_logo = None
 	context.portal_tagline = None
-	context.portal_primary_color = "#ec4899"
-	context.portal_secondary_color = "#6366f1"
-	context.portal_mid_color = _mix_colors("#ec4899", "#6366f1")
 
 	if ap_mac:
 		site = find_site_by_ap_mac(
@@ -79,7 +68,6 @@ def get_context(context):
 				"name",
 				"vendor_name",
 				"site_name",
-				"authorization_method",
 				"phone_number",
 				"enable_online_payment",
 				"enable_free_trial",
@@ -88,8 +76,7 @@ def get_context(context):
 				"vendor_user",
 				"portal_logo",
 				"portal_tagline",
-				"portal_primary_color",
-				"portal_secondary_color",
+				"lipa_namba_image",
 			],
 		)
 
@@ -97,7 +84,6 @@ def get_context(context):
 			context.site_found = True
 			context.vendor_name = site.vendor_name
 			context.site_label = site.site_name
-			context.authorization_method = site.authorization_method
 			context.support_phone = site.phone_number
 			context.online_payment_enabled = bool(site.enable_online_payment)
 			context.free_trial_minutes = int(site.free_trial_minutes or 15)
@@ -108,11 +94,8 @@ def get_context(context):
 			context.sabbath_active = is_sabbath_now(site)
 			context.portal_logo = site.portal_logo
 			context.portal_tagline = site.portal_tagline
-			context.portal_primary_color = site.portal_primary_color or context.portal_primary_color
-			context.portal_secondary_color = site.portal_secondary_color or context.portal_secondary_color
 			apply_preview_overrides(context, site)
-			context.portal_mid_color = _mix_colors(context.portal_primary_color, context.portal_secondary_color)
-			context.lipa_images, context.lipa_default = get_lipa_images(site.name)
+			context.lipa_images, context.lipa_default = get_lipa_images(site.lipa_namba_image)
 			context.packages = frappe.get_all(
 				"Hotspot Package Item",
 				filters={"parent": site.name, "parenttype": "Hotspot Site"},
@@ -143,7 +126,6 @@ def build_portal_data(context):
 	keys = [
 		"ap_mac",
 		"client_mac",
-		"target",
 		"orig_url",
 		"ssid_name",
 		"radio_id",
@@ -153,7 +135,6 @@ def build_portal_data(context):
 		"support_phone",
 		"packages",
 		"ads",
-		"authorization_method",
 		"online_payment_enabled",
 		"free_trial_enabled",
 		"free_trial_available",
@@ -185,29 +166,10 @@ def apply_preview_overrides(context, site):
 	if frappe.session.user != site.vendor_user and not is_admin_user():
 		return
 
-	if frappe.form_dict.get("preview_primary_color"):
-		context.portal_primary_color = frappe.form_dict.get("preview_primary_color")
-	if frappe.form_dict.get("preview_secondary_color"):
-		context.portal_secondary_color = frappe.form_dict.get("preview_secondary_color")
 	if frappe.form_dict.get("preview_tagline") is not None:
 		context.portal_tagline = frappe.form_dict.get("preview_tagline") or None
 	if frappe.form_dict.get("preview_logo"):
 		context.portal_logo = frappe.form_dict.get("preview_logo")
-
-
-def _mix_colors(hex_a, hex_b):
-	"""Simple RGB average of two '#rrggbb' colors, for the body gradient's
-	middle stop."""
-
-	def to_rgb(hex_color):
-		hex_color = (hex_color or "").lstrip("#")
-		if len(hex_color) != 6:
-			return (124, 58, 237)  # falls back to the original mid-purple
-		return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
-
-	a, b = to_rgb(hex_a), to_rgb(hex_b)
-	mixed = tuple((a[i] + b[i]) // 2 for i in range(3))
-	return "#{:02x}{:02x}{:02x}".format(*mixed)
 
 
 def format_duration(minutes):
@@ -220,29 +182,16 @@ def format_duration(minutes):
 	return f"Dakika {minutes}"
 
 
-def get_lipa_images(site_name):
-	"""Manual pay-by-QR/till-number images for the Lipa Namba button.
-
-	Returns (images, default_image). Sites that haven't populated the
-	Lipa Namba Images table yet fall back to the original static image so
-	their captive portal keeps working exactly as before this table existed.
-	"""
-	rows = frappe.get_all(
-		"Hotspot Lipa Number",
-		filters={"parent": site_name, "parenttype": "Hotspot Site"},
-		fields=["label", "image", "is_default"],
-		order_by="idx asc",
-	)
-	if not rows:
-		fallback = {
-			"label": "Lipa Namba",
-			"image": "/assets/bandofy/images/lipanamba/lipa_namba.jpeg",
-			"is_default": 1,
-		}
-		return [fallback], fallback
-
-	default_row = next((row for row in rows if row.is_default), rows[0])
-	return rows, default_row
+def get_lipa_images(lipa_namba_image):
+	"""The Lipa Namba (pay-by-QR/till-number) picture as (images, default):
+	the site's attached image, or the bundled one if none is set. Kept as a
+	one-item list so the portal's Lipa widget works unchanged."""
+	image = {
+		"label": "Lipa Namba",
+		"image": lipa_namba_image or "/assets/bandofy/images/lipanamba/lipa_namba.jpeg",
+		"is_default": 1,
+	}
+	return [image], image
 
 
 def get_active_ads(site_name):

@@ -18,10 +18,18 @@ sending credentials to extPortal/auth or the client payload to login always
 fails.
 """
 
+import re
+
+import frappe
 import requests
 import urllib3
+from frappe.utils import cint
 
 OMADA_AUTH_TYPE_MAC = 4
+# Omada site IDs are 24 hex characters; anything else stored as a site ID
+# (e.g. "Orion") is a site *name*, which the hotspot API rejects (-1505).
+OMADA_SITE_ID = re.compile(r"^[0-9a-fA-F]{24}$")
+DEFAULT_TIMEOUT = 10
 
 
 class OmadaAuthError(Exception):
@@ -29,14 +37,98 @@ class OmadaAuthError(Exception):
 	authorization call, or the response doesn't have the expected shape."""
 
 
-def _operator_login(base_url, operator_username, operator_password, timeout=10):
+def _settings():
+	"""(request timeout, verify SSL) from Hotspot Omada Settings, falling
+	back to the old hard-coded behaviour if the single isn't there yet."""
+	try:
+		settings = frappe.get_cached_doc("Hotspot Omada Settings")
+		return cint(settings.request_timeout) or DEFAULT_TIMEOUT, bool(settings.verify_ssl)
+	except Exception:
+		return DEFAULT_TIMEOUT, False
+
+
+def site_controller(site):
+	"""Connection arguments for one Hotspot Site's Omada calls: the central
+	controller and hotspot operator from Hotspot Omada Settings, plus this
+	site's own Omada site ID. ``site`` is a Hotspot Site doc or dict."""
+	settings = frappe.get_cached_doc("Hotspot Omada Settings")
+	password = settings.get_password("operator_password", raise_exception=False)
+	if not (settings.controller_url and settings.operator_name and password):
+		raise OmadaAuthError("Set the Controller URL and Hotspot Operator in Hotspot Omada Settings first.")
+	site_id = site.get("omada_site_id")
+	if not site_id:
+		raise OmadaAuthError(
+			f"{site.get('site_name') or site.get('name')} isn't set up on the Omada Controller yet."
+		)
+	if not OMADA_SITE_ID.match(site_id):
+		site_id = _resolve_site_id(site, site_id)
+
+	controller_id = settings.omadac_id
+	if not controller_id:
+		session = _new_session()
+		try:
+			controller_id = (
+				session.get(f"{settings.controller_url}/api/info", timeout=_settings()[0])
+				.json()
+				.get("result")
+				or {}
+			).get("omadacId")
+		except (requests.RequestException, ValueError) as e:
+			raise OmadaAuthError(f"Could not reach the Omada Controller: {e}") from e
+		if not controller_id:
+			raise OmadaAuthError("The Omada Controller did not report its Controller ID.")
+		frappe.db.set_single_value("Hotspot Omada Settings", "omadac_id", controller_id)
+		frappe.clear_document_cache("Hotspot Omada Settings", "Hotspot Omada Settings")
+
+	return {
+		"omada_host": settings.controller_url,
+		"controller_id": controller_id,
+		"operator_username": settings.operator_name,
+		"operator_password": password,
+		"site_id": site_id,
+	}
+
+
+def _resolve_site_id(site, stored):
+	"""Turns a site name stored where the Omada site ID belongs into the real
+	ID (looked up through the Open API) and saves it on the Hotspot Site."""
+	from bandofy.omada_openapi import OmadaApiError, find_site
+
+	try:
+		match = find_site(stored) or (site.get("site_name") and find_site(site.get("site_name")))
+	except OmadaApiError as e:
+		raise OmadaAuthError(
+			f"'{stored}' is an Omada site name, not its ID, and it couldn't be looked up ({e}). "
+			"Set the Open API keys in Hotspot Omada Settings, or use Omada > Create on Omada to link the site."
+		) from e
+	if not match:
+		raise OmadaAuthError(
+			f"No Omada site is named '{stored}'. Use Omada > Create on Omada to create or link this site."
+		)
+	if site.get("name"):
+		frappe.db.set_value("Hotspot Site", site.get("name"), "omada_site_id", match["siteId"])
+		if hasattr(site, "omada_site_id"):
+			site.omada_site_id = match["siteId"]
+	return match["siteId"]
+
+
+def _new_session():
+	"""Controllers usually present self-signed certificates, so verification
+	is off unless Hotspot Omada Settings turns it on."""
+	session = requests.Session()
+	session.verify = _settings()[1]
+	if not session.verify:
+		urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+	return session
+
+
+def _operator_login(base_url, operator_username, operator_password, timeout=None):
 	"""Log in as an Omada Hotspot Operator. Returns (session, csrf_token) for
 	the caller to make further authenticated calls with -- shared by
-	authorize_client, list_devices, and reboot_device. Raises OmadaAuthError
+	authorize_client, get_live_stats and diagnose. Raises OmadaAuthError
 	on any failure."""
-	session = requests.Session()
-	session.verify = False
-	urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+	timeout = timeout or _settings()[0]
+	session = _new_session()
 
 	try:
 		login_resp = session.post(
@@ -70,13 +162,14 @@ def authorize_client(
 	site_name,
 	duration_minutes,
 	radio_id=0,
-	timeout=10,
+	timeout=None,
 ):
 	"""Log in as an Omada Hotspot Operator and authorize a client's MAC.
 
 	Returns the parsed JSON body of the extPortal/auth response on success
 	(errorCode 0). Raises OmadaAuthError on any failure.
 	"""
+	timeout = timeout or _settings()[0]
 	base_url = f"{omada_host.rstrip('/')}/{controller_id}"
 	session, token = _operator_login(base_url, operator_username, operator_password, timeout)
 
@@ -106,92 +199,7 @@ def authorize_client(
 	return auth_data
 
 
-def list_devices(
-	omada_host, controller_id, operator_username, operator_password, site_id, timeout=10
-):
-	"""List the Access Points/switches/gateways adopted under an Omada site.
-
-	NOTE: unlike authorize_client and its extPortal/login endpoints (which
-	are TP-Link's officially documented External Portal Server API), this
-	endpoint pattern (`GET .../api/v2/sites/{siteId}/devices`) is inferred
-	from the same internal Omada Controller API family and hasn't been
-	exercised against a live controller in this project. Verify it against
-	your controller version before relying on it.
-
-	Returns a list of {mac, name, type, status, model, ip} dicts. Raises
-	OmadaAuthError on failure.
-	"""
-	base_url = f"{omada_host.rstrip('/')}/{controller_id}"
-	session, token = _operator_login(base_url, operator_username, operator_password, timeout)
-
-	try:
-		resp = session.get(
-			f"{base_url}/api/v2/sites/{site_id}/devices",
-			params={"token": token},
-			headers={"Csrf-Token": token},
-			timeout=timeout,
-		)
-		resp.raise_for_status()
-	except requests.RequestException as e:
-		raise OmadaAuthError(f"Omada device list request failed: {e}") from e
-
-	data = resp.json()
-	if data.get("errorCode") not in (0, None):
-		raise OmadaAuthError(f"Omada device list failed: {data}")
-
-	result = data.get("result")
-	devices = result if isinstance(result, list) else (result or {}).get("data") or []
-
-	return [
-		{
-			"mac": device.get("mac"),
-			"name": device.get("name"),
-			"type": device.get("type"),
-			"status": device.get("status"),
-			"model": device.get("model") or device.get("showModel"),
-			"ip": device.get("ip"),
-		}
-		for device in devices
-	]
-
-
-def reboot_device(
-	omada_host, controller_id, operator_username, operator_password, site_id, device_mac, timeout=10
-):
-	"""Reboot a single adopted device by MAC. Disconnects every client
-	currently on it -- callers should confirm with the operator before
-	calling this.
-
-	NOTE: same caveat as list_devices -- this endpoint pattern
-	(`POST .../api/v2/sites/{siteId}/devices/{mac}/reboot`) hasn't been
-	verified against a live controller in this project. Test it against a
-	device with no active customers before relying on it in production.
-
-	Raises OmadaAuthError on failure.
-	"""
-	base_url = f"{omada_host.rstrip('/')}/{controller_id}"
-	session, token = _operator_login(base_url, operator_username, operator_password, timeout)
-
-	try:
-		resp = session.post(
-			f"{base_url}/api/v2/sites/{site_id}/devices/{device_mac}/reboot",
-			headers={"Csrf-Token": token},
-			timeout=timeout,
-		)
-		resp.raise_for_status()
-	except requests.RequestException as e:
-		raise OmadaAuthError(f"Omada device reboot request failed: {e}") from e
-
-	data = resp.json()
-	if data.get("errorCode") not in (0, None):
-		raise OmadaAuthError(f"Omada device reboot failed: {data}")
-
-	return True
-
-
-def get_live_stats(
-	omada_host, controller_id, operator_username, operator_password, site_id, timeout=5
-):
+def get_live_stats(omada_host, controller_id, operator_username, operator_password, site_id, timeout=5):
 	"""Controller status plus best-effort live client/traffic numbers for the
 	dashboards.
 
@@ -204,6 +212,7 @@ def get_live_stats(
 
 	Raises OmadaAuthError if the login itself fails.
 	"""
+	timeout = timeout or _settings()[0]
 	base_url = f"{omada_host.rstrip('/')}/{controller_id}"
 	session, token = _operator_login(base_url, operator_username, operator_password, timeout)
 
@@ -266,9 +275,7 @@ def diagnose(omada_host, controller_id, operator_username, operator_password, si
 		steps.append({"step": step, "ok": bool(ok), "detail": detail})
 
 	host = omada_host.rstrip("/")
-	session = requests.Session()
-	session.verify = False
-	urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+	session = _new_session()
 
 	# 1. Reachability + the controller's real Omadac ID, from its public info endpoint.
 	ok, detail, data = _probe(session, "GET", f"{host}/api/info", timeout=timeout)
@@ -288,7 +295,7 @@ def diagnose(omada_host, controller_id, operator_username, operator_password, si
 			add(
 				"Controller ID",
 				False,
-				f"Site has '{controller_id}' but the controller reports '{real_id}'. Update the site's Controller ID.",
+				f"Settings have '{controller_id}' but the controller reports '{real_id}'. Run Test Connection in Hotspot Omada Settings.",
 			)
 			controller_id = real_id
 
@@ -313,17 +320,6 @@ def diagnose(omada_host, controller_id, operator_username, operator_password, si
 		headers=headers,
 		timeout=timeout,
 	)
-	add(f"Client list (site '{site_id}')", ok, detail)
-
-	# 4. Device list (Devices screen status, and what reboot relies on).
-	ok, detail, _ = _probe(
-		session,
-		"GET",
-		f"{base_url}/api/v2/sites/{site_id}/devices",
-		params={"token": token},
-		headers=headers,
-		timeout=timeout,
-	)
-	add("Device list", ok, detail)
+	add("Client list (hotspot operator)", ok, detail)
 
 	return steps

@@ -17,44 +17,35 @@ def normalize_mac(mac):
 
 
 def find_site_by_ap_mac(ap_mac, fields=None, active_only=True):
-	"""Look up a Hotspot Site by AP MAC, tolerant of ':' vs '-' separators
-	and case -- used everywhere a captive portal redirect's MAC needs to be
-	matched against a Hotspot Site record. Matches either a site's primary
-	`ap_mac` field or any MAC registered in its `additional_devices` child
-	table (see Hotspot Site Device)."""
+	"""Look up the Hotspot Site an AP belongs to, tolerant of ':' vs '-'
+	separators and case -- used everywhere a captive portal redirect's MAC
+	needs to be matched to a site. Matches any active row of a site's Access
+	Points table (Hotspot Site Device, parentfield ``devices``)."""
 	if not ap_mac:
 		return None
 
 	target = normalize_mac(ap_mac)
-	filters = {"is_active": 1} if active_only else {}
-	fields = list(fields) if fields else ["name"]
-	if "ap_mac" not in fields:
-		fields = [*fields, "ap_mac"]
-
-	sites = frappe.get_all("Hotspot Site", filters=filters, fields=fields)
-	for site in sites:
-		if normalize_mac(site.ap_mac) == target:
-			return site
-
 	device_rows = frappe.get_all(
-		"Hotspot Site Device", filters={"is_active": 1}, fields=["parent", "ap_mac"]
+		"Hotspot Site Device",
+		filters={"parenttype": "Hotspot Site", "parentfield": "devices", "is_active": 1},
+		fields=["parent", "ap_mac"],
 	)
-	matched_parent = next(
-		(row.parent for row in device_rows if normalize_mac(row.ap_mac) == target), None
-	)
-	if not matched_parent:
+	site_name = next((row.parent for row in device_rows if normalize_mac(row.ap_mac) == target), None)
+	if not site_name:
 		return None
 
-	for site in sites:
-		if site.name == matched_parent:
-			return site
+	filters = {"name": site_name}
+	if active_only:
+		filters["is_active"] = 1
+	return frappe.db.get_value("Hotspot Site", filters, list(fields) if fields else ["name"], as_dict=True)
 
-	# The matching device's site wasn't in the active-sites fetch above (e.g.
-	# active_only excluded an inactive site) -- fetch it directly instead.
-	if not active_only:
-		return frappe.db.get_value("Hotspot Site", matched_parent, fields, as_dict=True)
 
-	return None
+def site_ap_macs(site_name, active_only=True):
+	"""The MACs in a site's Access Points table, in table order."""
+	filters = {"parenttype": "Hotspot Site", "parentfield": "devices", "parent": site_name}
+	if active_only:
+		filters["is_active"] = 1
+	return frappe.get_all("Hotspot Site Device", filters=filters, pluck="ap_mac", order_by="idx asc")
 
 
 def has_used_free_trial(site_name, client_mac):

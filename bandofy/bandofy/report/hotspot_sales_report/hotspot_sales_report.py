@@ -50,7 +50,12 @@ def execute(filters=None):
 	days_in_range = max(date_diff(to_date, from_date) + 1, 1)
 
 	report_summary = [
-		{"value": total_transactions, "label": _("Total Paid Transactions"), "datatype": "Int", "indicator": "blue"},
+		{
+			"value": total_transactions,
+			"label": _("Total Paid Transactions"),
+			"datatype": "Int",
+			"indicator": "blue",
+		},
 		{"value": total_revenue, "label": _("Total Revenue"), "datatype": "Currency", "indicator": "green"},
 		{
 			"value": round(total_revenue / days_in_range, 2),
@@ -84,10 +89,21 @@ def execute(filters=None):
 
 	columns = [
 		{"fieldname": "date", "label": _("Date"), "fieldtype": "Date", "width": 110},
-		{"fieldname": "site", "label": _("Site"), "fieldtype": "Link", "options": "Hotspot Site", "width": 130},
+		{
+			"fieldname": "site",
+			"label": _("Site"),
+			"fieldtype": "Link",
+			"options": "Hotspot Site",
+			"width": 130,
+		},
 		{"fieldname": "vendor_name", "label": _("Vendor"), "fieldtype": "Data", "width": 160},
 		{"fieldname": "total_transactions", "label": _("Transactions"), "fieldtype": "Int", "width": 110},
-		{"fieldname": "mobile_money_transactions", "label": _("Mobile Money"), "fieldtype": "Int", "width": 110},
+		{
+			"fieldname": "mobile_money_transactions",
+			"label": _("Mobile Money"),
+			"fieldtype": "Int",
+			"width": 110,
+		},
 		{"fieldname": "voucher_transactions", "label": _("Vouchers"), "fieldtype": "Int", "width": 100},
 		{"fieldname": "total_revenue", "label": _("Revenue"), "fieldtype": "Currency", "width": 130},
 	]

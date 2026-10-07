@@ -2,10 +2,30 @@
 	<div class="sabbath-card">
 		<div class="sabbath-icon">
 			<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<path d="M3 18h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-				<path d="M6.5 18a5.5 5.5 0 0 1 11 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-				<path d="M12 4v3M5.2 7.2l2 2M18.8 7.2l-2 2M2.5 13.5h2.3M19.2 13.5h2.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-				<path d="M8 21h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+				<path
+					d="M3 18h18"
+					stroke="currentColor"
+					stroke-width="1.8"
+					stroke-linecap="round"
+				/>
+				<path
+					d="M6.5 18a5.5 5.5 0 0 1 11 0"
+					stroke="currentColor"
+					stroke-width="1.8"
+					stroke-linecap="round"
+				/>
+				<path
+					d="M12 4v3M5.2 7.2l2 2M18.8 7.2l-2 2M2.5 13.5h2.3M19.2 13.5h2.3"
+					stroke="currentColor"
+					stroke-width="1.8"
+					stroke-linecap="round"
+				/>
+				<path
+					d="M8 21h8"
+					stroke="currentColor"
+					stroke-width="1.8"
+					stroke-linecap="round"
+				/>
 			</svg>
 		</div>
 		<div class="sabbath-title">{{ t("sabbath_title") }}</div>

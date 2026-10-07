@@ -1,51 +1,39 @@
 {
  "actions": [],
  "autoname": "HTS-.#####",
- "creation": "2026-08-12 00:00:00.000000",
+ "creation": "2026-08-12 00:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "vendor_information_section",
+  "is_active",
   "vendor_name",
   "vendor_user",
   "column_break_vendor",
   "phone_number",
   "mobile_money_account",
-  "is_active",
-  "enable_online_payment",
-  "enable_free_trial",
-  "free_trial_minutes",
-  "enable_sabbath_mode",
-  "omada_credentials_section",
+  "omada_provisioning_section",
+  "hotspot_ssid_name",
+  "omada_ssid_id",
+  "omada_wlan_id",
+  "column_break_provisioning",
   "site_name",
-  "ap_mac",
-  "authorization_method",
-  "column_break_omada",
-  "controller_ip",
-  "port",
-  "controller_id",
-  "site_id",
-  "omada_username",
-  "omada_password",
+  "omada_site_id",
+  "omada_portal_id",
   "success_redirect_url",
-  "radius_section",
-  "radius_client_ip",
-  "radius_nas_id",
-  "column_break_radius",
-  "radius_secret",
-  "ap_login_url_template",
-  "additional_devices_section",
-  "additional_devices",
-  "portal_branding_section",
+  "pricing_section",
+  "devices",
+  "column_break_ucbr",
+  "packages",
+  "advance_tab",
+  "enable_free_trial",
+  "enable_online_payment",
   "portal_logo",
   "portal_tagline",
-  "column_break_portal_branding",
-  "portal_primary_color",
-  "portal_secondary_color",
-  "packages_section",
-  "packages",
-  "lipa_namba_section",
-  "lipa_namba_images"
+  "column_break_r84l",
+  "free_trial_minutes",
+  "enable_sabbath_mode",
+  "lipa_namba_image"
  ],
  "fields": [
   {
@@ -122,12 +110,51 @@
    "description": "Every week from Friday 18:00 to Saturday 18:00 the portal stops sales (mobile money, Lipa Namba, vouchers) and shows a Sabbath message. Connected devices keep their remaining time.",
    "fieldname": "enable_sabbath_mode",
    "fieldtype": "Check",
-   "label": "Enable Sabbath Mode (Fri 18:00 – Sat 18:00)"
+   "label": "Enable Sabbath Mode (Fri 18:00 \u2013 Sat 18:00)"
   },
   {
-   "fieldname": "omada_credentials_section",
+   "description": "Set up on the central Omada Controller from Hotspot Omada Settings. Use the Omada > Create on Omada button.",
+   "fieldname": "omada_provisioning_section",
    "fieldtype": "Section Break",
-   "label": "Omada Hardware Credentials"
+   "label": "Omada Provisioning"
+  },
+  {
+   "description": "Open Wi-Fi network customers join; the captive portal handles payment.",
+   "fieldname": "hotspot_ssid_name",
+   "fieldtype": "Data",
+   "label": "Hotspot SSID Name"
+  },
+  {
+   "fieldname": "column_break_provisioning",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "omada_site_id",
+   "fieldname": "omada_site_id",
+   "fieldtype": "Data",
+   "label": "Omada Site ID (Open API)",
+   "read_only": 1
+  },
+  {
+   "depends_on": "omada_site_id",
+   "fieldname": "omada_wlan_id",
+   "fieldtype": "Data",
+   "label": "Omada WLAN Group ID",
+   "read_only": 1
+  },
+  {
+   "depends_on": "omada_site_id",
+   "fieldname": "omada_ssid_id",
+   "fieldtype": "Data",
+   "label": "Omada SSID ID",
+   "read_only": 1
+  },
+  {
+   "depends_on": "omada_site_id",
+   "fieldname": "omada_portal_id",
+   "fieldtype": "Data",
+   "label": "Omada Portal ID",
+   "read_only": 1
   },
   {
    "fieldname": "site_name",
@@ -137,134 +164,23 @@
    "reqd": 1
   },
   {
-   "description": "MAC address of the Access Point used to match incoming captive portal redirects.",
-   "fieldname": "ap_mac",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "AP MAC Address",
-   "reqd": 1,
-   "unique": 1
-  },
-  {
-   "default": "Omada Controller API",
-   "description": "How this site authorizes a client after payment/voucher success. \"Omada Controller API\" (default, existing behavior) calls the Omada SDN Controller's REST API -- requires a Controller (software, OC200, or Omada Cloud) managing the AP. \"Local RADIUS Server\" is for standalone EAPs with no Controller: the EAP is set to Authentication Type \"External RADIUS Server\" and validates logins against bandofy's own independent RADIUS server (see bandofy.radius_server) instead.",
-   "fieldname": "authorization_method",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Authorization Method",
-   "options": "Omada Controller API\nLocal RADIUS Server",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_omada",
-   "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
-   "description": "For a local/self-hosted Controller: its LAN IP. For an Omada Cloud-managed site: the cloud API host shown in the browser URL when you're on the controller's dashboard, e.g. \"euw1-omada-cloud.tplinkcloud.com\".",
-   "fieldname": "controller_ip",
-   "fieldtype": "Data",
-   "label": "Controller IP / Host",
-   "mandatory_depends_on": "eval:doc.authorization_method==\"Omada Controller API\""
-  },
-  {
-   "default": "8043",
-   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
-   "description": "443 for Omada Cloud (HTTPS default); 8043 for a local Controller's default HTTPS management port.",
-   "fieldname": "port",
-   "fieldtype": "Int",
-   "label": "Controller Port"
-  },
-  {
-   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
-   "description": "The CONTROLLER_ID path segment TP-Link's External Portal API requires (also called Omadac ID) -- distinct from the Site ID below. Find it via the controller's Open API app registration page, or in Settings > Platform Integration.",
-   "fieldname": "controller_id",
-   "fieldtype": "Data",
-   "label": "Controller ID",
-   "mandatory_depends_on": "eval:doc.authorization_method==\"Omada Controller API\""
-  },
-  {
-   "default": "default",
-   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
-   "fieldname": "site_id",
-   "fieldtype": "Data",
-   "label": "Omada Site ID"
-  },
-  {
-   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
-   "fieldname": "omada_username",
-   "fieldtype": "Data",
-   "label": "Omada Username",
-   "mandatory_depends_on": "eval:doc.authorization_method==\"Omada Controller API\""
-  },
-  {
-   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
-   "fieldname": "omada_password",
-   "fieldtype": "Password",
-   "label": "Omada Password",
-   "mandatory_depends_on": "eval:doc.authorization_method==\"Omada Controller API\""
-  },
-  {
-   "default": "https://www.google.com",
-   "depends_on": "eval:doc.authorization_method==\"Omada Controller API\"",
+   "default": "https://www.youtube.com",
    "description": "Once a client is authorized on the Omada controller, the portal page redirects the browser here to break it out of the captive portal.",
    "fieldname": "success_redirect_url",
    "fieldtype": "Data",
    "label": "Success Redirect URL"
   },
   {
-   "depends_on": "eval:doc.authorization_method==\"Local RADIUS Server\"",
-   "fieldname": "radius_section",
+   "fieldname": "pricing_section",
    "fieldtype": "Section Break",
-   "label": "Local RADIUS Server"
+   "label": "Devices & Packages"
   },
   {
-   "description": "IP address the EAP itself sends RADIUS requests from (its management/LAN IP) -- must match \"RADIUS Server IP\" reachability on the EAP's Portal page and is used here to look up the correct shared secret for incoming requests.",
-   "fieldname": "radius_client_ip",
-   "fieldtype": "Data",
-   "label": "EAP IP Address",
-   "mandatory_depends_on": "eval:doc.authorization_method==\"Local RADIUS Server\""
-  },
-  {
-   "description": "Must match the \"NAS ID\" field configured on the EAP's Portal page.",
-   "fieldname": "radius_nas_id",
-   "fieldtype": "Data",
-   "label": "RADIUS NAS Identifier",
-   "mandatory_depends_on": "eval:doc.authorization_method==\"Local RADIUS Server\""
-  },
-  {
-   "fieldname": "column_break_radius",
-   "fieldtype": "Column Break"
-  },
-  {
-   "description": "Shared secret -- must match \"RADIUS Password\" configured on the EAP's Portal page exactly.",
-   "fieldname": "radius_secret",
-   "fieldtype": "Password",
-   "label": "RADIUS Shared Secret",
-   "mandatory_depends_on": "eval:doc.authorization_method==\"Local RADIUS Server\""
-  },
-  {
-   "description": "Template for the URL the portal page must send the client's browser to once payment/voucher succeeds, so the EAP performs the RADIUS login itself. Placeholders: {username} {password} {client_mac} {ap_mac}. This has NOT been verified against real TP-Link standalone EAP firmware -- confirm the correct login endpoint/parameters for your exact model before relying on it (e.g. by inspecting what the EAP's own Local Web Portal with Username/Password submits), then fill this in.",
-   "fieldname": "ap_login_url_template",
-   "fieldtype": "Data",
-   "label": "AP Login Redirect URL Template"
-  },
-  {
-   "fieldname": "additional_devices_section",
-   "fieldtype": "Section Break",
-   "label": "Additional Devices"
-  },
-  {
-   "description": "Extra Access Points whose captive-portal traffic and voucher redemptions should also count toward this site -- the AP MAC Address field above remains this site's primary device.",
-   "fieldname": "additional_devices",
+   "description": "Every TP-Link AP that serves this site's captive portal. Adopting an AP from the Omada menu adds it here.",
+   "fieldname": "devices",
    "fieldtype": "Table",
-   "label": "Additional Devices",
+   "label": "Access Points",
    "options": "Hotspot Site Device"
-  },
-  {
-   "fieldname": "portal_branding_section",
-   "fieldtype": "Section Break",
-   "label": "Portal Branding"
   },
   {
    "description": "Shown in place of the default WiFi mark on this site's captive portal. Also editable live from the mobile app's Customize Portal screen.",
@@ -279,54 +195,38 @@
    "label": "Portal Tagline"
   },
   {
-   "fieldname": "column_break_portal_branding",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "#ec4899",
-   "description": "Captive portal's primary accent color.",
-   "fieldname": "portal_primary_color",
-   "fieldtype": "Color",
-   "label": "Portal Primary Color"
-  },
-  {
-   "default": "#6366f1",
-   "description": "Captive portal's secondary accent color.",
-   "fieldname": "portal_secondary_color",
-   "fieldtype": "Color",
-   "label": "Portal Secondary Color"
-  },
-  {
-   "fieldname": "packages_section",
-   "fieldtype": "Section Break",
-   "label": "Packages"
-  },
-  {
    "fieldname": "packages",
    "fieldtype": "Table",
    "label": "Pricing Packages",
    "options": "Hotspot Package Item"
   },
   {
-   "fieldname": "lipa_namba_section",
-   "fieldtype": "Section Break",
-   "label": "Lipa Namba Images"
+   "fieldname": "column_break_ucbr",
+   "fieldtype": "Column Break"
   },
   {
-   "description": "Manual pay-by-QR/till-number images offered from the captive portal's Lipa Namba button. Add one per network; if more than one, the customer is asked to pick a network first.",
-   "fieldname": "lipa_namba_images",
-   "fieldtype": "Table",
-   "label": "Lipa Namba Images",
-   "options": "Hotspot Lipa Number"
+   "description": "QR / till-number picture shown when a customer taps Lipa Namba on the portal.",
+   "fieldname": "lipa_namba_image",
+   "fieldtype": "Attach Image",
+   "label": "Lipa Namba Image"
+  },
+  {
+   "fieldname": "advance_tab",
+   "fieldtype": "Tab Break",
+   "label": "Advance"
+  },
+  {
+   "fieldname": "column_break_r84l",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-06 12:00:00.000000",
+ "modified": "2026-10-07 11:39:54.285047",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Site",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -342,6 +242,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
