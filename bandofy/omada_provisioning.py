@@ -15,10 +15,11 @@ same name (e.g. one created by hand) is linked rather than duplicated.
 """
 
 import time
+from urllib.parse import urlsplit
 
 import frappe
 from frappe import _
-from frappe.utils import cint, get_url
+from frappe.utils import cint
 
 from bandofy import omada_openapi as api
 from bandofy.omada_openapi import OmadaApiError
@@ -54,7 +55,20 @@ def _require_provisioned(site):
 
 
 def _portal_url(settings):
-	return settings.portal_url or get_url("/wifi_login")
+	"""The public address Omada's External Portal sends customers to. It must
+	be one a phone can open, so a blank setting or a local address (no dot
+	in the host, e.g. this machine's "project:8002") is refused up front with
+	a clear message instead of Omada's "serverUrl is invalid"."""
+	url = (settings.portal_url or "").strip()
+	host = urlsplit(url).hostname or ""
+	if not url or urlsplit(url).scheme not in ("http", "https") or "." not in host:
+		raise OmadaApiError(
+			_(
+				"Set the Portal URL in Hotspot Omada Settings to your public Bandofy address, "
+				"e.g. https://yourdomain/wifi_login (phones must be able to open it). Current value: {0}"
+			).format(url or _("empty"))
+		)
+	return url
 
 
 def _auth_timeout_minutes(site):
