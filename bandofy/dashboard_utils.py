@@ -58,18 +58,8 @@ def get_omada_live_stats(site):
 	stats = {"connected": False, "client_count": 0, "tx_rate": 0, "rx_rate": 0, "error": None}
 
 	hotspot_site = frappe.get_doc("Hotspot Site", site.name)
-	if hotspot_site.authorization_method != "Omada Controller API":
-		stats["error"] = "This site doesn't use an Omada Controller"
-		return stats
-
 	try:
-		stats = omada_service.get_live_stats(
-			omada_host=f"https://{hotspot_site.controller_ip}:{hotspot_site.port}",
-			controller_id=hotspot_site.controller_id,
-			operator_username=hotspot_site.omada_username,
-			operator_password=hotspot_site.get_password("omada_password"),
-			site_id=hotspot_site.site_id,
-		)
+		stats = omada_service.get_live_stats(**omada_service.site_controller(hotspot_site))
 	except Exception as e:
 		stats["error"] = str(e)
 		frappe.log_error(title="Bandofy Omada Live Stats Fetch Failed", message=frappe.get_traceback())

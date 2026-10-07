@@ -31,7 +31,7 @@ from frappe.utils import get_first_day, get_last_day, today
 from bandofy import omada_service
 from bandofy.dashboard_utils import get_omada_live_stats, get_revenue, get_revenue_trend
 from bandofy.utils import is_admin_user as _is_admin
-from bandofy.utils import normalize_mac
+from bandofy.utils import normalize_mac, site_ap_macs
 
 
 def _own_site_name():
@@ -137,12 +137,20 @@ def get_sites():
 	if not _is_admin():
 		frappe.throw(_("Not permitted."), frappe.PermissionError)
 
-	return frappe.get_all(
+	sites = frappe.get_all(
 		"Hotspot Site",
-		fields=["name", "vendor_name", "site_name", "ap_mac", "is_active", "authorization_method"],
+		fields=["name", "vendor_name", "site_name", "is_active"],
 		order_by="vendor_name",
 		ignore_permissions=True,
 	)
+	return [_with_device_info(site) for site in sites]
+
+
+def _with_device_info(site):
+	"""Adds the site's AP count and first AP (the app builds the portal
+	preview link from it) -- a site's APs live in its Access Points table."""
+	macs = site_ap_macs(site["name"])
+	return {**site, "device_count": len(macs), "first_ap_mac": macs[0] if macs else None}
 
 
 def _site_dashboard(site_name):
@@ -150,12 +158,12 @@ def _site_dashboard(site_name):
 	site = frappe.db.get_value(
 		"Hotspot Site",
 		site_name,
-		["name", "vendor_name", "site_name", "ap_mac", "is_active"],
+		["name", "vendor_name", "site_name", "is_active"],
 		as_dict=True,
 	)
 
 	return {
-		"site": site,
+		"site": _with_device_info(site),
 		"revenue_today": get_revenue(site_name, today(), today()),
 		"revenue_month": get_revenue(site_name, get_first_day(today()), get_last_day(today())),
 		"revenue_trend": get_revenue_trend(site_name, days=7),
@@ -459,37 +467,32 @@ def create_site(
 	vendor_name,
 	vendor_user,
 	site_name,
-	ap_mac,
-	authorization_method="Omada Controller API",
+	devices=None,
 	phone_number=None,
 	mobile_money_account=None,
 	enable_online_payment=0,
 	enable_free_trial=1,
 	free_trial_minutes=15,
-	controller_ip=None,
-	port=8043,
-	controller_id=None,
-	site_id="default",
-	omada_username=None,
-	omada_password=None,
 	success_redirect_url=None,
-	radius_client_ip=None,
-	radius_nas_id=None,
-	radius_secret=None,
-	ap_login_url_template=None,
 	packages=None,
+	provision_on_omada=1,
+	hotspot_ssid_name=None,
 ):
 	"""Admin-only: create a new Hotspot Site from the app. Field validation
-	(e.g. Omada credentials required when authorization_method is "Omada
-	Controller API") is left to the doctype's own mandatory_depends_on
-	rules, surfaced through the same error-message plumbing as any other
-	failure.
+	is left to the doctype's own rules, surfaced through the same
+	error-message plumbing as any other failure.
 
 	``packages`` is a JSON-encoded list of {package_name, package_type,
 	price, duration_minutes} -- the site's own captive-portal pricing plans
 	(Hotspot Package Item child rows), unrelated to the global Hotspot
 	Package doctype vouchers are generated from. HotspotSite.validate()
-	requires at least one, same as creating the site from Desk would."""
+	requires at least one, same as creating the site from Desk would.
+
+	Unless ``provision_on_omada`` is 0, the site is also created on the
+	central Omada Controller right away (see bandofy.omada_provisioning) and
+	the step report is returned as ``provisioning``. ``devices`` is an
+	optional JSON list of AP MACs; usually APs are added later by adopting
+	them."""
 	if not _is_admin():
 		frappe.throw(_("Not permitted."), frappe.PermissionError)
 
@@ -499,27 +502,20 @@ def create_site(
 			"vendor_name": vendor_name,
 			"vendor_user": vendor_user,
 			"site_name": site_name,
-			"ap_mac": ap_mac,
-			"authorization_method": authorization_method,
 			"phone_number": phone_number,
 			"mobile_money_account": mobile_money_account,
 			"is_active": 1,
 			"enable_online_payment": enable_online_payment,
 			"enable_free_trial": enable_free_trial,
 			"free_trial_minutes": free_trial_minutes,
-			"controller_ip": controller_ip,
-			"port": port,
-			"controller_id": controller_id,
-			"site_id": site_id,
-			"omada_username": omada_username,
-			"omada_password": omada_password,
 			"success_redirect_url": success_redirect_url,
-			"radius_client_ip": radius_client_ip,
-			"radius_nas_id": radius_nas_id,
-			"radius_secret": radius_secret,
-			"ap_login_url_template": ap_login_url_template,
+			"hotspot_ssid_name": hotspot_ssid_name,
 		}
 	)
+
+	for mac in _json_arg(devices, []) or []:
+		if (mac or "").strip():
+			doc.append("devices", {"ap_mac": mac.strip(), "label": mac.strip(), "is_active": 1})
 
 	package_rows = json.loads(packages) if isinstance(packages, str) else (packages or [])
 	for row in package_rows:
@@ -536,7 +532,12 @@ def create_site(
 	doc.insert(ignore_permissions=True)
 	frappe.db.commit()  # nosemgrep
 
-	return {"name": doc.name, "site_name": doc.site_name, "vendor_name": doc.vendor_name}
+	result = {"name": doc.name, "site_name": doc.site_name, "vendor_name": doc.vendor_name}
+	if frappe.utils.cint(provision_on_omada):
+		from bandofy.omada_provisioning import provision_site
+
+		result["provisioning"] = provision_site(doc.name, hotspot_ssid_name)
+	return result
 
 
 @frappe.whitelist()
@@ -692,9 +693,8 @@ def delete_staff_voucher(name):
 
 @frappe.whitelist()
 def get_site_devices(site=None):
-	"""The site's primary AP plus any additional_devices, merged with live
-	Omada status (online/offline/model/ip) by MAC when the site is
-	Omada-managed. Fails soft to status "unknown" if the controller can't be
+	"""Every AP in the site's Access Points table, merged with live Omada
+	status (online/offline/model/ip) by MAC. Fails soft to status "unknown" if the controller can't be
 	reached, same as get_omada_live_stats."""
 	site_name = _resolve_site(site)
 	if not site_name:
@@ -702,42 +702,27 @@ def get_site_devices(site=None):
 
 	doc = frappe.get_doc("Hotspot Site", site_name)
 
-	devices = [{"ap_mac": doc.ap_mac, "label": doc.site_name, "is_primary": True, "is_active": True}]
-	for row in doc.additional_devices:
-		devices.append(
-			{
-				"ap_mac": row.ap_mac,
-				"label": row.label,
-				"is_primary": False,
-				"is_active": bool(row.is_active),
-			}
-		)
+	devices = [
+		{"ap_mac": row.ap_mac, "label": row.label, "is_active": bool(row.is_active)} for row in doc.devices
+	]
+	if not devices:
+		return devices
 
-	if doc.authorization_method == "Omada Controller API":
-		try:
-			live = omada_service.list_devices(
-				omada_host=f"https://{doc.controller_ip}:{doc.port}",
-				controller_id=doc.controller_id,
-				operator_username=doc.omada_username,
-				operator_password=doc.get_password("omada_password"),
-				site_id=doc.site_id,
-			)
-			live_by_mac = {normalize_mac(d["mac"]): d for d in live if d.get("mac")}
-			for device in devices:
-				match = live_by_mac.get(normalize_mac(device["ap_mac"]))
-				if match:
-					device.update(
-						{"status": match.get("status"), "model": match.get("model"), "ip": match.get("ip")}
-					)
-				else:
-					device["status"] = "unknown"
-		except Exception:
-			frappe.log_error(
-				title="Bandofy Mobile: get_site_devices Omada fetch failed", message=frappe.get_traceback()
-			)
-			for device in devices:
+	try:
+		live = omada_service.list_devices(**omada_service.site_controller(doc))
+		live_by_mac = {normalize_mac(d["mac"]): d for d in live if d.get("mac")}
+		for device in devices:
+			match = live_by_mac.get(normalize_mac(device["ap_mac"]))
+			if match:
+				device.update(
+					{"status": match.get("status"), "model": match.get("model"), "ip": match.get("ip")}
+				)
+			else:
 				device["status"] = "unknown"
-	else:
+	except Exception:
+		frappe.log_error(
+			title="Bandofy Mobile: get_site_devices Omada fetch failed", message=frappe.get_traceback()
+		)
 		for device in devices:
 			device["status"] = "unknown"
 
@@ -755,7 +740,7 @@ def add_site_device(site, ap_mac, label=None):
 		frappe.throw(_("AP MAC Address is required."))
 
 	doc = frappe.get_doc("Hotspot Site", site_name)
-	doc.append("additional_devices", {"ap_mac": ap_mac.strip(), "label": label, "is_active": 1})
+	doc.append("devices", {"ap_mac": ap_mac.strip(), "label": label, "is_active": 1})
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()  # nosemgrep
 
@@ -768,11 +753,11 @@ def remove_site_device(site, ap_mac):
 	target = normalize_mac(ap_mac)
 
 	doc = frappe.get_doc("Hotspot Site", site_name)
-	remaining = [row for row in doc.additional_devices if normalize_mac(row.ap_mac) != target]
-	if len(remaining) == len(doc.additional_devices):
+	remaining = [row for row in doc.devices if normalize_mac(row.ap_mac) != target]
+	if len(remaining) == len(doc.devices):
 		frappe.throw(_("Device not found on this site."))
 
-	doc.set("additional_devices", remaining)
+	doc.set("devices", remaining)
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()  # nosemgrep
 
@@ -786,17 +771,10 @@ def reboot_site_device(site, ap_mac):
 	site_name = _resolve_site_for_write(site)
 	doc = frappe.get_doc("Hotspot Site", site_name)
 
-	if doc.authorization_method != "Omada Controller API":
-		frappe.throw(_("Device reboot is only available for sites using the Omada Controller API."))
-
-	omada_service.reboot_device(
-		omada_host=f"https://{doc.controller_ip}:{doc.port}",
-		controller_id=doc.controller_id,
-		operator_username=doc.omada_username,
-		operator_password=doc.get_password("omada_password"),
-		site_id=doc.site_id,
-		device_mac=ap_mac,
-	)
+	try:
+		omada_service.reboot_device(**omada_service.site_controller(doc), device_mac=ap_mac)
+	except omada_service.OmadaAuthError as e:
+		frappe.throw(str(e), title=_("Omada Controller"))
 
 	return {"ok": True}
 
@@ -809,16 +787,11 @@ def check_omada_connection(site=None):
 	site_name = _resolve_site_for_write(site)
 	doc = frappe.get_doc("Hotspot Site", site_name)
 
-	if doc.authorization_method != "Omada Controller API":
-		return [{"step": "Authorization method", "ok": False, "detail": _("This site doesn't use an Omada Controller.")}]
-
-	return omada_service.diagnose(
-		omada_host=f"https://{doc.controller_ip}:{doc.port}",
-		controller_id=doc.controller_id,
-		operator_username=doc.omada_username,
-		operator_password=doc.get_password("omada_password"),
-		site_id=doc.site_id,
-	)
+	try:
+		controller = omada_service.site_controller(doc)
+	except omada_service.OmadaAuthError as e:
+		return [{"step": _("Omada settings"), "ok": False, "detail": str(e)}]
+	return omada_service.diagnose(**controller)
 
 
 def _resolve_chat_site(site, client_mac):
@@ -932,25 +905,21 @@ def send_chat_reply(client_mac, message, site=None):
 @frappe.whitelist()
 def get_site_branding(site=None):
 	"""Current captive-portal branding for the Customize Portal screen, plus
-	the site's ap_mac -- the live preview needs it to build the real
-	wifi_login URL (see www/wifi_login.py's apply_preview_overrides)."""
+	one of the site's AP MACs as ``ap_mac`` -- the live preview needs it to
+	build the real wifi_login URL (see www/wifi_login.py's
+	apply_preview_overrides). None if the site has no APs yet."""
 	site_name = _resolve_site(site)
 	if not site_name:
 		frappe.throw(_("Please choose a site."))
 
-	return frappe.db.get_value(
-		"Hotspot Site",
-		site_name,
-		["ap_mac", "portal_logo", "portal_tagline", "portal_primary_color", "portal_secondary_color"],
-		as_dict=True,
-	)
+	branding = frappe.db.get_value("Hotspot Site", site_name, ["portal_logo", "portal_tagline"], as_dict=True)
+	macs = site_ap_macs(site_name)
+	return {**branding, "ap_mac": macs[0] if macs else None}
 
 
 @frappe.whitelist()
 def update_site_branding(
 	site=None,
-	portal_primary_color=None,
-	portal_secondary_color=None,
 	portal_tagline=None,
 	portal_logo=None,
 ):
@@ -961,8 +930,6 @@ def update_site_branding(
 	site_name = _resolve_site_for_write(site)
 
 	values = {
-		"portal_primary_color": portal_primary_color,
-		"portal_secondary_color": portal_secondary_color,
 		"portal_tagline": portal_tagline,
 		"portal_logo": portal_logo,
 	}
@@ -1009,25 +976,16 @@ SITE_VENDOR_FIELDS = [
 	"free_trial_minutes",
 	"enable_sabbath_mode",
 	"success_redirect_url",
+	"lipa_namba_image",
 ]
 SITE_ADMIN_FIELDS = [
 	*SITE_VENDOR_FIELDS,
 	"vendor_user",
 	"is_active",
-	"ap_mac",
-	"authorization_method",
-	"controller_ip",
-	"port",
-	"controller_id",
-	"site_id",
-	"omada_username",
-	"radius_client_ip",
-	"radius_nas_id",
-	"ap_login_url_template",
 ]
-# Write-only: never sent back to the app, and a blank value means "unchanged".
-SITE_PASSWORD_FIELDS = ["omada_password", "radius_secret"]
-SITE_READ_ONLY_FOR_VENDOR = ["ap_mac", "authorization_method", "is_active"]
+SITE_READ_ONLY_FOR_VENDOR = ["is_active"]
+# Shown to everyone; changed only through the Omada endpoints below.
+SITE_OMADA_INFO = ["hotspot_ssid_name", "omada_site_id"]
 PACKAGE_ITEM_FIELDS = [
 	"package_name",
 	"package_type",
@@ -1042,13 +1000,9 @@ def _site_settings_dict(doc):
 	admin = _is_admin()
 	fields = SITE_ADMIN_FIELDS if admin else [*SITE_VENDOR_FIELDS, *SITE_READ_ONLY_FOR_VENDOR]
 	data = {"name": doc.name, "can_edit_admin_fields": admin}
-	data.update({field: doc.get(field) for field in fields})
-	if admin:
-		data["password_set"] = {field: bool(doc.get(field)) for field in SITE_PASSWORD_FIELDS}
+	data.update({field: doc.get(field) for field in [*fields, *SITE_OMADA_INFO]})
+	data["device_count"] = len(doc.devices)
 	data["packages"] = [{field: row.get(field) for field in PACKAGE_ITEM_FIELDS} for row in doc.packages]
-	data["lipa_namba_images"] = [
-		{"label": row.label, "image": row.image, "is_default": row.is_default} for row in doc.lipa_namba_images
-	]
 	return data
 
 
@@ -1061,10 +1015,10 @@ def get_site_settings(site=None):
 
 
 @frappe.whitelist()
-def update_site_settings(site=None, values=None, packages=None, lipa_namba_images=None):
+def update_site_settings(site=None, values=None, packages=None):
 	"""Saves site settings. ``values`` is a JSON object of fieldname ->
-	value; ``packages`` / ``lipa_namba_images`` (JSON lists), when passed,
-	replace that whole child table."""
+	value; ``packages`` (JSON list), when passed, replaces the Pricing
+	Packages table."""
 	site_name = _resolve_site_for_write(site)
 	admin = _is_admin()
 	allowed = SITE_ADMIN_FIELDS if admin else SITE_VENDOR_FIELDS
@@ -1074,9 +1028,6 @@ def update_site_settings(site=None, values=None, packages=None, lipa_namba_image
 	for fieldname, value in (_json_arg(values, {}) or {}).items():
 		if fieldname in allowed:
 			doc.set(fieldname, value)
-		elif admin and fieldname in SITE_PASSWORD_FIELDS:
-			if value:
-				doc.set(fieldname, value)
 		else:
 			frappe.throw(_("You are not allowed to change {0}.").format(fieldname), frappe.PermissionError)
 
@@ -1098,17 +1049,6 @@ def update_site_settings(site=None, values=None, packages=None, lipa_namba_image
 				},
 			)
 
-	lipa_rows = _json_arg(lipa_namba_images)
-	if lipa_rows is not None:
-		doc.set("lipa_namba_images", [])
-		for row in lipa_rows:
-			if not (row.get("label") and row.get("image")):
-				frappe.throw(_("Every Lipa Namba row needs a label and an image."))
-			doc.append(
-				"lipa_namba_images",
-				{"label": row["label"], "image": row["image"], "is_default": 1 if row.get("is_default") else 0},
-			)
-
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()  # nosemgrep
 
@@ -1117,12 +1057,12 @@ def update_site_settings(site=None, values=None, packages=None, lipa_namba_image
 
 @frappe.whitelist()
 def update_site_device(site, ap_mac, label=None, is_active=None):
-	"""Rename or (de)activate one of the site's additional access points."""
+	"""Rename or (de)activate one of the site's access points."""
 	site_name = _resolve_site_for_write(site)
 	target = normalize_mac(ap_mac)
 
 	doc = frappe.get_doc("Hotspot Site", site_name)
-	row = next((r for r in doc.additional_devices if normalize_mac(r.ap_mac) == target), None)
+	row = next((r for r in doc.devices if normalize_mac(r.ap_mac) == target), None)
 	if not row:
 		frappe.throw(_("Device not found on this site."))
 
@@ -1346,7 +1286,6 @@ TRANSACTION_DETAIL_FIELDS = [
 	"amount",
 	"duration_minutes",
 	"omada_authorized",
-	"authorized_until",
 	"creation",
 	"modified",
 ]
@@ -1389,7 +1328,7 @@ def set_transaction_status(name, status):
 
 SETTINGS_DOCTYPES = {
 	"payment": "Hotspot Payment Settings",
-	"radius": "Hotspot RADIUS Settings",
+	"omada": "Hotspot Omada Settings",
 }
 SETTINGS_SKIP_TYPES = ("Section Break", "Column Break", "Tab Break", "HTML", "Button")
 
@@ -1419,7 +1358,7 @@ def _settings_dict(doctype):
 
 @frappe.whitelist()
 def get_settings(kind):
-	"""Payment gateway or RADIUS server settings, with field metadata so the
+	"""Payment gateway or Omada controller settings, with field metadata so the
 	app can render the form. Passwords are never sent back."""
 	_require_admin()
 	if kind not in SETTINGS_DOCTYPES:
@@ -1576,3 +1515,77 @@ def get_activity(since=None, limit=50):
 
 	events.sort(key=lambda e: e["payload"]["timestamp"] or "")
 	return {"server_time": frappe.utils.get_datetime_str(frappe.utils.now_datetime()), "events": events[-limit:]}
+
+
+# --- Central Omada Controller (bandofy.omada_provisioning) -----------------
+# Admins create/link sites on the controller; a vendor can adopt devices and
+# manage SSIDs on their own site.
+
+
+def _omada_call(fn, *args, **kwargs):
+	"""Runs an Omada operation, turning controller errors into a normal
+	user-facing error message."""
+	from bandofy.omada_openapi import OmadaApiError
+
+	try:
+		return fn(*args, **kwargs)
+	except OmadaApiError as e:
+		frappe.throw(str(e), title=_("Omada Controller"))
+
+
+@frappe.whitelist()
+def test_omada_connection():
+	_require_admin()
+	from bandofy.omada_openapi import test_connection
+
+	return _omada_call(test_connection)
+
+
+@frappe.whitelist()
+def provision_omada_site(site=None, ssid_name=None):
+	"""Creates (or links and completes) the site on the central controller:
+	site, open hotspot SSID, Bandofy portal, operator access. Returns the
+	step report [{step, ok, detail}]."""
+	_require_admin()
+	site_name = _resolve_site_for_write(site)
+	from bandofy.omada_provisioning import provision_site
+
+	return provision_site(site_name, ssid_name)
+
+
+@frappe.whitelist()
+def get_pending_devices(site=None):
+	"""APs the controller has found that are waiting to be adopted."""
+	from bandofy.omada_provisioning import list_pending_devices
+
+	return _omada_call(list_pending_devices, _resolve_site_for_write(site))
+
+
+@frappe.whitelist()
+def adopt_omada_device(mac, site=None, username=None, password=None):
+	from bandofy.omada_provisioning import adopt_device
+
+	return _omada_call(adopt_device, _resolve_site_for_write(site), mac, username or None, password or None)
+
+
+@frappe.whitelist()
+def get_omada_ssids(site=None):
+	from bandofy.omada_provisioning import list_ssids
+
+	return _omada_call(list_ssids, _resolve_site_for_write(site))
+
+
+@frappe.whitelist()
+def save_omada_ssid(name, site=None, ssid_id=None):
+	"""Renames an SSID (``ssid_id``) or creates a new open one on the
+	Bandofy portal."""
+	from bandofy.omada_provisioning import save_ssid
+
+	return _omada_call(save_ssid, _resolve_site_for_write(site), name, ssid_id or None)
+
+
+@frappe.whitelist()
+def delete_omada_ssid(ssid_id, site=None):
+	from bandofy.omada_provisioning import delete_ssid
+
+	return _omada_call(delete_ssid, _resolve_site_for_write(site), ssid_id)

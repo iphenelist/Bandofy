@@ -34,13 +34,8 @@ monetization, and vendor/admin reporting, all in one app.
 - A voucher redemption section for prepaid voucher codes, alongside the
   paid packages.
 
-**Two authorization backends**, auto-selected per `Hotspot Site`:
-
-- **Omada Controller API** — authorizes the client directly against a TP-Link
-  Omada SDN Controller's hotspot REST API (`omada_service.py`).
-- **Local RADIUS Server** — a built-in RADIUS server (`radius_server.py`)
-  for standalone EAPs with no Omada Controller, driven by
-  `Hotspot Radius Settings`.
+**Authorization** — every site authorizes the client directly against a
+TP-Link Omada SDN Controller's hotspot REST API (`omada_service.py`).
 
 **Payments**
 
@@ -91,12 +86,11 @@ bench install-app bandofy
 ### Configuration
 
 - **Hotspot Site** — one record per access point: vendor info, support
-  phone number, `ap_mac`, authorization method, controller/RADIUS
-  credentials, and its `Pricing Packages` table (`Hotspot Package Item`).
+  phone number, `ap_mac`, Omada Controller credentials, and its `Pricing Packages` table (`Hotspot Package Item`).
 - **Hotspot Payment Settings** (single) — mobile money gateway credentials
   and webhook secret.
-- **Hotspot Radius Settings** (single) — enables/configures the built-in
-  local RADIUS server for standalone-EAP sites.
+- **Hotspot Omada Settings** (single) — controller request timeout, SSL
+  certificate checking, and the default post-login redirect URL.
 - **Payment network logos** — drop the real brand images into
   `bandofy/public/images/payment_logos/` as `mixx_by_yas.png`,
   `airtel_money.png`, `halopesa.png`, and `mpesa.png`; a text badge is
