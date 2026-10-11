@@ -309,11 +309,34 @@ def _portal_body(name, ssid_ids, portal_url, timeout_minutes):
 	}
 
 
+def _release_ssids(site_id, portal, ssid_ids):
+	"""Unbinds ``ssid_ids`` from another portal (Omada allows an SSID on only
+	one portal), deleting that portal if it would be left with no SSIDs."""
+	remaining = [s for s in (portal.get("ssidList") or []) if s not in ssid_ids]
+	if not remaining:
+		request("DELETE", f"/sites/{site_id}/portal/{portal['id']}")
+		return
+	detail = request("GET", f"/sites/{site_id}/portal/{portal['id']}") or portal
+	request("PATCH", f"/sites/{site_id}/portal/{portal['id']}", json={**detail, "ssidList": remaining})
+
+
 def ensure_portal(site_id, name, ssid_ids, portal_url, timeout_minutes):
 	"""An External Portal pointing at Bandofy and bound to ``ssid_ids``;
-	updates the existing one of that name instead of duplicating it."""
+	updates the existing one of that name instead of duplicating it. A portal
+	already holding one of the SSIDs (e.g. made by hand in Omada) is taken
+	over if there is no Bandofy portal yet, else the SSIDs are moved off it."""
 	body = _portal_body(name, ssid_ids, portal_url, timeout_minutes)
-	portal = next((p for p in list_portals(site_id) if p.get("name") == name), None)
+	portals = list_portals(site_id)
+	portal = next((p for p in portals if p.get("name") == name), None)
+	holders = [
+		p
+		for p in portals
+		if p is not portal and set(p.get("ssidList") or []) & set(ssid_ids)
+	]
+	if not portal and holders:
+		portal = holders.pop(0)
+	for other in holders:
+		_release_ssids(site_id, other, ssid_ids)
 	if portal:
 		body["ssidList"] = sorted(set(portal.get("ssidList") or []) | set(ssid_ids))
 		request("PATCH", f"/sites/{site_id}/portal/{portal['id']}", json=body)
