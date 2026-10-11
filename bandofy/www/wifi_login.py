@@ -115,6 +115,7 @@ def get_context(context):
 				pkg["duration_label"] = format_duration(pkg.duration_minutes)
 				pkg["price_label"] = "{} {:,.0f}".format(context.currency, pkg.price or 0)
 			context.ads = get_active_ads(site.name)
+			context.free_trial_ads = free_trial_ads(context.ads)
 
 	context.portal_data = build_portal_data(context)
 	return context
@@ -135,6 +136,7 @@ def build_portal_data(context):
 		"support_phone",
 		"packages",
 		"ads",
+		"free_trial_ads",
 		"online_payment_enabled",
 		"free_trial_enabled",
 		"free_trial_available",
@@ -200,7 +202,17 @@ def get_active_ads(site_name):
 	ads = frappe.get_all(
 		"Hotspot Ad",
 		filters={"is_active": 1, "site": ["in", [site_name, ""]]},
-		fields=["name", "title", "image", "target_url", "description", "phone_number"],
+		fields=[
+			"name",
+			"title",
+			"image",
+			"target_url",
+			"description",
+			"phone_number",
+			"show_before_free_trial",
+			"fullscreen_image",
+			"video",
+		],
 		order_by="display_order asc, creation asc",
 	)
 
@@ -218,6 +230,12 @@ def get_active_ads(site_name):
 		visible.append(ad)
 
 	return visible
+
+
+def free_trial_ads(ads):
+	"""The ads a customer must watch (one of, full screen) before a free
+	trial connects. See api.claim_free_trial, which enforces it."""
+	return [ad for ad in ads if ad.get("show_before_free_trial")]
 
 
 def build_ad_marquee_text(ad):

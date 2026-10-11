@@ -1189,6 +1189,9 @@ AD_FIELDS = [
 	"target_url",
 	"description",
 	"phone_number",
+	"show_before_free_trial",
+	"fullscreen_image",
+	"video",
 	"start_date",
 	"end_date",
 	"views_count",
@@ -1238,7 +1241,9 @@ def save_ad(values, name=None):
 		if fieldname in data:
 			value = data[fieldname]
 			doc.set(
-				fieldname, _blank_to_none(value) if fieldname in ("start_date", "end_date", "site") else value
+				fieldname, _blank_to_none(value)
+				if fieldname in ("start_date", "end_date", "site", "fullscreen_image", "video")
+				else value
 			)
 
 	if not _is_admin():

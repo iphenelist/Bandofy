@@ -1103,6 +1103,106 @@
 		.modal-overlay.show .success-icon svg path { animation: draw 0.45s ease-out 0.45s forwards; }
 		.redirect-note { font-size: 11.5px; color: var(--text-faint); margin-top: 18px; }
 
+		/* ---- Full-screen ad before the free trial ---------------------- */
+		.ad-full {
+			position: fixed;
+			inset: 0;
+			z-index: 2000;
+			background: var(--espresso);
+			color: var(--cream);
+			overflow: hidden;
+			animation: ad-full-in 0.45s var(--ease-out) both;
+		}
+		@keyframes ad-full-in { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: none; } }
+		/* blurred copy fills the edges, so any ad shape fits without cropping */
+		.ad-full-backdrop {
+			position: absolute;
+			inset: -40px;
+			background-size: cover;
+			background-position: center;
+			filter: blur(28px) brightness(0.45);
+		}
+		.ad-full-media {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			object-fit: contain;
+		}
+		.ad-full-top {
+			position: absolute;
+			top: 0; left: 0; right: 0;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: max(16px, env(safe-area-inset-top)) 16px 30px;
+			background: linear-gradient(180deg, rgba(31, 18, 11, 0.65), transparent);
+		}
+		.ad-full-badge {
+			font-size: 10.5px;
+			font-weight: 800;
+			letter-spacing: 1px;
+			text-transform: uppercase;
+			padding: 4px 10px;
+			border-radius: 999px;
+			background: rgba(235, 224, 210, 0.18);
+			border: 1px solid rgba(235, 224, 210, 0.35);
+		}
+		.ad-full-timer {
+			position: relative;
+			width: 44px;
+			height: 44px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 16px;
+			font-weight: 800;
+			border-radius: 50%;
+			background: rgba(31, 18, 11, 0.55);
+		}
+		.ad-full-timer svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+		.ad-full-timer circle { fill: none; stroke-width: 3; }
+		.ad-full-timer .track { stroke: rgba(235, 224, 210, 0.2); }
+		.ad-full-timer .bar {
+			stroke: var(--latte);
+			stroke-linecap: round;
+			stroke-dasharray: 100.5;
+			transition: stroke-dashoffset 1s linear;
+		}
+		.ad-full-timer.done { animation: pop 0.4s var(--ease-spring) both; }
+		.ad-full-sound {
+			position: absolute;
+			top: calc(max(16px, env(safe-area-inset-top)) + 56px);
+			right: 16px;
+			border: none;
+			border-radius: 999px;
+			padding: 7px 12px;
+			font-size: 12px;
+			font-weight: 700;
+			color: var(--cream);
+			background: rgba(31, 18, 11, 0.6);
+			cursor: pointer;
+		}
+		.ad-full-bottom {
+			position: absolute;
+			left: 0; right: 0; bottom: 0;
+			padding: 60px 20px max(22px, env(safe-area-inset-bottom));
+			text-align: center;
+			background: linear-gradient(0deg, rgba(31, 18, 11, 0.85) 30%, transparent);
+			animation: rise 0.5s var(--ease-out) 0.3s both;
+		}
+		.ad-full-title { font-family: var(--serif); font-size: 20px; font-weight: 700; }
+		.ad-full-desc { font-size: 13px; color: var(--latte); margin-top: 4px; line-height: 1.4; }
+		.ad-full-note {
+			display: inline-block;
+			margin-top: 12px;
+			padding: 6px 14px;
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 700;
+			background: rgba(235, 224, 210, 0.15);
+		}
+
 		/* Respect phones set to reduce motion */
 		@media (prefers-reduced-motion: reduce) {
 			*, *::before, *::after {

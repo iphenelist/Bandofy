@@ -15,6 +15,11 @@
   "target_url",
   "description",
   "phone_number",
+  "fullscreen_section",
+  "show_before_free_trial",
+  "fullscreen_image",
+  "column_break_fs",
+  "video",
   "schedule_section",
   "start_date",
   "column_break_2",
@@ -65,7 +70,8 @@
    "fieldname": "image",
    "fieldtype": "Attach Image",
    "label": "Banner Image",
-   "reqd": 1
+   "reqd": 1,
+   "description": "Wide banner on the portal page: 1200 x 240 px (5:1), JPG/PNG/WebP under 150 KB."
   },
   {
    "fieldname": "target_url",
@@ -85,6 +91,32 @@
    "fieldtype": "Data",
    "label": "Contact Phone (Optional)",
    "options": "Phone"
+  },
+  {
+   "fieldname": "fullscreen_section",
+   "fieldtype": "Section Break",
+   "label": "Full-Screen Ad (before Free Internet)",
+   "description": "Shown full screen for 5 seconds when a customer taps Start Free, before they are connected. Image: 1080 x 1920 px portrait (9:16), JPG/WebP under 300 KB. Video: MP4 (H.264), 720 x 1280 px portrait, 5-15 s, under 3 MB; plays muted until tapped. A video is used if set, else the full-screen image, else the banner."
+  },
+  {
+   "default": "1",
+   "fieldname": "show_before_free_trial",
+   "fieldtype": "Check",
+   "label": "Show Before Free Internet"
+  },
+  {
+   "fieldname": "fullscreen_image",
+   "fieldtype": "Attach Image",
+   "label": "Full-Screen Image (1080 x 1920)"
+  },
+  {
+   "fieldname": "column_break_fs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "video",
+   "fieldtype": "Attach",
+   "label": "Video (MP4, 720 x 1280)"
   },
   {
    "fieldname": "schedule_section",
@@ -120,7 +152,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-12 00:00:00.000000",
+ "modified": "2026-10-11 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Ad",

@@ -497,6 +497,41 @@ def _redeem_staff_voucher(voucher_code, site_name, client_mac, ap_mac, ssid_name
 	return result
 
 
+FREE_TRIAL_AD_SECONDS = 5
+# How long a watched ad stays valid for claiming the free trial.
+FREE_TRIAL_AD_WINDOW_MINUTES = 15
+
+
+def _watched_free_trial_ad(site_name, client_mac):
+	"""True when the site has no full-screen ads, or this device's portal
+	logged a view of one at least FREE_TRIAL_AD_SECONDS ago (the portal
+	logs the view when the ad appears and claims when its countdown ends)."""
+	from bandofy.www.wifi_login import free_trial_ads, get_active_ads
+
+	ads = [ad.name for ad in free_trial_ads(get_active_ads(site_name))]
+	if not ads:
+		return True
+	now = now_datetime()
+	return bool(
+		frappe.db.exists(
+			"Hotspot Ad View Log",
+			{
+				"ad": ["in", ads],
+				"client_mac": client_mac,
+				# 1 s slack for the gap between the browser's timer and the
+				# log row's own timestamp.
+				"viewed_on": [
+					"between",
+					[
+						add_to_date(now, minutes=-FREE_TRIAL_AD_WINDOW_MINUTES),
+						add_to_date(now, seconds=-(FREE_TRIAL_AD_SECONDS - 1)),
+					],
+				],
+			},
+		)
+	)
+
+
 @frappe.whitelist(allow_guest=True)
 def claim_free_trial(ap_mac, client_mac, ssid_name=None, radio_id=None):
 	"""One-time free-trial connection: authorizes a brand-new device for
@@ -521,6 +556,9 @@ def claim_free_trial(ap_mac, client_mac, ssid_name=None, radio_id=None):
 
 	if has_used_free_trial(site.name, client_mac):
 		frappe.throw(_("This device has already used its free trial on this network."))
+
+	if not _watched_free_trial_ad(site.name, client_mac):
+		frappe.throw(_("Please watch the short ad to get your free internet."))
 
 	duration_minutes = cint(site.free_trial_minutes) or 15
 

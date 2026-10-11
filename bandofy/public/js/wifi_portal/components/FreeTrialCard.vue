@@ -27,7 +27,7 @@
 			type="button"
 			class="free-trial-btn"
 			:disabled="busy || claimed"
-			@click="claim"
+			@click="start"
 		>
 			{{
 				claimed
@@ -39,6 +39,10 @@
 		</button>
 		<span v-else class="free-trial-used-badge">{{ t("free_trial_used_badge") }}</span>
 	</div>
+
+	<Teleport to="body">
+		<AdInterstitial v-if="showingAd" :ad="showingAd" @done="adDone" />
+	</Teleport>
 </template>
 
 <script setup>
@@ -47,17 +51,33 @@
 // immediate feedback -- a reload renders it as used anyway.
 import { ref } from "vue";
 import { call, errorText, resultMessage } from "../api";
+import AdInterstitial from "./AdInterstitial.vue";
 import { t } from "../i18n";
 import { clearMessage, handleSuccessPayload, showMessage } from "../login";
 import { connectArgs, portal } from "../portal";
 
 const busy = ref(false);
 const claimed = ref(false);
+const showingAd = ref(null);
+
+// When the site has full-screen ads, one (picked at random) plays first and
+// the claim goes through when its countdown ends.
+function start() {
+	const ads = portal.free_trial_ads || [];
+	if (!ads.length) return claim();
+	busy.value = true;
+	clearMessage();
+	showingAd.value = ads[Math.floor(Math.random() * ads.length)];
+}
+
+function adDone() {
+	claim().finally(() => (showingAd.value = null));
+}
 
 function claim() {
 	busy.value = true;
 	clearMessage();
-	call("claim_free_trial", connectArgs())
+	return call("claim_free_trial", connectArgs())
 		.then((result) => {
 			const payload = resultMessage(result);
 			if (payload) {
