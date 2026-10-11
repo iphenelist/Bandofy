@@ -11,8 +11,9 @@ import requests
 from frappe import _
 from frappe.utils import add_to_date, cint, get_datetime_str, get_url, getdate, now_datetime, nowdate
 
+from bandofy.omada_openapi import set_client_rate_limit
 from bandofy.omada_service import authorize_client, site_controller
-from bandofy.utils import find_site_by_ap_mac, has_used_free_trial, is_sabbath_now
+from bandofy.utils import find_site_by_ap_mac, has_used_free_trial, is_sabbath_now, normalize_mac
 
 DEFAULT_SUCCESS_REDIRECT_URL = "https://www.youtube.com"
 PAYMENT_POLL_GRACE_SECONDS = 90  # give the webhook this long to arrive before polling
@@ -684,6 +685,29 @@ def _authorize_transaction_on_omada(txn, site):
 		radio_id=txn.radio_id,
 	)
 	txn.db_set("omada_authorized", 1, commit=True)
+	_apply_package_bandwidth(txn, site)
+
+
+def _apply_package_bandwidth(txn, site):
+	"""When the site enforces package bandwidth, caps the client on Omada to
+	its package's Download/Upload Kbps (found by package name; Free Trial,
+	Staff Access etc. have no package row, so any earlier cap is removed).
+	Never fails the authorization -- the customer is already online."""
+	if not (site.get("enforce_bandwidth_limits") and site.omada_site_id):
+		return
+	package = next((p for p in site.packages if p.package_name == txn.package_name), None)
+	digits = normalize_mac(txn.client_mac).upper()
+	try:
+		set_client_rate_limit(
+			site.omada_site_id,
+			"-".join(digits[i : i + 2] for i in range(0, 12, 2)),
+			package.bandwidth_down_kbps if package else 0,
+			package.bandwidth_up_kbps if package else 0,
+		)
+	except Exception:
+		frappe.log_error(
+			title=f"Bandofy bandwidth limit failed: {txn.name}", message=frappe.get_traceback()
+		)
 
 
 def authorize_mac_on_omada(transaction_id):

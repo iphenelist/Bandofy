@@ -95,7 +95,7 @@ website_route_rules = [
 # ------------
 
 # before_install = "bandofy.install.before_install"
-# after_install = "bandofy.install.after_install"
+after_install = "bandofy.install.after_install"
 
 # Uninstallation
 # ------------

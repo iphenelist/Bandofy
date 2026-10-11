@@ -267,6 +267,36 @@ def rename_open_ssid(site_id, wlan_id, ssid_id, name):
 	)
 
 
+def _rate(kbps):
+	"""(enable, unit, limit) for one direction: Omada takes 1-1024 of
+	Kbps (unit 1) or Mbps (unit 2)."""
+	kbps = int(kbps or 0)
+	if kbps <= 0:
+		return False, 2, 1
+	if kbps <= 1024:
+		return True, 1, kbps
+	return True, 2, min(1024, max(1, round(kbps / 1024)))
+
+
+def set_client_rate_limit(site_id, client_mac, down_kbps, up_kbps):
+	"""Caps one client's speed; 0/blank in both directions removes the cap."""
+	down_on, down_unit, down_limit = _rate(down_kbps)
+	up_on, up_unit, up_limit = _rate(up_kbps)
+	request(
+		"PATCH",
+		f"/sites/{site_id}/clients/{client_mac}/ratelimit",
+		json={
+			"enable": down_on or up_on,
+			"downEnable": down_on,
+			"downUnit": down_unit,
+			"downLimit": down_limit,
+			"upEnable": up_on,
+			"upUnit": up_unit,
+			"upLimit": up_limit,
+		},
+	)
+
+
 def delete_ssid(site_id, wlan_id, ssid_id):
 	request("DELETE", f"/sites/{site_id}/wireless-network/wlans/{wlan_id}/ssids/{ssid_id}")
 

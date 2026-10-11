@@ -54,6 +54,7 @@
   },
   {
    "default": "3072",
+   "fetch_from": "package_name.bandwidth_down_kbps",
    "fieldname": "bandwidth_down_kbps",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -61,6 +62,7 @@
   },
   {
    "default": "1024",
+   "fetch_from": "package_name.bandwidth_up_kbps",
    "fieldname": "bandwidth_up_kbps",
    "fieldtype": "Int",
    "label": "Upload Bandwidth (Kbps)"
@@ -69,7 +71,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-10-06 22:35:12.837448",
+ "modified": "2026-10-11 13:30:00.000000",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Package Item",

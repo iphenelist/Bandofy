@@ -10,7 +10,11 @@
   "package_type",
   "column_break_1",
   "price",
-  "duration_minutes"
+  "duration_minutes",
+  "bandwidth_section",
+  "bandwidth_down_kbps",
+  "column_break_2",
+  "bandwidth_up_kbps"
  ],
  "fields": [
   {
@@ -47,11 +51,35 @@
    "in_list_view": 1,
    "label": "Duration (Minutes)",
    "reqd": 1
+  },
+  {
+   "description": "Speed cap applied on the Omada Controller when a site has Enforce Package Bandwidth on. 0 means no cap.",
+   "fieldname": "bandwidth_section",
+   "fieldtype": "Section Break",
+   "label": "Bandwidth"
+  },
+  {
+   "default": "3072",
+   "fieldname": "bandwidth_down_kbps",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Download Bandwidth (Kbps)"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1024",
+   "fieldname": "bandwidth_up_kbps",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Upload Bandwidth (Kbps)"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-25 00:00:00.000000",
+ "modified": "2026-10-11 13:30:00.000000",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Package",

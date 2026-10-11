@@ -10,3 +10,4 @@ bandofy.patches.v2_create_missing_hotspot_packages
 bandofy.patches.remove_local_radius
 bandofy.patches.move_controller_details_to_omada_settings
 bandofy.patches.site_devices_table_and_single_lipa_image
+bandofy.patches.default_packages_with_bandwidth

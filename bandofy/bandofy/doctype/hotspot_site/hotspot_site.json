@@ -33,6 +33,7 @@
   "column_break_r84l",
   "free_trial_minutes",
   "enable_sabbath_mode",
+  "enforce_bandwidth_limits",
   "lipa_namba_image"
  ],
  "fields": [
@@ -111,6 +112,13 @@
    "fieldname": "enable_sabbath_mode",
    "fieldtype": "Check",
    "label": "Enable Sabbath Mode (Fri 18:00 \u2013 Sat 18:00)"
+  },
+  {
+   "default": "0",
+   "description": "Apply each package's Download/Upload Bandwidth to the customer on the Omada Controller when they connect. Off: customers share the SSID's full speed.",
+   "fieldname": "enforce_bandwidth_limits",
+   "fieldtype": "Check",
+   "label": "Enforce Package Bandwidth"
   },
   {
    "description": "Set up on the central Omada Controller from Hotspot Omada Settings. Use the Omada > Create on Omada button.",
@@ -222,7 +230,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-07 11:39:54.285047",
+ "modified": "2026-10-11 13:00:00.000000",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Site",

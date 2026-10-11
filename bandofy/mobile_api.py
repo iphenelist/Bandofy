@@ -460,12 +460,15 @@ def download_voucher_batch_pdf(batch):
 	frappe.local.response.type = "pdf"
 
 
+PACKAGE_BANDWIDTH_FIELDS = ["bandwidth_down_kbps", "bandwidth_up_kbps"]
+
+
 @frappe.whitelist()
 def get_packages():
-	"""Every Hotspot Package, for the voucher-creation form's picker."""
+	"""Every Hotspot Package, for the voucher-creation and site package pickers."""
 	return frappe.get_all(
 		"Hotspot Package",
-		fields=["name", "package_type", "price", "duration_minutes"],
+		fields=["name", "package_type", "price", "duration_minutes", *PACKAGE_BANDWIDTH_FIELDS],
 		order_by="name",
 		ignore_permissions=True,
 	)
@@ -528,15 +531,7 @@ def create_site(
 
 	package_rows = json.loads(packages) if isinstance(packages, str) else (packages or [])
 	for row in package_rows:
-		doc.append(
-			"packages",
-			{
-				"package_name": row.get("package_name"),
-				"package_type": row.get("package_type") or "Unlimited",
-				"price": row.get("price"),
-				"duration_minutes": row.get("duration_minutes"),
-			},
-		)
+		doc.append("packages", _package_item(row))
 
 	doc.insert(ignore_permissions=True)
 	frappe.db.commit()  # nosemgrep
@@ -1024,6 +1019,7 @@ SITE_VENDOR_FIELDS = [
 	"enable_free_trial",
 	"free_trial_minutes",
 	"enable_sabbath_mode",
+	"enforce_bandwidth_limits",
 	"success_redirect_url",
 	"lipa_namba_image",
 ]
@@ -1040,9 +1036,24 @@ PACKAGE_ITEM_FIELDS = [
 	"package_type",
 	"price",
 	"duration_minutes",
-	"bandwidth_down_kbps",
-	"bandwidth_up_kbps",
+	*PACKAGE_BANDWIDTH_FIELDS,
 ]
+
+
+def _package_item(row):
+	"""A site Pricing Packages row from the app's JSON. Type, price,
+	duration and bandwidth come from the selected Hotspot Package (the row's
+	fetch_from re-applies them on save anyway); the app's values are only
+	used for a package that doesn't exist, which the save then rejects."""
+	name = (row.get("package_name") or "").strip()
+	if not name:
+		frappe.throw(_("Every package needs a name."))
+	defaults = frappe.db.get_value("Hotspot Package", name, PACKAGE_ITEM_FIELDS[1:], as_dict=True) or {}
+	item = {"package_name": name}
+	for field in PACKAGE_ITEM_FIELDS[1:]:
+		item[field] = defaults.get(field) if defaults else row.get(field)
+	item["package_type"] = item["package_type"] or "Unlimited"
+	return item
 
 
 def _site_settings_dict(doc):
@@ -1084,19 +1095,7 @@ def update_site_settings(site=None, values=None, packages=None):
 	if package_rows is not None:
 		doc.set("packages", [])
 		for row in package_rows:
-			if not (row.get("package_name") or "").strip():
-				frappe.throw(_("Every package needs a name."))
-			doc.append(
-				"packages",
-				{
-					"package_name": row["package_name"].strip(),
-					"package_type": row.get("package_type") or "Unlimited",
-					"price": row.get("price") or 0,
-					"duration_minutes": row.get("duration_minutes") or 0,
-					"bandwidth_down_kbps": row.get("bandwidth_down_kbps") or 0,
-					"bandwidth_up_kbps": row.get("bandwidth_up_kbps") or 0,
-				},
-			)
+			doc.append("packages", _package_item(row))
 
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()  # nosemgrep
@@ -1129,9 +1128,18 @@ def update_site_device(site, ap_mac, label=None, is_active=None):
 
 
 @frappe.whitelist()
-def save_package(package_name, package_type, price, duration_minutes, name=None):
+def save_package(
+	package_name,
+	package_type,
+	price,
+	duration_minutes,
+	name=None,
+	bandwidth_down_kbps=None,
+	bandwidth_up_kbps=None,
+):
 	"""Create a Hotspot Package, or update an existing one (``name``). The
-	package name is the record's ID, so it can't be renamed here."""
+	package name is the record's ID, so it can't be renamed here. Bandwidth
+	left out keeps its current (or default) value; 0 means no cap."""
 	_require_admin()
 
 	if name:
@@ -1143,6 +1151,10 @@ def save_package(package_name, package_type, price, duration_minutes, name=None)
 	doc.package_type = package_type
 	doc.price = frappe.utils.flt(price)
 	doc.duration_minutes = frappe.utils.cint(duration_minutes)
+	if bandwidth_down_kbps is not None:
+		doc.bandwidth_down_kbps = frappe.utils.cint(bandwidth_down_kbps)
+	if bandwidth_up_kbps is not None:
+		doc.bandwidth_up_kbps = frappe.utils.cint(bandwidth_up_kbps)
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()  # nosemgrep
 
@@ -1151,6 +1163,8 @@ def save_package(package_name, package_type, price, duration_minutes, name=None)
 		"package_type": doc.package_type,
 		"price": doc.price,
 		"duration_minutes": doc.duration_minutes,
+		"bandwidth_down_kbps": doc.bandwidth_down_kbps,
+		"bandwidth_up_kbps": doc.bandwidth_up_kbps,
 	}
 
 
