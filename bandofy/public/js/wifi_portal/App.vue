@@ -16,46 +16,48 @@
 		</div>
 
 		<div class="card">
-			<div class="hero-icon">
-				<img
-					v-if="portal.portal_logo"
-					:src="portal.portal_logo"
-					:alt="portal.site_label || 'Logo'"
-				/>
-				<svg v-else viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<path
-						d="M12 18.5C12.8284 18.5 13.5 17.8284 13.5 17C13.5 16.1716 12.8284 15.5 12 15.5C11.1716 15.5 10.5 16.1716 10.5 17C10.5 17.8284 11.1716 18.5 12 18.5Z"
-						fill="#fff"
+			<div class="hero">
+				<div class="hero-icon">
+					<img
+						v-if="portal.portal_logo"
+						:src="portal.portal_logo"
+						:alt="portal.site_label || 'Logo'"
 					/>
-					<path
-						d="M8.5 14C10.5 12 13.5 12 15.5 14"
-						stroke="#fff"
-						stroke-width="1.8"
-						stroke-linecap="round"
-					/>
-					<path
-						d="M5.5 10.8C9.5 7 14.5 7 18.5 10.8"
-						stroke="#fff"
-						stroke-width="1.8"
-						stroke-linecap="round"
-					/>
-					<path
-						d="M2.5 7.6C8 2.5 16 2.5 21.5 7.6"
-						stroke="#fff"
-						stroke-width="1.8"
-						stroke-linecap="round"
-					/>
-				</svg>
+					<svg v-else viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path
+							d="M12 18.5C12.8284 18.5 13.5 17.8284 13.5 17C13.5 16.1716 12.8284 15.5 12 15.5C11.1716 15.5 10.5 16.1716 10.5 17C10.5 17.8284 11.1716 18.5 12 18.5Z"
+							fill="#fff"
+						/>
+						<path
+							d="M8.5 14C10.5 12 13.5 12 15.5 14"
+							stroke="#fff"
+							stroke-width="1.8"
+							stroke-linecap="round"
+						/>
+						<path
+							d="M5.5 10.8C9.5 7 14.5 7 18.5 10.8"
+							stroke="#fff"
+							stroke-width="1.8"
+							stroke-linecap="round"
+						/>
+						<path
+							d="M2.5 7.6C8 2.5 16 2.5 21.5 7.6"
+							stroke="#fff"
+							stroke-width="1.8"
+							stroke-linecap="round"
+						/>
+					</svg>
+				</div>
+				<h1>{{ portal.site_label || "Wi-Fi Hotspot" }}</h1>
+				<p class="tagline">
+					{{
+						portal.vendor_name
+							? t("tagline_with_vendor", { vendor: portal.vendor_name })
+							: t("tagline_default")
+					}}
+				</p>
+				<p class="premium-tag">{{ portal.portal_tagline || t("premium_tag") }}</p>
 			</div>
-			<h1>{{ portal.site_label || "Wi-Fi Hotspot" }}</h1>
-			<p class="tagline">
-				{{
-					portal.vendor_name
-						? t("tagline_with_vendor", { vendor: portal.vendor_name })
-						: t("tagline_default")
-				}}
-			</p>
-			<p class="premium-tag">{{ portal.portal_tagline || t("premium_tag") }}</p>
 
 			<template v-if="portal.site_found">
 				<div v-if="!portal.sabbath_active" class="steps">
