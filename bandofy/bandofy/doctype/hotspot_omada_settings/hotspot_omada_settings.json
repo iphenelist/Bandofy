@@ -1,0 +1,229 @@
+{
+ "actions": [],
+ "creation": "2026-10-07 12:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "controller_section",
+  "controller_url",
+  "omadac_id",
+  "column_break_controller",
+  "client_id",
+  "client_secret",
+  "operator_section",
+  "operator_name",
+  "column_break_operator",
+  "operator_password",
+  "new_site_section",
+  "default_region",
+  "default_timezone",
+  "default_scenario",
+  "column_break_new_site",
+  "device_username",
+  "device_password",
+  "adopt_username",
+  "adopt_password",
+  "portal_section_new",
+  "portal_url",
+  "default_ssid_name",
+  "connection_section",
+  "request_timeout",
+  "column_break_1",
+  "verify_ssl",
+  "portal_section",
+  "default_success_redirect_url",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "controller_section",
+   "fieldtype": "Section Break",
+   "label": "Central Controller"
+  },
+  {
+   "description": "e.g. https://169.58.222.183:8043",
+   "fieldname": "controller_url",
+   "fieldtype": "Data",
+   "label": "Controller URL"
+  },
+  {
+   "description": "Filled in automatically by Test Connection, from the controller's /api/info.",
+   "fieldname": "omadac_id",
+   "fieldtype": "Data",
+   "label": "Controller ID (omadacId)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_controller",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "From Omada: Settings > Platform Integration > Open API > Add New App (Client mode, Admin role, all sites).",
+   "fieldname": "client_id",
+   "fieldtype": "Data",
+   "label": "Open API Client ID"
+  },
+  {
+   "fieldname": "client_secret",
+   "fieldtype": "Password",
+   "label": "Open API Client Secret"
+  },
+  {
+   "description": "The Omada hotspot operator Bandofy uses to connect customers after payment. Every site Bandofy creates is added to this operator's Site Privileges.",
+   "fieldname": "operator_section",
+   "fieldtype": "Section Break",
+   "label": "Hotspot Operator"
+  },
+  {
+   "description": "e.g. frappe_api",
+   "fieldname": "operator_name",
+   "fieldtype": "Data",
+   "label": "Operator Name"
+  },
+  {
+   "fieldname": "column_break_operator",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "operator_password",
+   "fieldtype": "Password",
+   "label": "Operator Password"
+  },
+  {
+   "fieldname": "new_site_section",
+   "fieldtype": "Section Break",
+   "label": "New Site Defaults"
+  },
+  {
+   "default": "Tanzania",
+   "description": "Country name as Omada shows it.",
+   "fieldname": "default_region",
+   "fieldtype": "Data",
+   "label": "Region"
+  },
+  {
+   "description": "As Omada stores it. Test Connection copies it from the first existing site if empty.",
+   "fieldname": "default_timezone",
+   "fieldtype": "Data",
+   "label": "Time Zone"
+  },
+  {
+   "description": "e.g. Airport. Test Connection copies it from the first existing site if empty.",
+   "fieldname": "default_scenario",
+   "fieldtype": "Data",
+   "label": "Application Scenario"
+  },
+  {
+   "fieldname": "column_break_new_site",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "admin",
+   "description": "Device account Omada sets on every new site's devices.",
+   "fieldname": "device_username",
+   "fieldtype": "Data",
+   "label": "Device Account Username"
+  },
+  {
+   "description": "10-64 characters with upper and lower case letters, a number and a symbol (! # $ % & * @ ^).",
+   "fieldname": "device_password",
+   "fieldtype": "Password",
+   "label": "Device Account Password"
+  },
+  {
+   "description": "Login used to adopt a factory-default AP. Leave blank for the default admin/admin.",
+   "fieldname": "adopt_username",
+   "fieldtype": "Data",
+   "label": "Adopt Username"
+  },
+  {
+   "fieldname": "adopt_password",
+   "fieldtype": "Password",
+   "label": "Adopt Password"
+  },
+  {
+   "fieldname": "portal_section_new",
+   "fieldtype": "Section Break",
+   "label": "Portal for New Sites"
+  },
+  {
+   "description": "Your public Bandofy address that Omada's External Portal sends customers to, e.g. https://bandofy.example.com/wifi_login. Required to create sites; phones must be able to open it.",
+   "fieldname": "portal_url",
+   "fieldtype": "Data",
+   "label": "Portal URL",
+   "options": "URL"
+  },
+  {
+   "default": "Bandofy",
+   "fieldname": "default_ssid_name",
+   "fieldtype": "Data",
+   "label": "Default Hotspot SSID Name"
+  },
+  {
+   "fieldname": "connection_section",
+   "fieldtype": "Section Break",
+   "label": "Controller Connection"
+  },
+  {
+   "default": "10",
+   "description": "How long to wait for an Omada Controller to answer when authorizing a customer, listing devices or rebooting one.",
+   "fieldname": "request_timeout",
+   "fieldtype": "Int",
+   "label": "Request Timeout (Seconds)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Check the controller's HTTPS certificate. Leave off for local controllers and OC200s, which use self-signed certificates; turn on only if every controller has a valid certificate (e.g. Omada Cloud).",
+   "fieldname": "verify_ssl",
+   "fieldtype": "Check",
+   "label": "Verify Controller SSL Certificate"
+  },
+  {
+   "fieldname": "portal_section",
+   "fieldtype": "Section Break",
+   "label": "Captive Portal"
+  },
+  {
+   "default": "https://www.youtube.com",
+   "description": "Where customers are sent after they are connected, for sites that leave their own Success Redirect URL blank.",
+   "fieldname": "default_success_redirect_url",
+   "fieldtype": "Data",
+   "label": "Default Success Redirect URL",
+   "options": "URL"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-10-07 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Bandofy",
+ "name": "Hotspot Omada Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -5,14 +5,24 @@
 				<div class="label">{{ t("modal_pkg_label") }}</div>
 				<div class="name">{{ shown.package_name }}</div>
 				<div class="meta">
-					{{ t("price_for_duration", { price: shown.price_label, duration: formatDuration(shown.duration_minutes) }) }}
+					{{
+						t("price_for_duration", {
+							price: shown.price_label,
+							duration: formatDuration(shown.duration_minutes),
+						})
+					}}
 				</div>
 			</div>
 
 			<label class="field-label" for="modal-phone">{{ t("modal_phone_label") }}</label>
 			<div class="phone-pill">
 				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C11.4 21 3 12.6 3 2.7c0-.6.4-1 1-1H7.7c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.2 1.1L6.6 10.8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+					<path
+						d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C11.4 21 3 12.6 3 2.7c0-.6.4-1 1-1H7.7c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.2 1.1L6.6 10.8Z"
+						stroke="currentColor"
+						stroke-width="1.6"
+						stroke-linejoin="round"
+					/>
 				</svg>
 				<input
 					id="modal-phone"
@@ -81,7 +91,11 @@ function pay() {
 
 	busy.value = true;
 	msg.text = "";
-	call("initiate_payment", { phone: phone.value, package_idx: shown.value.idx, ...connectArgs() })
+	call("initiate_payment", {
+		phone: phone.value,
+		package_idx: shown.value.idx,
+		...connectArgs(),
+	})
 		.then((result) => {
 			const payload = resultMessage(result);
 			if (payload) {

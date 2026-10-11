@@ -30,13 +30,17 @@ export function resultMessage(result) {
 export function errorText(result) {
 	const data = result.data || {};
 	if (typeof data.exception === "string" && data.exception) {
-		return data.exception.replace(/^[\w.]+(Error|Exception):\s*/, "") || t("msg_generic_error");
+		return (
+			data.exception.replace(/^[\w.]+(Error|Exception):\s*/, "") || t("msg_generic_error")
+		);
 	}
 	try {
 		const messages = JSON.parse(data._server_messages || "[]")
 			.map((m) => JSON.parse(m).message)
 			.filter(Boolean);
 		if (messages.length) return messages.join(" ");
-	} catch (e) {}
+	} catch (e) {
+		// not a Frappe error payload -- fall through to the generic message
+	}
 	return t("msg_generic_error");
 }

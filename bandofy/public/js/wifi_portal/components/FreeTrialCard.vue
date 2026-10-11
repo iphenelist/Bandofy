@@ -2,12 +2,24 @@
 	<div class="free-trial-card" :class="{ used: !portal.free_trial_available }">
 		<div class="free-trial-icon">
 			<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="currentColor" stroke-width="1.8" />
-				<path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+				<path
+					d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z"
+					stroke="currentColor"
+					stroke-width="1.8"
+				/>
+				<path
+					d="M12 7v5l3.5 2"
+					stroke="currentColor"
+					stroke-width="1.8"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				/>
 			</svg>
 		</div>
 		<div class="free-trial-text">
-			<div class="free-trial-title">{{ t("free_trial_title", { minutes: portal.free_trial_minutes }) }}</div>
+			<div class="free-trial-title">
+				{{ t("free_trial_title", { minutes: portal.free_trial_minutes }) }}
+			</div>
 			<div class="free-trial-sub">{{ t("free_trial_subtitle") }}</div>
 		</div>
 		<button
@@ -17,7 +29,13 @@
 			:disabled="busy || claimed"
 			@click="claim"
 		>
-			{{ claimed ? t("free_trial_used_badge") : busy ? t("msg_processing") : t("free_trial_btn") }}
+			{{
+				claimed
+					? t("free_trial_used_badge")
+					: busy
+					? t("msg_processing")
+					: t("free_trial_btn")
+			}}
 		</button>
 		<span v-else class="free-trial-used-badge">{{ t("free_trial_used_badge") }}</span>
 	</div>

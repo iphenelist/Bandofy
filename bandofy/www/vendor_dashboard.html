@@ -14,7 +14,7 @@
 		<div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
 			<div>
 				<h1 class="text-lg font-bold">{{ site.site_name }}</h1>
-				<p class="text-xs text-slate-400">{{ site.vendor_name }} · AP {{ site.ap_mac }}</p>
+				<p class="text-xs text-slate-400">{{ site.vendor_name }} · {{ ap_count }} access point{{ "" if ap_count == 1 else "s" }}</p>
 			</div>
 			<a href="/api/method/logout" class="text-sm bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg">Log out</a>
 		</div>

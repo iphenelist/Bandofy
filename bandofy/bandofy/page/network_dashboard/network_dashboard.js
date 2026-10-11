@@ -1,6 +1,8 @@
 // Copyright (c) 2026, Innocent P M and contributors
 // For license information, please see license.txt
 
+/* global bandofy -- namespace created by frappe.provide("bandofy") below */
+
 frappe.pages["network-dashboard"].on_page_load = function (wrapper) {
 	const page = frappe.ui.make_app_page({
 		parent: wrapper,
@@ -16,9 +18,9 @@ frappe.provide("bandofy");
 bandofy.NetworkDashboard = class NetworkDashboard {
 	constructor(page) {
 		this.page = page;
-		this.$body = $('<div class="network-dashboard-wrapper" style="padding: 12px 2px;"></div>').appendTo(
-			page.body
-		);
+		this.$body = $(
+			'<div class="network-dashboard-wrapper" style="padding: 12px 2px;"></div>'
+		).appendTo(page.body);
 		this.page.set_primary_action(__("Refresh"), () => this.load(), "refresh");
 		this.load();
 	}
@@ -54,9 +56,15 @@ bandofy.NetworkDashboard = class NetworkDashboard {
 			.map(
 				(s) => `
 				<tr>
-					<td><a href="/app/hotspot-site/${encodeURIComponent(s.name)}">${frappe.utils.escape_html(s.vendor_name)}</a></td>
+					<td><a href="/app/hotspot-site/${encodeURIComponent(s.name)}">${frappe.utils.escape_html(
+					s.vendor_name
+				)}</a></td>
 					<td>${frappe.utils.escape_html(s.site_name)}</td>
-					<td>${s.is_active ? '<span class="indicator green">Active</span>' : '<span class="indicator red">Inactive</span>'}</td>
+					<td>${
+						s.is_active
+							? '<span class="indicator green">Active</span>'
+							: '<span class="indicator red">Inactive</span>'
+					}</td>
 					<td>${format_currency(s.revenue_today)}</td>
 					<td>${format_currency(s.revenue_month)}</td>
 					<td>${s.transactions_today}</td>

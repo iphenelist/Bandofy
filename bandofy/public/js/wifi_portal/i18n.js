@@ -22,7 +22,8 @@ const MESSAGES = {
 		group_bundle: "Vifurushi vya Data",
 		buy_now_btn: "Nunua Sasa",
 		empty_packages: "Hakuna vifurushi kwa sasa. Tafadhali wasiliana na msimamizi wa mtandao.",
-		no_site: "Hatukuweza kutambua kifaa hiki cha mtandao. Tafadhali unganisha tena kwenye Wi-Fi na ujaribu tena.",
+		no_site:
+			"Hatukuweza kutambua kifaa hiki cha mtandao. Tafadhali unganisha tena kwenye Wi-Fi na ujaribu tena.",
 		footer_powered: "Inaendeshwa na Bandofy",
 		modal_pkg_label: "Kifurushi Ulichochagua",
 		modal_phone_label: "Nambari ya Simu ya Malipo",
@@ -31,12 +32,14 @@ const MESSAGES = {
 		modal_submit_btn: "Lipa Sasa",
 		modal_close_label: "Funga",
 		find_voucher_modal_title: "Tafuta Voucher Yangu",
-		find_voucher_modal_body: "Angalia ujumbe wa SMS ulioupokea baada ya kulipa, au kadi yako ya voucher, kwa nambari yako ya siri. Kama huwezi kuipata, piga simu kwa msaada.",
+		find_voucher_modal_body:
+			"Angalia ujumbe wa SMS ulioupokea baada ya kulipa, au kadi yako ya voucher, kwa nambari yako ya siri. Kama huwezi kuipata, piga simu kwa msaada.",
 		find_voucher_call_btn: "Piga Simu kwa Msaada",
 		call_label: "Piga Simu kwa Msaada",
 		lipa_select_title: "Chagua Njia ya Lipa",
 		lipa_select_hint: "Chagua mtandao unaotaka kulipia ili uone namba/QR yake.",
-		lipa_default_hint: "Tumia namba hii au scan QR kulipa moja kwa moja kupitia mtandao wowote au benki.",
+		lipa_default_hint:
+			"Tumia namba hii au scan QR kulipa moja kwa moja kupitia mtandao wowote au benki.",
 		lipa_fab_label: "Lipa Namba",
 		maintenance_title: "Mfumo wa kulipa kwa pesa upo katika matengenezo.",
 		maintenance_body: "Tumia Lipa Namba au nambari ya Voucher kuunganishwa kwa sasa.",
@@ -45,11 +48,14 @@ const MESSAGES = {
 		success_redirect_note: "Unaelekezwa kwenye intaneti...",
 		msg_please_enter_voucher: "Tafadhali ingiza nambari yako ya voucher.",
 		msg_generic_error: "Hitilafu imetokea. Tafadhali jaribu tena.",
-		msg_network_error: "Hitilafu ya mtandao. Tafadhali angalia muunganisho wako na ujaribu tena.",
-		msg_waiting_payment: "Tunasubiri uthibitisho wa malipo yako... Tafadhali kamilisha kwenye simu yako.",
+		msg_network_error:
+			"Hitilafu ya mtandao. Tafadhali angalia muunganisho wako na ujaribu tena.",
+		msg_waiting_payment:
+			"Tunasubiri uthibitisho wa malipo yako... Tafadhali kamilisha kwenye simu yako.",
 		msg_payment_confirmed_connected: "Malipo yamethibitishwa. Umeunganishwa kwenye Wi-Fi!",
 		msg_connected_default: "Umeunganishwa kwenye Wi-Fi!",
-		msg_payment_confirmed_no_redirect: "Malipo yamethibitishwa, lakini hatukuweza kukuunganisha moja kwa moja. Tafadhali unganisha tena kwenye mtandao wa Wi-Fi.",
+		msg_payment_confirmed_no_redirect:
+			"Malipo yamethibitishwa, lakini hatukuweza kukuunganisha moja kwa moja. Tafadhali unganisha tena kwenye mtandao wa Wi-Fi.",
 		msg_payment_failed: "Malipo hayakukamilika. Tafadhali jaribu tena.",
 		msg_please_enter_phone: "Tafadhali ingiza nambari yako ya simu.",
 		msg_sending_request: "Inatuma ombi...",
@@ -72,10 +78,13 @@ const MESSAGES = {
 		sabbath_title: "Sabato Njema 🕊️",
 		sabbath_verse: "Ikumbuke siku ya Sabato, uitakase.",
 		sabbath_verse_ref: "Kutoka 20:8",
-		sabbath_body: "Leo ni siku ya pumziko takatifu. Kuanzia Ijumaa saa 12 jioni hadi Jumamosi saa 12 jioni hatupokei malipo wala vocha. Huduma zitarejea Jumamosi saa 12 jioni.",
-		sabbath_connected: "Kama tayari umeunganishwa, endelea kufurahia intaneti hadi muda wako uishe. Mungu akubariki!",
-		sabbath_verse_2: "Sabato ilifanyika kwa ajili ya mwanadamu, si mwanadamu kwa ajili ya Sabato.",
-		sabbath_verse_2_ref: "Marko 2:27"
+		sabbath_body:
+			"Leo ni siku ya pumziko takatifu. Kuanzia Ijumaa saa 12 jioni hadi Jumamosi saa 12 jioni hatupokei malipo wala vocha. Huduma zitarejea Jumamosi saa 12 jioni.",
+		sabbath_connected:
+			"Kama tayari umeunganishwa, endelea kufurahia intaneti hadi muda wako uishe. Mungu akubariki!",
+		sabbath_verse_2:
+			"Sabato ilifanyika kwa ajili ya mwanadamu, si mwanadamu kwa ajili ya Sabato.",
+		sabbath_verse_2_ref: "Marko 2:27",
 	},
 	en: {
 		title_suffix: "Connect Now",
@@ -95,7 +104,8 @@ const MESSAGES = {
 		group_bundle: "Data Bundles",
 		buy_now_btn: "Buy Now",
 		empty_packages: "No plans available right now. Please contact the network admin.",
-		no_site: "We couldn't identify this network device. Please reconnect to the Wi-Fi and try again.",
+		no_site:
+			"We couldn't identify this network device. Please reconnect to the Wi-Fi and try again.",
 		footer_powered: "Powered by Bandofy",
 		modal_pkg_label: "Selected Plan",
 		modal_phone_label: "Payment Phone Number",
@@ -104,12 +114,14 @@ const MESSAGES = {
 		modal_submit_btn: "Pay Now",
 		modal_close_label: "Close",
 		find_voucher_modal_title: "Find My Voucher",
-		find_voucher_modal_body: "Check the SMS you received after paying, or your physical voucher card, for your code. If you can't find it, call for help.",
+		find_voucher_modal_body:
+			"Check the SMS you received after paying, or your physical voucher card, for your code. If you can't find it, call for help.",
 		find_voucher_call_btn: "Call for Help",
 		call_label: "Call for Help",
 		lipa_select_title: "Choose Payment Method",
 		lipa_select_hint: "Choose the network you want to pay via to see its number/QR.",
-		lipa_default_hint: "Use this number or scan the QR to pay directly via any network or bank.",
+		lipa_default_hint:
+			"Use this number or scan the QR to pay directly via any network or bank.",
 		lipa_fab_label: "Pay by Number",
 		maintenance_title: "The mobile payment system is under maintenance.",
 		maintenance_body: "Use Pay by Number or a Voucher code to connect for now.",
@@ -119,10 +131,12 @@ const MESSAGES = {
 		msg_please_enter_voucher: "Please enter your voucher code.",
 		msg_generic_error: "Something went wrong. Please try again.",
 		msg_network_error: "Network error. Please check your connection and try again.",
-		msg_waiting_payment: "Waiting for your payment confirmation... Please complete it on your phone.",
+		msg_waiting_payment:
+			"Waiting for your payment confirmation... Please complete it on your phone.",
 		msg_payment_confirmed_connected: "Payment confirmed. You're connected to Wi-Fi!",
 		msg_connected_default: "You're connected to Wi-Fi!",
-		msg_payment_confirmed_no_redirect: "Payment confirmed, but we couldn't connect you automatically. Please reconnect to the Wi-Fi network.",
+		msg_payment_confirmed_no_redirect:
+			"Payment confirmed, but we couldn't connect you automatically. Please reconnect to the Wi-Fi network.",
 		msg_payment_failed: "Payment did not complete. Please try again.",
 		msg_please_enter_phone: "Please enter your phone number.",
 		msg_sending_request: "Sending request...",
@@ -145,18 +159,22 @@ const MESSAGES = {
 		sabbath_title: "Happy Sabbath 🕊️",
 		sabbath_verse: "Remember the Sabbath day, to keep it holy.",
 		sabbath_verse_ref: "Exodus 20:8",
-		sabbath_body: "Today is a holy day of rest. From Friday 18:00 until Saturday 18:00 we are not accepting payments or vouchers. Service resumes Saturday at 18:00.",
-		sabbath_connected: "If you are already connected, keep enjoying the internet until your time ends. God bless you!",
+		sabbath_body:
+			"Today is a holy day of rest. From Friday 18:00 until Saturday 18:00 we are not accepting payments or vouchers. Service resumes Saturday at 18:00.",
+		sabbath_connected:
+			"If you are already connected, keep enjoying the internet until your time ends. God bless you!",
 		sabbath_verse_2: "The Sabbath was made for man, not man for the Sabbath.",
-		sabbath_verse_2_ref: "Mark 2:27"
-	}
+		sabbath_verse_2_ref: "Mark 2:27",
+	},
 };
 
 function storedLang() {
 	try {
 		const stored = localStorage.getItem("foh_lang");
 		if (stored === "en" || stored === "sw") return stored;
-	} catch (e) {}
+	} catch (e) {
+		// localStorage blocked (private mode) -- use the default language
+	}
 	return "sw";
 }
 
@@ -167,7 +185,9 @@ export function setLang(value) {
 	lang.value = value;
 	try {
 		localStorage.setItem("foh_lang", value);
-	} catch (e) {}
+	} catch (e) {
+		// localStorage blocked (private mode) -- the choice just isn't remembered
+	}
 }
 
 // t("free_trial_title", { minutes: 15 }) fills "{minutes}" placeholders.

@@ -6,8 +6,7 @@
 	<title id="page-title">{{ site_label or "Wi-Fi" }} - Ungana Sasa</title>
 	<style>
 		:root {
-			/* Fixed green / white / black brand palette -- no longer driven by
-			   per-site portal_primary_color/portal_secondary_color. */
+			/* Fixed green / white / black brand palette. */
 			--green: #16A34A;
 			--green-dark: #15803D;
 			--green-soft: #DCFCE7;
@@ -866,7 +865,6 @@
 
 			<input type="hidden" id="client_mac" value="{{ client_mac }}">
 			<input type="hidden" id="ap_mac" value="{{ ap_mac }}">
-			<input type="hidden" id="target" value="{{ target }}">
 			<input type="hidden" id="ssid_name" value="{{ ssid_name }}">
 			<input type="hidden" id="radio_id" value="{{ radio_id }}">
 
@@ -1161,14 +1159,8 @@
 
 	<script>
 		(function () {
-			var AUTHORIZATION_METHOD = "{{ authorization_method or '' }}";
 			var ONLINE_PAYMENT_ENABLED = {{ 'true' if online_payment_enabled else 'false' }};
 			var LIPA_COUNT = {{ lipa_images|length }};
-			// host:port to complete a Local RADIUS Server login against, sent by
-			// standalone EAPs on the initial redirect. Not yet wired into
-			// pollForRadiusLogin -- the exact submission scheme (path/params)
-			// this endpoint expects hasn't been confirmed against real hardware.
-			var TARGET = "{{ target }}";
 			var SITE_LABEL = {{ (site_label or "Wi-Fi")|tojson }};
 
 			// ---------------------------------------------------------------
@@ -1445,41 +1437,7 @@
 				setTimeout(function () { window.location.href = url; }, 1600);
 			}
 
-			// Local-RADIUS sites only: once a transaction is Paid, fetch its
-			// one-time RADIUS credential and send the browser through the EAP's
-			// own login endpoint so it completes RADIUS auth. Independent of the
-			// Omada-Controller-API sites, which are authorized server-side and
-			// need no browser redirect at all.
-			function pollForRadiusLogin(transactionId, attempt) {
-				attempt = attempt || 0;
-				if (attempt > 30) {
-					showMessage(t("msg_payment_confirmed_no_redirect"), "error");
-					return;
-				}
-
-				fetch("/api/method/bandofy.api.get_radius_credentials", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"X-Frappe-CSRF-Token": getCookie("csrf_token")
-					},
-					body: JSON.stringify({ transaction_id: transactionId })
-				})
-					.then(function (res) { return res.json(); })
-					.then(function (data) {
-						var result = data && data.message;
-						if (result && result.login_url) {
-							redirectAfterSuccess(result.login_url, t("msg_payment_confirmed_connected"));
-						} else {
-							setTimeout(function () { pollForRadiusLogin(transactionId, attempt + 1); }, 3000);
-						}
-					})
-					.catch(function () {
-						setTimeout(function () { pollForRadiusLogin(transactionId, attempt + 1); }, 3000);
-					});
-			}
-
-			// Omada-Controller-API sites only: once a Pending (payment) transaction
+			// Once a Pending (payment) transaction
 			// is confirmed Paid and authorized on the controller, fetch the
 			// breakout URL and send the browser there. A voucher redemption is
 			// authorized synchronously and already returns redirect_url directly
@@ -1521,12 +1479,7 @@
 					// Voucher fast path: already authorized synchronously --
 					// this is the real success moment.
 					redirectAfterSuccess(payload.redirect_url, payload.message);
-				} else if (AUTHORIZATION_METHOD === "Local RADIUS Server" && payload.transaction_id) {
-					// Retries until Paid (Mobile Money is Pending until the
-					// webhook/poller confirms it; a voucher is Paid immediately).
-					showMessage(t("msg_waiting_payment"), "success");
-					pollForRadiusLogin(payload.transaction_id, 0);
-				} else if (AUTHORIZATION_METHOD === "Omada Controller API" && payload.transaction_id) {
+				} else if (payload.transaction_id) {
 					// Payment flow: waits on the webhook/poller to mark Paid
 					// and enqueue Omada authorization before a redirect exists.
 					showMessage(t("msg_waiting_payment"), "success");
@@ -1962,8 +1915,7 @@
 			}
 
 			// One-time free trial: same instant-connect shape as voucher
-			// redemption (handleSuccessPayload covers both the RADIUS and
-			// Omada authorization paths already). The server is the source
+			// redemption (handleSuccessPayload covers it already). The server is the source
 			// of truth for "already used" -- this button only exists in the
 			// DOM at all when free_trial_available was true on page load,
 			// so disabling it here is just immediate feedback for *this*

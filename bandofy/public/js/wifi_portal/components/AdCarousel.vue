@@ -1,14 +1,29 @@
 <template>
 	<div class="ad-card">
 		<div class="ad-slides">
-			<div v-for="(ad, i) in ads" :key="ad.name" class="ad-slide" :class="{ active: i === current }">
-				<a :href="ad.target_url || '#'" target="_blank" rel="noopener" class="ad-image-wrap ad-link">
+			<div
+				v-for="(ad, i) in ads"
+				:key="ad.name"
+				class="ad-slide"
+				:class="{ active: i === current }"
+			>
+				<a
+					:href="ad.target_url || '#'"
+					target="_blank"
+					rel="noopener"
+					class="ad-image-wrap ad-link"
+				>
 					<img class="ad-banner" :src="ad.image" :alt="ad.title" />
 				</a>
 				<div v-if="ad.marquee_text" class="ad-marquee">
-					<div class="ad-marquee-track" :style="{ animationDuration: ad.marquee_duration + 's' }">
+					<div
+						class="ad-marquee-track"
+						:style="{ animationDuration: ad.marquee_duration + 's' }"
+					>
 						<span class="ad-marquee-item">{{ ad.marquee_text }}</span>
-						<span class="ad-marquee-item" aria-hidden="true">{{ ad.marquee_text }}</span>
+						<span class="ad-marquee-item" aria-hidden="true">{{
+							ad.marquee_text
+						}}</span>
 					</div>
 				</div>
 			</div>

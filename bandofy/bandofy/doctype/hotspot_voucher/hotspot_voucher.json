@@ -2,7 +2,7 @@
  "actions": [],
  "allow_rename": 1,
  "autoname": "field:voucher_code",
- "creation": "2026-08-12 00:00:00.000000",
+ "creation": "2026-08-12 00:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -79,11 +79,13 @@
    "reqd": 1
   },
   {
+   "fetch_from": "package_name.price",
    "fieldname": "price",
    "fieldtype": "Currency",
    "label": "Price"
   },
   {
+   "fetch_from": "package_name.duration_minutes",
    "fieldname": "duration_minutes",
    "fieldtype": "Int",
    "label": "Duration (Minutes)",
@@ -143,7 +145,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-12 00:00:00.000000",
+ "modified": "2026-10-07 02:25:48.571024",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Voucher",
@@ -163,6 +165,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
