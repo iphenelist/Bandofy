@@ -154,6 +154,19 @@ def list_scenarios():
 
 
 def create_site(name, region, time_zone, scenario, device_username, device_password):
+	try:
+		_post_site(name, region, time_zone, scenario, device_username, device_password)
+	except OmadaApiError as e:
+		raise OmadaApiError(
+			_("{0} (region {1}, time zone {2}, scenario {3})").format(e, region, time_zone, scenario)
+		) from e
+	site = find_site(name)
+	if not site:
+		raise OmadaApiError(_("Site {0} was created but could not be found afterwards.").format(name))
+	return site
+
+
+def _post_site(name, region, time_zone, scenario, device_username, device_password):
 	request(
 		"POST",
 		"/sites",
@@ -168,10 +181,6 @@ def create_site(name, region, time_zone, scenario, device_username, device_passw
 			"supportL2": True,
 		},
 	)
-	site = find_site(name)
-	if not site:
-		raise OmadaApiError(_("Site {0} was created but could not be found afterwards.").format(name))
-	return site
 
 
 # --- Devices ---------------------------------------------------------------

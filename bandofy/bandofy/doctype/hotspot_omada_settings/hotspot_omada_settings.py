@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import re
+from zoneinfo import available_timezones
 
 import frappe
 from frappe import _
@@ -17,6 +18,9 @@ class HotspotOmadaSettings(Document):
 			if not self.controller_url.startswith(("http://", "https://")):
 				self.controller_url = f"https://{self.controller_url}"
 
+		if self.default_timezone:
+			self.default_timezone = _normalize_timezone(self.default_timezone)
+
 		password = (
 			self.get_password("device_password", raise_exception=False) if self.device_password else None
 		)
@@ -27,6 +31,21 @@ class HotspotOmadaSettings(Document):
 					"a number and one of {0}."
 				).format(DEVICE_PASSWORD_SYMBOLS)
 			)
+
+
+def _normalize_timezone(value):
+	"""Omada wants an IANA zone ID (Africa/Nairobi); a bare city name such as
+	"Nairobi" is rejected as "Invalid request parameters"."""
+	value = value.strip()
+	if "/" in value or value.upper().startswith(("UTC", "GMT")):
+		return value
+	city = value.replace(" ", "_").lower()
+	matches = sorted(tz for tz in available_timezones() if tz.lower().endswith(f"/{city}"))
+	if len(matches) != 1:
+		frappe.throw(
+			_("Time Zone must be an ID like Africa/Nairobi, as Omada stores it (got {0}).").format(value)
+		)
+	return matches[0]
 
 
 def _is_strong_device_password(password):
