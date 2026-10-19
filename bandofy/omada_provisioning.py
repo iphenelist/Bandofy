@@ -22,6 +22,7 @@ from frappe import _
 from frappe.utils import cint
 
 from bandofy import omada_openapi as api
+from bandofy.bandofy.doctype.hotspot_omada_settings.hotspot_omada_settings import _normalize_timezone
 from bandofy.omada_openapi import OmadaApiError
 from bandofy.utils import normalize_mac
 
@@ -119,7 +120,7 @@ def provision_site(site_name, ssid_name=None):
 				omada_site = api.create_site(
 					name=site.site_name,
 					region=settings.default_region or "Tanzania",
-					time_zone=settings.default_timezone,
+					time_zone=_normalize_timezone(settings.default_timezone),
 					scenario=settings.default_scenario,
 					device_username=settings.device_username or "admin",
 					device_password=settings.get_password("device_password"),
