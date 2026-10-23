@@ -26,6 +26,8 @@ import json
 
 import frappe
 from frappe import _
+from frappe.query_builder import Case, Criterion, Field
+from frappe.query_builder.functions import Coalesce, Count, Date, Max, Sum
 from frappe.utils import get_first_day, get_last_day, today
 
 from bandofy import omada_service
@@ -863,20 +865,25 @@ def get_chat_threads(site=None):
 	still unread. An admin with no site chosen gets every site's threads."""
 	site_name = _resolve_site(site)
 
-	threads = frappe.db.sql(
-		f"""
-		select m.site, s.site_name, m.client_mac,
-			max(m.creation) as last_message_at,
-			sum(case when m.direction='Guest' and m.is_read=0 then 1 else 0 end) as unread_count
-		from `tabHotspot Chat Message` m
-		left join `tabHotspot Site` s on s.name = m.site
-		{"where m.site=%(site)s" if site_name else ""}
-		group by m.site, s.site_name, m.client_mac
-		order by last_message_at desc
-		""",
-		{"site": site_name},
-		as_dict=True,
+	m = frappe.qb.DocType("Hotspot Chat Message")
+	s = frappe.qb.DocType("Hotspot Site")
+	query = (
+		frappe.qb.from_(m)
+		.left_join(s)
+		.on(s.name == m.site)
+		.select(
+			m.site,
+			s.site_name,
+			m.client_mac,
+			Max(m.creation).as_("last_message_at"),
+			Sum(Case().when((m.direction == "Guest") & (m.is_read == 0), 1).else_(0)).as_("unread_count"),
+		)
+		.groupby(m.site, s.site_name, m.client_mac)
+		.orderby(Field("last_message_at"), order=frappe.qb.desc)
 	)
+	if site_name:
+		query = query.where(m.site == site_name)
+	threads = query.run(as_dict=True)
 
 	for thread in threads:
 		last = frappe.db.get_value(
@@ -909,10 +916,8 @@ def get_chat_thread(client_mac, site=None):
 
 	unread_names = [m.name for m in messages if m.direction == "Guest" and not m.is_read]
 	if unread_names:
-		frappe.db.sql(
-			"update `tabHotspot Chat Message` set is_read=1 where name in %(names)s",
-			{"names": unread_names},
-		)
+		m = frappe.qb.DocType("Hotspot Chat Message")
+		frappe.qb.update(m).set(m.is_read, 1).where(m.name.isin(unread_names)).run()
 		frappe.db.commit()  # nosemgrep
 
 	return messages
@@ -1241,9 +1246,10 @@ def save_ad(values, name=None):
 		if fieldname in data:
 			value = data[fieldname]
 			doc.set(
-				fieldname, _blank_to_none(value)
+				fieldname,
+				_blank_to_none(value)
 				if fieldname in ("start_date", "end_date", "site", "fullscreen_image", "video")
-				else value
+				else value,
 			)
 
 	if not _is_admin():
@@ -1491,20 +1497,25 @@ def get_sales_report(site=None, from_date=None, to_date=None):
 	}
 	totals["avg_per_day"] = next((s["value"] for s in summary if s.get("label") == _("Avg Revenue / Day")), 0)
 
-	by_package = frappe.db.sql(
-		f"""
-		select coalesce(package_name, '') as package_name, count(name) as transactions, sum(amount) as revenue
-		from `tabHotspot Transaction`
-		where status = 'Paid'
-			and coalesce(reference_id, '') not like 'STAFF:%%'
-			and date(creation) between %(from_date)s and %(to_date)s
-			{"and site = %(site)s" if site_name else ""}
-		group by package_name
-		order by revenue desc
-		""",
-		{"from_date": from_date, "to_date": to_date, "site": site_name},
-		as_dict=True,
-	)
+	t = frappe.qb.DocType("Hotspot Transaction")
+	conditions = [
+		t.status == "Paid",
+		Coalesce(t.reference_id, "").not_like("STAFF:%"),
+		Date(t.creation).between(from_date, to_date),
+	]
+	if site_name:
+		conditions.append(t.site == site_name)
+	by_package = (
+		frappe.qb.from_(t)
+		.select(
+			Coalesce(t.package_name, "").as_("package_name"),
+			Count(t.name).as_("transactions"),
+			Sum(t.amount).as_("revenue"),
+		)
+		.where(Criterion.all(conditions))
+		.groupby(t.package_name)
+		.orderby(Field("revenue"), order=frappe.qb.desc)
+	).run(as_dict=True)
 
 	labels = chart["data"]["labels"]
 	values = chart["data"]["datasets"][0]["values"]

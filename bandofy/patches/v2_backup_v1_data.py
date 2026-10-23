@@ -68,26 +68,33 @@ def _sites():
 	columns = ["name", "site_name", "vendor_name"] + [
 		c for c in OLD_SITE_FIELDS if frappe.db.has_column("Hotspot Site", c)
 	]
-	return frappe.db.sql(
-		f"select {', '.join(f'`{c}`' for c in columns)} from `tabHotspot Site` order by creation",
-		as_dict=True,
-	)
+	hs = frappe.qb.DocType("Hotspot Site")
+	return frappe.qb.from_(hs).select(*(hs[c] for c in columns)).orderby(hs.creation).run(as_dict=True)
 
 
 def _rows(doctype, fields):
 	if not frappe.db.table_exists(doctype):
 		return []
 	columns = [f for f in fields if frappe.db.has_column(doctype, f)]
-	return frappe.db.sql(
-		f"""select {", ".join(f"`{c}`" for c in columns)} from `tab{doctype}`
-		where parenttype='Hotspot Site' order by parent, idx""",
-		as_dict=True,
-	)
+	table = frappe.qb.DocType(doctype)
+	return (
+		frappe.qb.from_(table)
+		.select(*(table[c] for c in columns))
+		.where(table.parenttype == "Hotspot Site")
+		.orderby(table.parent)
+		.orderby(table.idx)
+	).run(as_dict=True)
 
 
 def _single(doctype):
 	"""A settings single's stored values, minus anything password-like."""
-	rows = frappe.db.sql("select field, value from `tabSingles` where doctype=%s", doctype, as_dict=True)
+	singles = frappe.qb.DocType("Singles")
+	rows = (
+		frappe.qb.from_(singles)
+		.select(singles.field, singles.value)
+		.where(singles.doctype == doctype)
+		.run(as_dict=True)
+	)
 	return {
 		r.field: r.value
 		for r in rows

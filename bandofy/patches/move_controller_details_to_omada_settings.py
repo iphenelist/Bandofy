@@ -24,11 +24,12 @@ def execute():
 	if not columns:
 		return
 
-	sites = frappe.db.sql(
-		f"""select name, site_name, omada_site_id, {", ".join(f"`{c}`" for c in columns)}
-		from `tabHotspot Site` order by creation""",
-		as_dict=True,
-	)
+	hs = frappe.qb.DocType("Hotspot Site")
+	sites = (
+		frappe.qb.from_(hs)
+		.select(hs.name, hs.site_name, hs.omada_site_id, *(hs[c] for c in columns))
+		.orderby(hs.creation)
+	).run(as_dict=True)
 
 	for site in sites:
 		if site.get("site_id") and not site.omada_site_id:

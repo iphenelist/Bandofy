@@ -7,11 +7,12 @@ def execute():
 	if frappe.db.exists("DocType", "Hotspot RADIUS Settings"):
 		frappe.delete_doc("DocType", "Hotspot RADIUS Settings", force=True, ignore_missing=True)
 
+	hs = frappe.qb.DocType("Hotspot Site")
 	radius_sites = (
-		frappe.db.sql(
-			"select name from `tabHotspot Site` where authorization_method = 'Local RADIUS Server'",
-			pluck=True,
-		)
+		frappe.qb.from_(hs)
+		.select(hs.name)
+		.where(hs.authorization_method == "Local RADIUS Server")
+		.run(pluck="name")
 		if frappe.db.has_column("Hotspot Site", "authorization_method")
 		else []
 	)

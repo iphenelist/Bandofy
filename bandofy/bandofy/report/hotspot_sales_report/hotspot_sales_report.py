@@ -3,6 +3,8 @@
 
 import frappe
 from frappe import _
+from frappe.query_builder import Case, Criterion, Field
+from frappe.query_builder.functions import Coalesce, Count, Date, Sum
 from frappe.utils import add_days, date_diff, flt, getdate
 
 
@@ -12,38 +14,7 @@ def execute(filters=None):
 	to_date = getdate(filters.get("to_date"))
 	site = filters.get("site")
 
-	conditions = [
-		"t.status = 'Paid'",
-		"coalesce(t.reference_id, '') not like 'STAFF:%%'",  # free staff access, not a sale; NULL-safe
-		"date(t.creation) between %(from_date)s and %(to_date)s",
-	]
-	params = {"from_date": from_date, "to_date": to_date}
-
-	if site:
-		conditions.append("t.site = %(site)s")
-		params["site"] = site
-
-	where = " and ".join(conditions)
-
-	rows = frappe.db.sql(
-		f"""
-		select
-			date(t.creation) as date,
-			t.site as site,
-			s.vendor_name as vendor_name,
-			count(t.name) as total_transactions,
-			sum(case when t.reference_id like 'VOUCHER:%%' then 1 else 0 end) as voucher_transactions,
-			sum(case when t.reference_id like 'VOUCHER:%%' then 0 else 1 end) as mobile_money_transactions,
-			sum(t.amount) as total_revenue
-		from `tabHotspot Transaction` t
-		left join `tabHotspot Site` s on s.name = t.site
-		where {where}
-		group by date(t.creation), t.site
-		order by date desc, total_revenue desc
-		""",
-		params,
-		as_dict=True,
-	)
+	rows = get_sales_rows(from_date, to_date, site)
 
 	total_revenue = sum(flt(r.total_revenue) for r in rows)
 	total_transactions = sum(r.total_transactions for r in rows)
@@ -124,3 +95,37 @@ def execute(filters=None):
 		)
 
 	return columns, data, None, chart, report_summary
+
+
+def get_sales_rows(from_date, to_date, site=None):
+	"""Paid sales per day and site, excluding free staff access."""
+	t = frappe.qb.DocType("Hotspot Transaction")
+	s = frappe.qb.DocType("Hotspot Site")
+	is_voucher = t.reference_id.like("VOUCHER:%")
+
+	conditions = [
+		t.status == "Paid",
+		Coalesce(t.reference_id, "").not_like("STAFF:%"),  # free staff access, not a sale; NULL-safe
+		Date(t.creation).between(from_date, to_date),
+	]
+	if site:
+		conditions.append(t.site == site)
+
+	return (
+		frappe.qb.from_(t)
+		.left_join(s)
+		.on(s.name == t.site)
+		.select(
+			Date(t.creation).as_("date"),
+			t.site.as_("site"),
+			s.vendor_name.as_("vendor_name"),
+			Count(t.name).as_("total_transactions"),
+			Sum(Case().when(is_voucher, 1).else_(0)).as_("voucher_transactions"),
+			Sum(Case().when(is_voucher, 0).else_(1)).as_("mobile_money_transactions"),
+			Sum(t.amount).as_("total_revenue"),
+		)
+		.where(Criterion.all(conditions))
+		.groupby(Date(t.creation), t.site)
+		.orderby(Field("date"), order=frappe.qb.desc)
+		.orderby(Field("total_revenue"), order=frappe.qb.desc)
+	).run(as_dict=True)

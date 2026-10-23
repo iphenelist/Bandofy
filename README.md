@@ -1,126 +1,73 @@
 ### Bandofy
 
-Frappe Omada Hotspot Management System — a Frappe custom app for running paid
-Wi-Fi hotspots on TP-Link Omada-managed access points, or standalone TP-Link
-EAPs, without needing a MikroTik router. It covers the customer-facing
-captive portal, mobile-money payment collection, voucher sales, ad
-monetization, and vendor/admin reporting, all in one app.
+Paid Wi-Fi hotspots on TP-Link Omada access points, without a MikroTik router. Bandofy is a Frappe v16 app that runs the customer captive portal, mobile money payments (Abliner), vouchers, ads and guest chat, and gives vendors and admins dashboards, a sales report and a mobile app API.
 
-### Features
+Requires Frappe `>=16.0.0,<17.0.0` and Python 3.14. It has no other app dependencies.
 
-**Customer captive portal** (`/wifi_login`)
+### Documentation
 
-- Per-site branding: site name, vendor, and (optionally) a support phone
-  number the customer can tap to copy if they run into trouble.
-- Fully localized in Swahili, white background with green accents.
-- Pricing packages pulled live from the site's own package list (no code
-  changes needed to add/edit/remove a plan) and grouped into **Bila Kikomo**
-  (Unlimited) and **Vifurushi vya Data** (Bundle) sections.
-- "Nunua Sasa" opens a popup to confirm the package and collect the
-  customer's number before triggering an STK push — payment is never
-  charged to whatever number happened to be typed elsewhere on the page.
-- A floating **Lipa Namba** button opens the site's manual pay-by-QR/
-  till-number card, for customers who'd rather pay directly than wait on
-  an STK push.
-- A success popup confirms once a payment or voucher redemption is actually
-  verified and the device is being connected — not just when a payment
-  request was sent.
-- A rotating ad carousel (auto-advancing, with tap-to-jump dots) displays
-  every active `Hotspot Ad` for the site, each with a logo sized to fit
-  consistently and a scrolling marquee caption (short description + phone
-  number).
-- Recognized mobile money networks (Mixx by Yas, Airtel Money, HaloPesa,
-  M-Pesa — see `public/images/payment_logos/`) are shown as trust badges.
-- A voucher redemption section for prepaid voucher codes, alongside the
-  paid packages.
+| Page | Covers |
+| --- | --- |
+| [Sites and the Omada Controller](docs/sites-and-omada.md) | Hotspot Site, Access Points, Hotspot Omada Settings, provisioning, adoption and SSIDs |
+| [Packages and vouchers](docs/packages-and-vouchers.md) | Hotspot Package, Pricing Packages, Voucher Batches, Vouchers, Staff Vouchers, print formats |
+| [Payments](docs/payments.md) | Hotspot Transaction, Hotspot Payment Settings, the Abliner STK push, webhook and fallback poll |
+| [Captive portal, ads and chat](docs/captive-portal.md) | `/wifi_login`, free trial, Sabbath mode, Hotspot Ad, Ad View Log, Chat Message |
+| [Dashboards, reports and the mobile app](docs/dashboards-and-reports.md) | Vendor and admin access, `/vendor-dashboard`, Network Dashboard, Hotspot Sales Report, mobile API, realtime alerts |
 
-**Authorization** — every site authorizes the client directly against a
-TP-Link Omada SDN Controller's hotspot REST API (`omada_service.py`).
-
-**Payments**
-
-- Mobile Money STK push via a configurable gateway (`Hotspot Payment
-  Settings`), with webhook callback + signature verification
-  (`api.payment_callback`) and a 5-minute cron
-  (`api.sync_pending_payments`) that reconciles any transaction the
-  webhook missed.
-- While the gateway is disabled/unconfigured, payments fall back to a
-  logging-only stub so the portal stays usable in development.
-
-**Vouchers**
-
-- `Hotspot Voucher Batch` bulk-generates single-use `Hotspot Voucher` codes
-  for a site and package, redeemable from the captive portal without any
-  payment step.
-- A printable voucher card format (`Hotspot Voucher Card`) for handing out
-  physical vouchers.
-
-**Ads**
-
-- `Hotspot Ad` supports per-site or global ads, scheduled by date range,
-  with impression tracking in `Hotspot Ad View Log`.
-
-**Dashboards & reporting**
-
-- `/vendor-dashboard` — a portal for vendors (non-System-Manager users) to
-  see their own site's activity without any access to the Desk backend.
-- **Network Dashboard** (Desk page, System Manager only) — an overview
-  across all sites.
-- **Hotspot Sales Report** — paid transactions by date range and site.
-
-**Access control**
-
-- Vendors are blocked from the Desk backend entirely
-  (`api.restrict_desk_access`) and redirected to their own portal.
+In the v16 desk, Bandofy has its own tile on the apps screen and a **Bandofy** sidebar: Hotspot Site, Hotspot Transaction, Hotspot Voucher Batch and Network Dashboard first, then Packages & Vouchers, Ads & Chat, Reports and Settings. Each **Hotspot Site** form brings everything about that site together in tabs: details, dashboard, packages and payments, access points and Omada, portal and ads, vouchers, transactions and chat.
 
 ### Installation
 
-You can install this app using the [bench](https://github.com/frappe/bench) CLI:
-
 ```bash
 cd $PATH_TO_YOUR_BENCH
-bench get-app $URL_OF_THIS_REPO --branch main
-bench install-app bandofy
+bench get-app $URL_OF_THIS_REPO --branch v2.0.0
+bench --site <site> install-app bandofy
+bench build --app bandofy
 ```
 
-### Configuration
+Installing creates six default packages (Masaa 6 to Mwezi).
 
-- **Hotspot Site** — one record per access point: vendor info, support
-  phone number, `ap_mac`, Omada Controller credentials, and its `Pricing Packages` table (`Hotspot Package Item`).
-- **Hotspot Payment Settings** (single) — mobile money gateway credentials
-  and webhook secret.
-- **Hotspot Omada Settings** (single) — controller request timeout, SSL
-  certificate checking, and the default post-login redirect URL.
-- **Payment network logos** — drop the real brand images into
-  `bandofy/public/images/payment_logos/` as `mixx_by_yas.png`,
-  `airtel_money.png`, `halopesa.png`, and `mpesa.png`; a text badge is
-  shown as a fallback for any file that's missing.
-- **Lipa Namba card** — drop the site's manual pay QR/till-number image at
-  `bandofy/public/images/lipanamba/lipa_namba.jpeg`.
+### Setting up
 
-### Contributing
+1. **Hotspot Omada Settings**: set the controller URL, the Open API client and operator logins, and the Portal URL (`https://<your site>/wifi_login`). Then click **Test Connection**.
+2. **Hotspot Payment Settings**: add the Abliner API key (`tsl_live_…`) and webhook secret (`whsec_…`). Register the webhook URL shown on the form with Abliner, then tick **Enabled**.
+3. **Hotspot Site**: one per location. Add the vendor's Website User, the pricing packages and the access points. Then click **Omada → Create on Omada**.
+4. Optional: the site's Lipa Namba image, portal logo and tagline, and ads.
 
-This app uses `pre-commit` for code formatting and linting. Please [install pre-commit](https://pre-commit.com/#installation) and enable it for this repository:
+Payment network badges are read from `bandofy/public/images/payment_logos/` (`mixx_by_yas.png`, `airtel_money.png`, `halopesa.png`, `mpesa.png`). A text badge replaces any file that is missing.
+
+### Upgrading from v1
+
+The v2 patches (`bandofy/patches.txt`) run on `bench --site <site> migrate`. They:
+
+- save a private backup file of v1 data (`bandofy_v1_backup_*.json`);
+- move the controller details from each site into Hotspot Omada Settings;
+- merge `ap_mac` and additional devices into one Access Points table;
+- create Hotspot Packages for free-text package names;
+- switch the gateway to Abliner.
+
+A site that used a different controller gets a comment and an Error Log entry. Its customers aren't authorized until it is moved to the central controller.
+
+### Development
+
+This app uses `pre-commit` for formatting and linting (ruff, prettier, eslint):
 
 ```bash
 cd apps/bandofy
 pre-commit install
 ```
 
-Pre-commit is configured to use the following tools for checking and formatting your code:
+All database access uses `frappe.qb` (query builder); please don't add raw `frappe.db.sql`.
 
-- ruff
-- eslint
-- prettier
-- pyupgrade
-### CI
+GitHub Actions run these workflows:
 
-This app can use GitHub Actions for CI. The following workflows are configured:
-
-- CI: Installs this app and runs unit tests on every push to `develop` branch.
-- Linters: Runs [Frappe Semgrep Rules](https://github.com/frappe/semgrep-rules) and [pip-audit](https://pypi.org/project/pip-audit/) on every pull request.
-
+| Workflow | Runs |
+| --- | --- |
+| CI (`ci.yml`) | Installs the app on a fresh site and runs the tests. |
+| Linters (`linter.yml`) | [Frappe Semgrep Rules](https://github.com/frappe/semgrep-rules) and `pip-audit`. |
+| Pre-commit (`pre-commit.yml`) | The pre-commit hooks above, on every pull request. |
+| Semantic Commits (`semantic-commits.yml`) | Checks that every commit message in a pull request follows [Conventional Commits](https://www.conventionalcommits.org/), e.g. `fix: …`, `feat: …`, `refactor: …`. |
 
 ### License
 
-mit
+MIT

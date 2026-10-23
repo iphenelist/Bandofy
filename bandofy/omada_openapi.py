@@ -46,7 +46,7 @@ def controller_info(controller_url=None):
 		resp.raise_for_status()
 		data = resp.json()
 	except (requests.RequestException, ValueError) as e:
-		raise OmadaApiError(_("Could not reach the Omada Controller at {0}: {1}").format(url, e)) from e
+		raise OmadaApiError(_("Could not reach the Omada Controller at {0}: {1}").format(url, str(e))) from e
 	if data.get("errorCode") not in (0, None):
 		raise OmadaApiError(data.get("msg") or str(data))
 	return data.get("result") or {}
@@ -83,7 +83,7 @@ def _token(force=False):
 		)
 		data = resp.json()
 	except (requests.RequestException, ValueError) as e:
-		raise OmadaApiError(_("Could not get an Omada Open API token: {0}").format(e)) from e
+		raise OmadaApiError(_("Could not get an Omada Open API token: {0}").format(str(e))) from e
 
 	result = data.get("result") or {}
 	token = result.get("accessToken")
@@ -112,7 +112,7 @@ def request(method, path, json=None, params=None, _retried=False):
 		)
 		data = resp.json()
 	except (requests.RequestException, ValueError) as e:
-		raise OmadaApiError(_("Omada request {0} {1} failed: {2}").format(method, path, e)) from e
+		raise OmadaApiError(_("Omada request {0} {1} failed: {2}").format(method, path, str(e))) from e
 
 	code = data.get("errorCode")
 	if (code in TOKEN_ERROR_CODES or resp.status_code == 401) and not _retried:
@@ -158,7 +158,7 @@ def create_site(name, region, time_zone, scenario, device_username, device_passw
 		_post_site(name, region, time_zone, scenario, device_username, device_password)
 	except OmadaApiError as e:
 		raise OmadaApiError(
-			_("{0} (region {1}, time zone {2}, scenario {3})").format(e, region, time_zone, scenario)
+			_("{0} (region {1}, time zone {2}, scenario {3})").format(str(e), region, time_zone, scenario)
 		) from e
 	site = find_site(name)
 	if not site:
@@ -367,11 +367,7 @@ def ensure_portal(site_id, name, ssid_ids, portal_url, timeout_minutes):
 	body = _portal_body(name, ssid_ids, portal_url, timeout_minutes)
 	portals = list_portals(site_id)
 	portal = next((p for p in portals if p.get("name") == name), None)
-	holders = [
-		p
-		for p in portals
-		if p is not portal and set(p.get("ssidList") or []) & set(ssid_ids)
-	]
+	holders = [p for p in portals if p is not portal and set(p.get("ssidList") or []) & set(ssid_ids)]
 	if not portal and holders:
 		portal = holders.pop(0)
 	for other in holders:

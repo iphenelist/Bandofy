@@ -743,9 +743,7 @@ def _apply_package_bandwidth(txn, site):
 			package.bandwidth_up_kbps if package else 0,
 		)
 	except Exception:
-		frappe.log_error(
-			title=f"Bandofy bandwidth limit failed: {txn.name}", message=frappe.get_traceback()
-		)
+		frappe.log_error(title=f"Bandofy bandwidth limit failed: {txn.name}", message=frappe.get_traceback())
 
 
 def authorize_mac_on_omada(transaction_id):

@@ -6,18 +6,17 @@ mobile monitoring app's REST API, so the two never drift apart.
 """
 
 import frappe
+from frappe.query_builder.functions import CurDate, Date, Sum
+from pypika.terms import Interval
 
 
 def get_revenue(site_name, start_date, end_date):
-	result = frappe.db.sql(
-		"""
-		select sum(amount) as total
-		from `tabHotspot Transaction`
-		where site=%s and status='Paid'
-		and date(creation) between %s and %s
-		""",
-		(site_name, start_date, end_date),
-	)
+	t = frappe.qb.DocType("Hotspot Transaction")
+	result = (
+		frappe.qb.from_(t)
+		.select(Sum(t.amount).as_("total"))
+		.where((t.site == site_name) & (t.status == "Paid") & Date(t.creation).between(start_date, end_date))
+	).run()
 	return result[0][0] if result and result[0][0] else 0
 
 
@@ -25,17 +24,17 @@ def get_revenue_trend(site_name, days=7):
 	"""Daily Paid revenue totals for the last `days` days (oldest first),
 	including days with zero revenue, for the app's trend chart.
 	"""
-	rows = frappe.db.sql(
-		"""
-		select date(creation) as day, sum(amount) as total
-		from `tabHotspot Transaction`
-		where site=%s and status='Paid'
-		and date(creation) between date_sub(curdate(), interval %s day) and curdate()
-		group by date(creation)
-		""",
-		(site_name, days - 1),
-		as_dict=True,
-	)
+	t = frappe.qb.DocType("Hotspot Transaction")
+	rows = (
+		frappe.qb.from_(t)
+		.select(Date(t.creation).as_("day"), Sum(t.amount).as_("total"))
+		.where(
+			(t.site == site_name)
+			& (t.status == "Paid")
+			& Date(t.creation).between(CurDate() - Interval(days=days - 1), CurDate())
+		)
+		.groupby(Date(t.creation))
+	).run(as_dict=True)
 	by_day = {frappe.utils.getdate(row.day).isoformat(): row.total or 0 for row in rows}
 
 	trend = []

@@ -4,6 +4,7 @@
 import frappe
 from frappe.utils import get_first_day, get_last_day, today
 
+from bandofy.dashboard_utils import get_revenue
 from bandofy.utils import site_ap_macs
 
 
@@ -26,8 +27,8 @@ def get_dashboard_data():
 	total_transactions_today = 0
 
 	for site in sites:
-		revenue_today = _revenue(site.name, today(), today())
-		revenue_month = _revenue(site.name, month_start, month_end)
+		revenue_today = get_revenue(site.name, today(), today())
+		revenue_month = get_revenue(site.name, month_start, month_end)
 		txns_today = frappe.db.count(
 			"Hotspot Transaction",
 			{"site": site.name, "status": "Paid", "creation": ["between", [today(), today()]]},
@@ -64,16 +65,3 @@ def get_dashboard_data():
 		"total_transactions_today": total_transactions_today,
 		"sites": site_rows,
 	}
-
-
-def _revenue(site_name, start_date, end_date):
-	result = frappe.db.sql(
-		"""
-		select sum(amount) as total
-		from `tabHotspot Transaction`
-		where site=%s and status='Paid'
-		and date(creation) between %s and %s
-		""",
-		(site_name, start_date, end_date),
-	)
-	return result[0][0] if result and result[0][0] else 0

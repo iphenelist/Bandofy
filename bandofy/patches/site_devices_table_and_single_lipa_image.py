@@ -1,4 +1,5 @@
 import frappe
+from frappe.query_builder.functions import IfNull
 
 from bandofy.utils import normalize_mac
 
@@ -8,10 +9,12 @@ def execute():
 	instead of a primary `ap_mac` field plus `additional_devices`, and Lipa
 	Namba is one attached image instead of a table. Runs before Frappe drops
 	the orphaned Hotspot Lipa Number doctype, so its rows can still be read."""
-	frappe.db.sql(
-		"""update `tabHotspot Site Device` set parentfield='devices'
-		where parenttype='Hotspot Site' and parentfield='additional_devices'"""
-	)
+	device = frappe.qb.DocType("Hotspot Site Device")
+	(
+		frappe.qb.update(device)
+		.set(device.parentfield, "devices")
+		.where((device.parenttype == "Hotspot Site") & (device.parentfield == "additional_devices"))
+	).run()
 
 	has_ap_mac = frappe.db.has_column("Hotspot Site", "ap_mac")
 	has_lipa = frappe.db.table_exists("Hotspot Lipa Number")
@@ -24,7 +27,8 @@ def execute():
 
 
 def _move_primary_ap(site):
-	ap_mac = frappe.db.sql("select ap_mac from `tabHotspot Site` where name=%s", site.name)[0][0]
+	hs = frappe.qb.DocType("Hotspot Site")
+	ap_mac = frappe.qb.from_(hs).select(hs.ap_mac).where(hs.name == site.name).run()[0][0]
 	rows = frappe.get_all(
 		"Hotspot Site Device",
 		filters={"parenttype": "Hotspot Site", "parentfield": "devices", "parent": site.name},
@@ -53,11 +57,16 @@ def _move_primary_ap(site):
 def _pick_lipa_image(site_name):
 	if frappe.db.get_value("Hotspot Site", site_name, "lipa_namba_image"):
 		return
-	image = frappe.db.sql(
-		"""select image from `tabHotspot Lipa Number`
-		where parenttype='Hotspot Site' and parent=%s and ifnull(image, '') != ''
-		order by is_default desc, idx asc limit 1""",
-		site_name,
-	)
+	lipa = frappe.qb.DocType("Hotspot Lipa Number")
+	image = (
+		frappe.qb.from_(lipa)
+		.select(lipa.image)
+		.where(
+			(lipa.parenttype == "Hotspot Site") & (lipa.parent == site_name) & (IfNull(lipa.image, "") != "")
+		)
+		.orderby(lipa.is_default, order=frappe.qb.desc)
+		.orderby(lipa.idx)
+		.limit(1)
+	).run()
 	if image:
 		frappe.db.set_value("Hotspot Site", site_name, "lipa_namba_image", image[0][0], update_modified=False)
