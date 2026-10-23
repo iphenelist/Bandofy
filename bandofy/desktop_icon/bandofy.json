@@ -1,0 +1,19 @@
+{
+ "app": "bandofy",
+ "creation": "2026-10-23 16:12:34.000000",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "App",
+ "idx": 0,
+ "label": "Bandofy",
+ "link": "/desk/bandofy/hotspot-site",
+ "link_type": "External",
+ "logo_url": "/assets/bandofy/images/bandofy-logo.svg",
+ "modified": "2026-10-23 16:12:34.000000",
+ "modified_by": "Administrator",
+ "name": "Bandofy",
+ "owner": "Administrator",
+ "roles": [],
+ "standard": 1
+}

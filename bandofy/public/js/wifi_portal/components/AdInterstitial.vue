@@ -1,6 +1,10 @@
 <template>
 	<div class="ad-full" role="dialog" :aria-label="ad.title">
-		<div v-if="poster" class="ad-full-backdrop" :style="{ backgroundImage: `url(${poster})` }"></div>
+		<div
+			v-if="poster"
+			class="ad-full-backdrop"
+			:style="{ backgroundImage: `url(${poster})` }"
+		></div>
 
 		<video
 			v-if="ad.video && !mediaFailed"
@@ -57,7 +61,11 @@
 				{{ ad.marquee_text }}
 			</div>
 			<div class="ad-full-note">
-				{{ remaining > 0 ? t("ad_connect_in", { seconds: remaining }) : t("msg_processing") }}
+				{{
+					remaining > 0
+						? t("ad_connect_in", { seconds: remaining })
+						: t("msg_processing")
+				}}
 			</div>
 		</div>
 	</div>

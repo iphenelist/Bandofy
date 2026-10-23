@@ -5,42 +5,92 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "vendor_information_section",
+  "site_section",
+  "site_name",
+  "column_break_site",
   "is_active",
+  "vendor_information_section",
   "vendor_name",
   "vendor_user",
   "column_break_vendor",
   "phone_number",
   "mobile_money_account",
+  "dashboard_tab",
+  "dashboard_html",
+  "packages_tab",
+  "pricing_section",
+  "packages",
+  "payments_section",
+  "enable_online_payment",
+  "enforce_bandwidth_limits",
+  "column_break_payments",
+  "lipa_namba_image",
+  "omada_tab",
+  "devices_section",
+  "devices",
+  "live_devices_section",
+  "devices_html",
   "omada_provisioning_section",
   "hotspot_ssid_name",
-  "omada_ssid_id",
-  "omada_wlan_id",
-  "column_break_provisioning",
-  "site_name",
-  "omada_site_id",
-  "omada_portal_id",
   "success_redirect_url",
-  "pricing_section",
-  "devices",
-  "column_break_ucbr",
-  "packages",
-  "advance_tab",
-  "enable_free_trial",
-  "enable_online_payment",
+  "column_break_provisioning",
+  "omada_site_id",
+  "omada_wlan_id",
+  "omada_ssid_id",
+  "omada_portal_id",
+  "portal_tab",
+  "branding_section",
   "portal_logo",
+  "column_break_branding",
   "portal_tagline",
-  "column_break_r84l",
+  "access_section",
+  "enable_free_trial",
   "free_trial_minutes",
+  "column_break_access",
   "enable_sabbath_mode",
-  "enforce_bandwidth_limits",
-  "lipa_namba_image"
+  "ads_section",
+  "ads_html",
+  "vouchers_tab",
+  "voucher_batches_section",
+  "voucher_batches_html",
+  "staff_vouchers_section",
+  "staff_vouchers_html",
+  "vouchers_section",
+  "vouchers_html",
+  "transactions_tab",
+  "transactions_html",
+  "chat_tab",
+  "chat_html"
  ],
  "fields": [
   {
+   "fieldname": "site_section",
+   "fieldtype": "Section Break",
+   "label": "Site"
+  },
+  {
+   "fieldname": "site_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Site Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_site",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Is Active"
+  },
+  {
    "fieldname": "vendor_information_section",
    "fieldtype": "Section Break",
-   "label": "Vendor Information"
+   "label": "Vendor"
   },
   {
    "fieldname": "vendor_name",
@@ -75,12 +125,34 @@
    "label": "Mobile Money Account"
   },
   {
-   "default": "1",
-   "fieldname": "is_active",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Is Active"
+   "fieldname": "dashboard_tab",
+   "fieldtype": "Tab Break",
+   "label": "Dashboard"
+  },
+  {
+   "fieldname": "dashboard_html",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "packages_tab",
+   "fieldtype": "Tab Break",
+   "label": "Packages & Payments"
+  },
+  {
+   "fieldname": "pricing_section",
+   "fieldtype": "Section Break",
+   "label": "Pricing Packages"
+  },
+  {
+   "fieldname": "packages",
+   "fieldtype": "Table",
+   "label": "Pricing Packages",
+   "options": "Hotspot Package Item"
+  },
+  {
+   "fieldname": "payments_section",
+   "fieldtype": "Section Break",
+   "label": "Payments"
   },
   {
    "default": "0",
@@ -91,29 +163,6 @@
    "label": "Enable Online Payment (Mobile Money)"
   },
   {
-   "default": "1",
-   "description": "Shows a one-time free-trial button on the captive portal. Each device (by MAC address) can only claim it once per site -- claiming again is blocked automatically once used.",
-   "fieldname": "enable_free_trial",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Enable Free Trial"
-  },
-  {
-   "default": "15",
-   "depends_on": "eval:doc.enable_free_trial",
-   "description": "How long a first-time device gets connected for free before it's disconnected. The device's MAC is then registered so it cannot claim the free trial again.",
-   "fieldname": "free_trial_minutes",
-   "fieldtype": "Int",
-   "label": "Free Trial Duration (Minutes)"
-  },
-  {
-   "default": "0",
-   "description": "Every week from Friday 18:00 to Saturday 18:00 the portal stops sales (mobile money, Lipa Namba, vouchers) and shows a Sabbath message. Connected devices keep their remaining time.",
-   "fieldname": "enable_sabbath_mode",
-   "fieldtype": "Check",
-   "label": "Enable Sabbath Mode (Fri 18:00 \u2013 Sat 18:00)"
-  },
-  {
    "default": "0",
    "description": "Apply each package's Download/Upload Bandwidth to the customer on the Omada Controller when they connect. Off: customers share the SSID's full speed.",
    "fieldname": "enforce_bandwidth_limits",
@@ -121,16 +170,59 @@
    "label": "Enforce Package Bandwidth"
   },
   {
-   "description": "Set up on the central Omada Controller from Hotspot Omada Settings. Use the Omada > Create on Omada button.",
+   "fieldname": "column_break_payments",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "QR / till-number picture shown when a customer taps Lipa Namba on the portal.",
+   "fieldname": "lipa_namba_image",
+   "fieldtype": "Attach Image",
+   "label": "Lipa Namba Image"
+  },
+  {
+   "fieldname": "omada_tab",
+   "fieldtype": "Tab Break",
+   "label": "Access Points & Omada"
+  },
+  {
+   "fieldname": "devices_section",
+   "fieldtype": "Section Break",
+   "label": "Access Points"
+  },
+  {
+   "description": "Every TP-Link AP that serves this site's captive portal. Adopting an AP from the Omada menu adds it here.",
+   "fieldname": "devices",
+   "fieldtype": "Table",
+   "label": "Access Points",
+   "options": "Hotspot Site Device"
+  },
+  {
+   "fieldname": "live_devices_section",
+   "fieldtype": "Section Break",
+   "label": "Live Status"
+  },
+  {
+   "fieldname": "devices_html",
+   "fieldtype": "HTML"
+  },
+  {
    "fieldname": "omada_provisioning_section",
    "fieldtype": "Section Break",
-   "label": "Omada Provisioning"
+   "label": "Omada Provisioning",
+   "description": "Set up on the central Omada Controller from Hotspot Omada Settings. Use the Omada > Create on Omada button."
   },
   {
    "description": "Open Wi-Fi network customers join; the captive portal handles payment.",
    "fieldname": "hotspot_ssid_name",
    "fieldtype": "Data",
    "label": "Hotspot SSID Name"
+  },
+  {
+   "default": "https://www.youtube.com",
+   "description": "Once a client is authorized on the Omada controller, the portal page redirects the browser here to break it out of the captive portal.",
+   "fieldname": "success_redirect_url",
+   "fieldtype": "Data",
+   "label": "Success Redirect URL"
   },
   {
    "fieldname": "column_break_provisioning",
@@ -165,30 +257,14 @@
    "read_only": 1
   },
   {
-   "fieldname": "site_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Site Name",
-   "reqd": 1
+   "fieldname": "portal_tab",
+   "fieldtype": "Tab Break",
+   "label": "Portal & Ads"
   },
   {
-   "default": "https://www.youtube.com",
-   "description": "Once a client is authorized on the Omada controller, the portal page redirects the browser here to break it out of the captive portal.",
-   "fieldname": "success_redirect_url",
-   "fieldtype": "Data",
-   "label": "Success Redirect URL"
-  },
-  {
-   "fieldname": "pricing_section",
+   "fieldname": "branding_section",
    "fieldtype": "Section Break",
-   "label": "Devices & Packages"
-  },
-  {
-   "description": "Every TP-Link AP that serves this site's captive portal. Adopting an AP from the Omada menu adds it here.",
-   "fieldname": "devices",
-   "fieldtype": "Table",
-   "label": "Access Points",
-   "options": "Hotspot Site Device"
+   "label": "Branding"
   },
   {
    "description": "Shown in place of the default WiFi mark on this site's captive portal. Also editable live from the mobile app's Customize Portal screen.",
@@ -197,40 +273,110 @@
    "label": "Portal Logo"
   },
   {
+   "fieldname": "column_break_branding",
+   "fieldtype": "Column Break"
+  },
+  {
    "description": "Overrides the default \"Premium WiFi Access\" line on the captive portal. Leave blank to keep the default (translated EN/SW).",
    "fieldname": "portal_tagline",
    "fieldtype": "Data",
    "label": "Portal Tagline"
   },
   {
-   "fieldname": "packages",
-   "fieldtype": "Table",
-   "label": "Pricing Packages",
-   "options": "Hotspot Package Item"
+   "fieldname": "access_section",
+   "fieldtype": "Section Break",
+   "label": "Free Trial & Sabbath"
   },
   {
-   "fieldname": "column_break_ucbr",
+   "default": "1",
+   "description": "Shows a one-time free-trial button on the captive portal. Each device (by MAC address) can only claim it once per site -- claiming again is blocked automatically once used.",
+   "fieldname": "enable_free_trial",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enable Free Trial"
+  },
+  {
+   "default": "15",
+   "depends_on": "eval:doc.enable_free_trial",
+   "description": "How long a first-time device gets connected for free before it's disconnected. The device's MAC is then registered so it cannot claim the free trial again.",
+   "fieldname": "free_trial_minutes",
+   "fieldtype": "Int",
+   "label": "Free Trial Duration (Minutes)"
+  },
+  {
+   "fieldname": "column_break_access",
    "fieldtype": "Column Break"
   },
   {
-   "description": "QR / till-number picture shown when a customer taps Lipa Namba on the portal.",
-   "fieldname": "lipa_namba_image",
-   "fieldtype": "Attach Image",
-   "label": "Lipa Namba Image"
+   "default": "0",
+   "description": "Every week from Friday 18:00 to Saturday 18:00 the portal stops sales (mobile money, Lipa Namba, vouchers) and shows a Sabbath message. Connected devices keep their remaining time.",
+   "fieldname": "enable_sabbath_mode",
+   "fieldtype": "Check",
+   "label": "Enable Sabbath Mode (Fri 18:00 – Sat 18:00)"
   },
   {
-   "fieldname": "advance_tab",
+   "fieldname": "ads_section",
+   "fieldtype": "Section Break",
+   "label": "Ads"
+  },
+  {
+   "fieldname": "ads_html",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "vouchers_tab",
    "fieldtype": "Tab Break",
-   "label": "Advance"
+   "label": "Vouchers"
   },
   {
-   "fieldname": "column_break_r84l",
-   "fieldtype": "Column Break"
+   "fieldname": "voucher_batches_section",
+   "fieldtype": "Section Break",
+   "label": "Voucher Batches"
+  },
+  {
+   "fieldname": "voucher_batches_html",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "staff_vouchers_section",
+   "fieldtype": "Section Break",
+   "label": "Staff Vouchers"
+  },
+  {
+   "fieldname": "staff_vouchers_html",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "vouchers_section",
+   "fieldtype": "Section Break",
+   "label": "Vouchers"
+  },
+  {
+   "fieldname": "vouchers_html",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "transactions_tab",
+   "fieldtype": "Tab Break",
+   "label": "Transactions"
+  },
+  {
+   "fieldname": "transactions_html",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "chat_tab",
+   "fieldtype": "Tab Break",
+   "label": "Chat"
+  },
+  {
+   "fieldname": "chat_html",
+   "fieldtype": "HTML"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-11 13:00:00.000000",
+ "modified": "2026-10-23 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Site",

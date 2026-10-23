@@ -1,0 +1,23 @@
+{
+ "app": "bandofy",
+ "creation": "2026-10-23 16:12:34.000000",
+ "docstatus": 0,
+ "doctype": "Dock",
+ "idx": 0,
+ "items": [
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "wifi",
+   "link_to": "Bandofy",
+   "link_type": "Sidebar",
+   "title": "Bandofy"
+  }
+ ],
+ "modified": "2026-10-23 16:12:34.000000",
+ "modified_by": "Administrator",
+ "name": "bandofy",
+ "owner": "Administrator",
+ "standard": 1,
+ "user": ""
+}

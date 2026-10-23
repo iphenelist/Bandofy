@@ -1,4 +1,5 @@
 import frappe
+from frappe.query_builder.functions import IfNull
 
 
 def execute():
@@ -10,13 +11,14 @@ def execute():
 	if not frappe.db.table_exists("Hotspot Package Item"):
 		return
 
-	rows = frappe.db.sql(
-		"""select package_name, package_type, price, duration_minutes
-		from `tabHotspot Package Item`
-		where parenttype='Hotspot Site' and ifnull(package_name, '') != ''
-		order by creation, idx""",
-		as_dict=True,
-	)
+	item = frappe.qb.DocType("Hotspot Package Item")
+	rows = (
+		frappe.qb.from_(item)
+		.select(item.package_name, item.package_type, item.price, item.duration_minutes)
+		.where((item.parenttype == "Hotspot Site") & (IfNull(item.package_name, "") != ""))
+		.orderby(item.creation)
+		.orderby(item.idx)
+	).run(as_dict=True)
 	created = set()
 	for row in rows:
 		name = row.package_name.strip()

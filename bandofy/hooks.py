@@ -10,16 +10,12 @@ app_license = "mit"
 
 # required_apps = []
 
-# Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "bandofy",
-# 		"logo": "/assets/bandofy/logo.png",
-# 		"title": "Bandofy",
-# 		"route": "/bandofy",
-# 		"has_permission": "bandofy.api.permission.has_app_permission"
-# 	}
-# ]
+app_logo_url = "/assets/bandofy/images/bandofy-logo.svg"
+
+# No "route": a bare `/desk/bandofy` is only a page while the Bandofy Workspace
+# exists, so let the desk pick the landing page (the workspace, or the Dock's
+# first sidebar item on newer v16 builds).
+add_to_apps_screen = [{"name": "bandofy", "logo": app_logo_url, "title": "Bandofy"}]
 
 # Includes in <head>
 # ------------------
@@ -43,7 +39,8 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+# The Hotspot Site form's live per-tab tables (vouchers, transactions, chat...)
+doctype_js = {"Hotspot Site": "public/js/hotspot_site_panels.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}

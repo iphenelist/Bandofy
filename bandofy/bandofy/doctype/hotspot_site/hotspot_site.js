@@ -5,8 +5,13 @@
 // the mobile app uses (see bandofy.omada_provisioning).
 const OMADA = "bandofy.mobile_api.";
 
+/* global bandofy -- bandofy.site_panels comes from public/js/hotspot_site_panels.js (doctype_js hook) */
+
 frappe.ui.form.on("Hotspot Site", {
 	refresh(frm) {
+		// Live tables in the Dashboard, Omada, Portal, Vouchers, Transactions and
+		// Chat tabs -- see public/js/hotspot_site_panels.js.
+		bandofy.site_panels.setup(frm);
 		if (frm.is_new()) return;
 
 		frm.add_custom_button(
@@ -18,6 +23,10 @@ frappe.ui.form.on("Hotspot Site", {
 			frm.add_custom_button(__("Adopt Device"), () => bandofy_adopt(frm), __("Omada"));
 			frm.add_custom_button(__("Wi-Fi Networks"), () => bandofy_ssids(frm), __("Omada"));
 		}
+	},
+
+	on_tab_change(frm) {
+		bandofy.site_panels.load_active_tab(frm);
 	},
 });
 
