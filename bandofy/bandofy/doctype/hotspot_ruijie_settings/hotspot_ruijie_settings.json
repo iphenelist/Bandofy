@@ -1,0 +1,146 @@
+{
+ "actions": [],
+ "creation": "2026-10-25 09:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "radius_section",
+  "enabled",
+  "shared_secret",
+  "allow_mac_relogin",
+  "column_break_radius",
+  "bind_ip",
+  "auth_port",
+  "acct_port",
+  "login_section",
+  "login_url",
+  "login_method",
+  "column_break_login",
+  "username_field",
+  "password_field",
+  "extra_fields",
+  "notes"
+ ],
+ "fields": [
+  {
+   "description": "Ruijie controllers log customers in through RADIUS. Bandofy runs its own RADIUS server (bench execute bandofy.radius_server.start, see docs/ruijie.md); it accepts only the one-time logins Bandofy issues after a payment, voucher or free trial.",
+   "fieldname": "radius_section",
+   "fieldtype": "Section Break",
+   "label": "Bandofy RADIUS Server"
+  },
+  {
+   "default": "0",
+   "description": "While off, the RADIUS server rejects every login.",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "description": "The key in `radius-server host <Bandofy IP> key <secret>` on every Ruijie controller. Use a long random value: sites behind mobile-network NAT can't be told apart by IP, so this secret is what admits them.",
+   "fieldname": "shared_secret",
+   "fieldtype": "Password",
+   "label": "RADIUS Shared Secret"
+  },
+  {
+   "default": "1",
+   "description": "Accept the controller's MAC-based re-login (dot1x-mab) for a device whose paid time hasn't run out, so it reconnects without the portal. The device is trusted by its MAC, as on Omada sites.",
+   "fieldname": "allow_mac_relogin",
+   "fieldtype": "Check",
+   "label": "Allow MAC Re-login"
+  },
+  {
+   "fieldname": "column_break_radius",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0.0.0.0",
+   "fieldname": "bind_ip",
+   "fieldtype": "Data",
+   "label": "Listen IP"
+  },
+  {
+   "default": "1812",
+   "fieldname": "auth_port",
+   "fieldtype": "Int",
+   "label": "Authentication Port"
+  },
+  {
+   "default": "1813",
+   "fieldname": "acct_port",
+   "fieldtype": "Int",
+   "label": "Accounting Port"
+  },
+  {
+   "description": "After a customer pays, the portal sends Bandofy's one-time username and password to the controller's own login server, which then asks the RADIUS server above. Placeholders: {username}, {password}, {user_ip}, {user_mac}, {ac_name}, {nas_ip}, {ap_mac}, {ssid}, {url} (where the customer was going) and {success_url}.",
+   "fieldname": "login_section",
+   "fieldtype": "Section Break",
+   "label": "Controller Login Page"
+  },
+  {
+   "default": "http://1.1.1.1:8082/login",
+   "description": "Must match `web-auth auth-server submit-url` on the controller.",
+   "fieldname": "login_url",
+   "fieldtype": "Data",
+   "label": "Login Submit URL"
+  },
+  {
+   "default": "POST",
+   "fieldname": "login_method",
+   "fieldtype": "Select",
+   "label": "Login Method",
+   "options": "POST\nGET"
+  },
+  {
+   "fieldname": "column_break_login",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "username",
+   "fieldname": "username_field",
+   "fieldtype": "Data",
+   "label": "Username Field"
+  },
+  {
+   "default": "password",
+   "fieldname": "password_field",
+   "fieldtype": "Data",
+   "label": "Password Field"
+  },
+  {
+   "description": "Optional JSON object of more form fields to send, e.g. {\"userip\": \"{user_ip}\", \"usermac\": \"{user_mac}\"}. Check the field names your controller firmware expects.",
+   "fieldname": "extra_fields",
+   "fieldtype": "Code",
+   "label": "Extra Fields",
+   "options": "JSON"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-10-25 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Bandofy",
+ "name": "Hotspot Ruijie Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

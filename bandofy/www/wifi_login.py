@@ -4,7 +4,7 @@
 import frappe
 from frappe.utils import getdate, nowdate
 
-from bandofy.utils import find_site_by_ap_mac, has_used_free_trial, is_admin_user, is_sabbath_now
+from bandofy.utils import find_site, has_used_free_trial, is_admin_user, is_omada_site_id, is_sabbath_now
 
 no_cache = 1
 
@@ -17,7 +17,6 @@ PAYMENT_PROVIDERS = [
 	{"name": "Mixx by Yas", "file": "mixx_by_yas"},
 	{"name": "Airtel Money", "file": "airtel_money"},
 	{"name": "HaloPesa", "file": "halopesa"},
-	{"name": "M-Pesa", "file": "mpesa"},
 ]
 
 
@@ -25,24 +24,39 @@ def get_context(context):
 	frappe.flags.disable_guest_fallback = True
 	context.no_cache = 1
 
-	# Standalone EAP "External Web Portal" redirects use apMac/ap/ap_mac and
-	# clientMac/client_mac depending on firmware; accept all of them.
-	ap_mac = (
-		frappe.form_dict.get("apMac") or frappe.form_dict.get("ap") or frappe.form_dict.get("ap_mac") or ""
-	)
-	client_mac = frappe.form_dict.get("clientMac") or frappe.form_dict.get("client_mac") or ""
-	# "origUrl" is where the client was headed before the captive portal.
-	orig_url = frappe.form_dict.get("origUrl") or frappe.form_dict.get("orig_url") or ""
+	# Omada redirects use apMac/ap/ap_mac and clientMac/client_mac depending
+	# on firmware. Ruijie ACs send the names set by `fmt custom` in their
+	# web-auth template (see docs/ruijie.md): wlanapmac, mac, ssid, url,
+	# wlanacname, wlanuserip and wlannasip. Accept all of them.
+	ap_mac = _param("apMac", "ap", "ap_mac", "wlanapmac")
+	client_mac = _param("clientMac", "client_mac", "mac")
+	# Where the client was headed before the captive portal.
+	orig_url = _param("origUrl", "orig_url", "url")
 	# ssidName/radioId are Omada-Controller-managed-site specific -- required
 	# by the hotspot/login authorize call in api.authorize_mac_on_omada.
-	ssid_name = frappe.form_dict.get("ssidName") or frappe.form_dict.get("ssid") or ""
-	radio_id = frappe.form_dict.get("radioId") or frappe.form_dict.get("radio_id") or ""
+	ssid_name = _param("ssidName", "ssid")
+	radio_id = _param("radioId", "radio_id")
+	# Ruijie only: the AC's name identifies the site, and the user and NAS
+	# IPs may be needed by the AC's login page.
+	ac_name = _param("wlanacname", "ac_name")
+	user_ip = _param("wlanuserip", "user_ip")
+	nas_ip = _param("wlannasip", "nas_ip")
+	# Controller-managed sites add the Omada site ID as "site"; it is how the
+	# portal finds the Hotspot Site (the AP MAC is the fallback).
+	omada_site = (frappe.form_dict.get("site") or "").strip()
+	if not is_omada_site_id(omada_site):
+		omada_site = ""
 
 	context.ap_mac = ap_mac
 	context.client_mac = client_mac
 	context.orig_url = orig_url
 	context.ssid_name = ssid_name
 	context.radio_id = radio_id
+	context.omada_site = omada_site
+	context.ac_name = ac_name
+	context.user_ip = user_ip
+	context.nas_ip = nas_ip
+	context.controller_type = None
 	context.vendor_name = None
 	context.site_label = None
 	context.support_phone = None
@@ -61,11 +75,14 @@ def get_context(context):
 	context.portal_logo = None
 	context.portal_tagline = None
 
-	if ap_mac:
-		site = find_site_by_ap_mac(
+	if ap_mac or omada_site or ac_name:
+		site = find_site(
+			omada_site,
 			ap_mac,
+			ac_name=ac_name,
 			fields=[
 				"name",
+				"controller_type",
 				"vendor_name",
 				"site_name",
 				"phone_number",
@@ -82,6 +99,7 @@ def get_context(context):
 
 		if site:
 			context.site_found = True
+			context.controller_type = site.controller_type or "Omada"
 			context.vendor_name = site.vendor_name
 			context.site_label = site.site_name
 			context.support_phone = site.phone_number
@@ -121,6 +139,15 @@ def get_context(context):
 	return context
 
 
+def _param(*names):
+	"""The first non-empty request parameter among ``names``, stripped."""
+	for name in names:
+		value = frappe.form_dict.get(name)
+		if value:
+			return str(value).strip()
+	return ""
+
+
 def build_portal_data(context):
 	"""Everything the Vue portal app (public/js/wifi_portal) needs, handed to
 	it as a single JSON blob on window.PORTAL."""
@@ -130,6 +157,11 @@ def build_portal_data(context):
 		"orig_url",
 		"ssid_name",
 		"radio_id",
+		"omada_site",
+		"ac_name",
+		"user_ip",
+		"nas_ip",
+		"controller_type",
 		"site_found",
 		"vendor_name",
 		"site_label",

@@ -9,6 +9,10 @@ from frappe.utils import now_datetime
 SABBATH_START_HOUR = 18  # Friday 18:00 ...
 SABBATH_END_HOUR = 18  # ... to Saturday 18:00, system timezone
 
+# Omada site IDs are 24 hex characters. The controller puts the site's ID in
+# the External Portal redirect as `site`.
+OMADA_SITE_ID = re.compile(r"^[0-9a-fA-F]{24}$")
+
 
 def normalize_mac(mac):
 	"""Compare MACs on hex digits only -- EAPs/controllers are inconsistent
@@ -38,6 +42,38 @@ def find_site_by_ap_mac(ap_mac, fields=None, active_only=True):
 	if active_only:
 		filters["is_active"] = 1
 	return frappe.db.get_value("Hotspot Site", filters, list(fields) if fields else ["name"], as_dict=True)
+
+
+def is_omada_site_id(value):
+	"""Whether ``value`` looks like an Omada site ID (24 hex characters)."""
+	return bool(value and OMADA_SITE_ID.match(value.strip()))
+
+
+def find_site(omada_site=None, ap_mac=None, fields=None, active_only=True, ac_name=None):
+	"""The Hotspot Site a captive-portal request belongs to.
+
+	Tries, in order:
+	- ``omada_site``: the Omada site ID the controller adds to the External
+	  Portal redirect as ``site`` (Omada sites);
+	- ``ac_name``: the Ruijie controller's name it sends as ``wlanacname``
+	  (Ruijie sites);
+	- ``ap_mac``: any active row of a site's Access Points table, for
+	  requests without either and for sites that haven't filled them in.
+	So a site needs no Access Points rows, and APs added on the controller
+	work at once."""
+	fields = list(fields) if fields else ["name"]
+	lookups = []
+	if is_omada_site_id(omada_site):
+		lookups.append({"omada_site_id": omada_site.strip()})
+	if ac_name and ac_name.strip():
+		lookups.append({"ruijie_ac_name": ac_name.strip(), "controller_type": "Ruijie"})
+	for filters in lookups:
+		if active_only:
+			filters["is_active"] = 1
+		site = frappe.db.get_value("Hotspot Site", filters, fields, as_dict=True)
+		if site:
+			return site
+	return find_site_by_ap_mac(ap_mac, fields=fields, active_only=active_only)
 
 
 def site_ap_macs(site_name, active_only=True):

@@ -60,10 +60,56 @@ def _is_strong_device_password(password):
 
 @frappe.whitelist()
 def test_connection():
-	"""Desk "Test Connection" button: fetches the controller ID, an Open API
-	token and the site list, and fills in any empty new-site defaults from
-	the first existing site."""
+	"""Desk "Test Connection" button. With Open API keys: fetches the
+	controller ID, an Open API token and the site list, and fills in any
+	empty new-site defaults from the first existing site. Without them:
+	fetches the controller ID and checks the hotspot operator login, which
+	is all connecting customers needs."""
 	frappe.only_for("System Manager")
-	from bandofy.omada_openapi import test_connection as run
+	settings = frappe.get_doc("Hotspot Omada Settings")
+	if settings.client_id:
+		from bandofy.omada_openapi import OmadaApiError
+		from bandofy.omada_openapi import test_connection as run
 
-	return run()
+		try:
+			return run()
+		except OmadaApiError as e:
+			frappe.throw(str(e), title=_("Omada Controller"))
+
+	return _test_operator_connection(settings)
+
+
+def _test_operator_connection(settings):
+	from bandofy.omada_openapi import OmadaApiError, controller_info
+	from bandofy.omada_service import OmadaAuthError, _operator_login
+
+	password = settings.get_password("operator_password", raise_exception=False)
+	if not (settings.controller_url and settings.operator_name and password):
+		frappe.throw(_("Fill in the Controller URL, Operator Name and Operator Password, then save."))
+
+	try:
+		info = controller_info(settings.controller_url)
+	except OmadaApiError as e:
+		frappe.throw(str(e), title=_("Omada Controller"))
+
+	omadac_id = info.get("omadacId")
+	if not omadac_id:
+		frappe.throw(_("The Omada Controller did not report its Controller ID."), title=_("Omada Controller"))
+	if omadac_id != settings.omadac_id:
+		frappe.db.set_single_value("Hotspot Omada Settings", "omadac_id", omadac_id)
+		frappe.clear_document_cache("Hotspot Omada Settings", "Hotspot Omada Settings")
+
+	try:
+		_operator_login(f"{settings.controller_url}/{omadac_id}", settings.operator_name, password)
+	except OmadaAuthError as e:
+		frappe.throw(
+			_("The controller answered, but the hotspot operator could not log in: {0}").format(e),
+			title=_("Omada Controller"),
+		)
+
+	return {
+		"controller_version": info.get("controllerVer"),
+		"omadac_id": omadac_id,
+		"sites": None,
+		"operator": {"name": settings.operator_name, "logged_in": True},
+	}

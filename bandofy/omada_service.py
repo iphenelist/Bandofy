@@ -61,6 +61,11 @@ def site_controller(site):
 			f"{site.get('site_name') or site.get('name')} isn't set up on the Omada Controller yet."
 		)
 	if not OMADA_SITE_ID.match(site_id):
+		if not settings.client_id:
+			raise OmadaAuthError(
+				f"'{site_id}' on {site.get('site_name') or site.get('name')} is not an Omada site ID. "
+				"Enter the site's 24-character Omada Site ID on the Hotspot Site."
+			)
 		site_id = _resolve_site_id(site, site_id)
 
 	controller_id = settings.omadac_id

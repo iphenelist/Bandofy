@@ -20,7 +20,9 @@
   "amount",
   "column_break_2",
   "duration_minutes",
-  "omada_authorized"
+  "omada_authorized",
+  "authorized_until",
+  "radius_password"
  ],
  "fields": [
   {
@@ -115,16 +117,31 @@
   },
   {
    "default": "0",
-   "description": "Set once authorize_mac_on_omada has successfully authorized this client's MAC on the Omada controller -- checked by get_omada_connection_status, which the portal page polls to know when it can redirect the browser out of the captive portal.",
+   "description": "Set once the customer can get online: on Omada sites when the controller has authorized the MAC, on Ruijie sites when the one-time RADIUS login has been issued. get_omada_connection_status, which the portal polls, checks it.",
    "fieldname": "omada_authorized",
    "fieldtype": "Check",
-   "label": "Omada Authorized",
+   "label": "Authorized",
+   "read_only": 1
+  },
+  {
+   "description": "Ruijie sites: the one-time RADIUS login is accepted until this time.",
+   "fieldname": "authorized_until",
+   "fieldtype": "Datetime",
+   "label": "Authorized Until",
+   "read_only": 1
+  },
+  {
+   "description": "Ruijie sites: the one-time RADIUS password; the username is this transaction's ID.",
+   "fieldname": "radius_password",
+   "fieldtype": "Password",
+   "hidden": 1,
+   "label": "RADIUS Password",
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-07 12:00:00.000000",
+ "modified": "2026-10-25 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Transaction",

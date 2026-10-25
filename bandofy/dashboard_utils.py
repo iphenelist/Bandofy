@@ -57,6 +57,9 @@ def get_omada_live_stats(site):
 	stats = {"connected": False, "client_count": 0, "tx_rate": 0, "rx_rate": 0, "error": None}
 
 	hotspot_site = frappe.get_doc("Hotspot Site", site.name)
+	if hotspot_site.controller_type == "Ruijie":
+		stats["error"] = "Live client numbers come from the Omada Controller; this is a Ruijie site."
+		return stats
 	try:
 		stats = omada_service.get_live_stats(**omada_service.site_controller(hotspot_site))
 	except Exception as e:

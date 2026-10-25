@@ -14,6 +14,11 @@ frappe.ui.form.on("Hotspot Site", {
 		bandofy.site_panels.setup(frm);
 		if (frm.is_new()) return;
 
+		// Automatic setup needs Open API keys in Hotspot Omada Settings. Without
+		// them the site is set up in the Omada Controller and only its Omada
+		// Site ID is entered here (see HotspotSite.onload).
+		if (!(frm.doc.__onload && frm.doc.__onload.open_api)) return;
+
 		frm.add_custom_button(
 			frm.doc.omada_site_id ? __("Re-run Omada Setup") : __("Create on Omada"),
 			() => bandofy_provision(frm),
@@ -42,18 +47,15 @@ function bandofy_steps_html(steps) {
 }
 
 function bandofy_provision(frm) {
-	frappe.prompt(
-		{
-			fieldname: "ssid_name",
-			fieldtype: "Data",
-			label: __("Hotspot SSID Name"),
-			default: frm.doc.hotspot_ssid_name || "Bandofy",
-			reqd: 1,
-		},
-		(values) => {
+	// The hotspot SSID is the Site Name (see HotspotSite.sync_names_from_site_name).
+	frappe.confirm(
+		__("Set up this site on the Omada Controller with the Wi-Fi name {0}?", [
+			frappe.utils.escape_html(frm.doc.site_name).bold(),
+		]),
+		() => {
 			frappe.call({
 				method: OMADA + "provision_omada_site",
-				args: { site: frm.doc.name, ssid_name: values.ssid_name },
+				args: { site: frm.doc.name },
 				freeze: true,
 				freeze_message: __("Setting up the site on the Omada Controller..."),
 				callback: (r) => {
@@ -64,9 +66,7 @@ function bandofy_provision(frm) {
 					frm.reload_doc();
 				},
 			});
-		},
-		__("Create on Omada"),
-		__("Start")
+		}
 	);
 }
 
@@ -160,7 +160,8 @@ function bandofy_ssids(frm) {
 						fieldname: "name",
 						fieldtype: "Data",
 						label: __("Rename hotspot SSID to"),
-						default: frm.doc.hotspot_ssid_name,
+						description: __("The Site Name changes to match."),
+						default: frm.doc.site_name,
 					},
 				],
 				primary_action_label: __("Save"),
