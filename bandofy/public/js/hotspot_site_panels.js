@@ -182,6 +182,8 @@ $.extend(bandofy.site_panels, {
 
 		async devices_html(frm, $w) {
 			const devices = await this.call("get_site_devices", { site: frm.doc.name });
+			// Live status, model, IP and Reboot come from the Omada Open API.
+			const open_api = !!(frm.doc.__onload && frm.doc.__onload.open_api);
 			const status = (s) =>
 				!s || s === "unknown"
 					? this.pill("Unknown", "gray")
@@ -201,10 +203,14 @@ $.extend(bandofy.site_panels, {
 							label: __("Active"),
 							html: (r) => (r.is_active ? __("Yes") : __("No")),
 						},
-						{ label: __("Status"), html: (r) => status(r.status) },
-						{ label: __("Model"), html: (r) => this.esc(r.model) },
-						{ label: __("IP"), html: (r) => this.esc(r.ip) },
-						{
+						...(open_api
+							? [
+									{ label: __("Status"), html: (r) => status(r.status) },
+									{ label: __("Model"), html: (r) => this.esc(r.model) },
+									{ label: __("IP"), html: (r) => this.esc(r.ip) },
+							  ]
+							: []),
+						open_api && {
 							label: "",
 							html: (r) =>
 								this.button(__("Reboot"), () =>
@@ -226,11 +232,15 @@ $.extend(bandofy.site_panels, {
 									)
 								),
 						},
-					],
+					].filter(Boolean),
 					devices,
-					__(
-						"No access points yet. Add them in the table above, or use Omada > Adopt Device."
-					)
+					open_api
+						? __(
+								"No access points yet. Add them in the table above, or use Omada > Adopt Device."
+						  )
+						: __(
+								"No access points listed. That's fine: customers are matched by the Omada Site ID. Add APs above only to label them."
+						  )
 				)
 			);
 		},
@@ -239,11 +249,7 @@ $.extend(bandofy.site_panels, {
 			const ads = await this.call("get_ads", { site: frm.doc.name });
 			$w.empty().append(
 				this.toolbar([
-					this.button(
-						__("New Ad"),
-						() => frappe.new_doc("Hotspot Ad", { site: frm.doc.name }),
-						"btn-primary"
-					),
+					this.button(__("New Ad"), () => this.ad_dialog(frm), "btn-primary"),
 					this.button(__("Refresh"), () => this.load(frm, "ads_html")),
 				]),
 				this.table(
@@ -271,6 +277,22 @@ $.extend(bandofy.site_panels, {
 						},
 						{ label: __("Order"), html: (r) => this.esc(r.display_order) },
 						{ label: __("Views"), html: (r) => this.esc(r.views_count) },
+						{
+							label: "",
+							html: (r) =>
+								$("<span></span>").append(
+									this.button(__("Edit"), () => this.ad_dialog(frm, r)),
+									this.button(__("Delete"), () =>
+										frappe.confirm(
+											__("Delete ad {0}?", [this.esc(r.title).bold()]),
+											() =>
+												this.call("delete_ad", { name: r.name }).then(() =>
+													this.load(frm, "ads_html")
+												)
+										)
+									)
+								),
+						},
 					],
 					ads,
 					__("No ads for this site.")
@@ -428,6 +450,16 @@ $.extend(bandofy.site_panels, {
 					frappe.show_alert({ message: __("Voucher updated"), indicator: "green" });
 					fetch(true);
 				});
+			// A voucher sold outside the portal (e.g. through the ISP router):
+			// marking it Used records a Paid transaction at its price.
+			const mark_sold = (r) =>
+				frappe.confirm(
+					__(
+						"Mark voucher {0} as sold for {1}? It will be counted in the sales report.",
+						[this.esc(r.name).bold(), this.money(r.price)]
+					),
+					() => set_status(r, "Used")
+				);
 
 			const fetch = async (reset) => {
 				if (reset) Object.assign(state, { start: 0, rows: [] });
@@ -467,11 +499,20 @@ $.extend(bandofy.site_panels, {
 							{
 								label: "",
 								html: (r) =>
-									r.status === "Unused"
-										? this.button(__("Block"), () => set_status(r, "Blocked"))
-										: r.status === "Blocked"
-										? this.button(__("Unblock"), () => set_status(r, "Unused"))
-										: "",
+									r.status === "Used"
+										? ""
+										: $("<span></span>").append(
+												this.button(__("Mark Sold"), () => mark_sold(r)),
+												r.status === "Unused"
+													? this.button(__("Block"), () =>
+															set_status(r, "Blocked")
+													  )
+													: r.status === "Blocked"
+													? this.button(__("Unblock"), () =>
+															set_status(r, "Unused")
+													  )
+													: ""
+										  ),
 							},
 						],
 						state.rows,
@@ -644,6 +685,93 @@ $.extend(bandofy.site_panels, {
 					.join(""),
 			})
 		);
+	},
+
+	// New or edit a captive-portal ad in a popup (bandofy.mobile_api.save_ad).
+	ad_dialog(frm, ad) {
+		// Portal visitors are guests, so ad media must be public files.
+		const upload = { make_attachments_public: 1 };
+		const d = new frappe.ui.Dialog({
+			title: ad ? __("Edit Ad") : __("New Ad"),
+			size: "large",
+			fields: [
+				{ fieldname: "title", fieldtype: "Data", label: __("Ad Title"), reqd: 1 },
+				{ fieldname: "is_active", fieldtype: "Check", label: __("Is Active"), default: 1 },
+				{ fieldtype: "Column Break" },
+				{
+					fieldname: "site",
+					fieldtype: "Link",
+					options: "Hotspot Site",
+					label: __("Hotspot Site (leave blank for all sites)"),
+					default: frm.doc.name,
+					hidden: !frappe.user.has_role("System Manager"),
+				},
+				{
+					fieldname: "display_order",
+					fieldtype: "Int",
+					label: __("Display Order"),
+					default: 0,
+				},
+				{ fieldtype: "Section Break", label: __("Creative") },
+				{
+					fieldname: "image",
+					fieldtype: "Attach Image",
+					label: __("Banner Image"),
+					reqd: 1,
+					options: upload,
+				},
+				{ fieldname: "target_url", fieldtype: "Data", label: __("Target URL (Optional)") },
+				{ fieldtype: "Column Break" },
+				{
+					fieldname: "description",
+					fieldtype: "Data",
+					label: __("Short Description (Optional)"),
+				},
+				{
+					fieldname: "phone_number",
+					fieldtype: "Data",
+					options: "Phone",
+					label: __("Contact Phone (Optional)"),
+				},
+				{
+					fieldtype: "Section Break",
+					label: __("Full-Screen Ad (before Free Internet)"),
+					collapsible: !(ad && ad.show_before_free_trial),
+				},
+				{
+					fieldname: "show_before_free_trial",
+					fieldtype: "Check",
+					label: __("Show Before Free Internet"),
+				},
+				{
+					fieldname: "fullscreen_image",
+					fieldtype: "Attach Image",
+					label: __("Full-Screen Image (1080 x 1920)"),
+					options: upload,
+				},
+				{ fieldtype: "Column Break" },
+				{
+					fieldname: "video",
+					fieldtype: "Attach",
+					label: __("Video (MP4, 720 x 1280)"),
+					options: upload,
+				},
+				{ fieldtype: "Section Break", label: __("Schedule (Optional)") },
+				{ fieldname: "start_date", fieldtype: "Date", label: __("Start Date") },
+				{ fieldtype: "Column Break" },
+				{ fieldname: "end_date", fieldtype: "Date", label: __("End Date") },
+			],
+			primary_action_label: __("Save"),
+			primary_action: (values) => {
+				this.call("save_ad", { name: ad ? ad.name : null, values }).then(() => {
+					d.hide();
+					frappe.show_alert({ message: __("Ad saved"), indicator: "green" });
+					this.load(frm, "ads_html");
+				});
+			},
+		});
+		if (ad) d.set_values(ad);
+		d.show();
 	},
 
 	new_batch(frm) {

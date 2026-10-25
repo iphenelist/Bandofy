@@ -41,6 +41,8 @@ Named `HVB-YY.MM.-#####`. Fields: Site, Package, Quantity, optional code Prefix,
 
 Named by its code: 6 random digits, easy to key in on a phone. Fields: Status (`Unused`, `Used`, `Expired`, `Blocked`), Site, Batch, Package, Price, Duration, Generated On, Expires On, and, once used, Used On, Used By (Client MAC), Redeemed At AP MAC and Transaction.
 
+**Mark Sold** (Vouchers tab, or `set_voucher_status` with `Used`) records a voucher sold outside the captive portal, for example internet sold through the ISP router. It creates the same Paid Hotspot Transaction (`VOUCHER:<code>`, Client MAC `Manual Sale`) a portal redemption does, at the voucher's price, so the sale appears in the Hotspot Sales Report and dashboards. Like any Used voucher, it can't be changed back.
+
 - Before redemption, **Expires On** is the last date the code can be redeemed. When a voucher is redeemed, it is recalculated to *Used On + Duration*.
 - Redemption (`bandofy.api.redeem_voucher`) creates a Paid Hotspot Transaction with phone number `Voucher` and reference `VOUCHER:<code>`, then authorizes the device.
 - A Used voucher is a record of access already given, so the mobile app can't make it redeemable again.

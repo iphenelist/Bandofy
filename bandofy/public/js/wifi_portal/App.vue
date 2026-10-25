@@ -26,52 +26,71 @@
 					<svg v-else viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 						<path
 							d="M12 18.5C12.8284 18.5 13.5 17.8284 13.5 17C13.5 16.1716 12.8284 15.5 12 15.5C11.1716 15.5 10.5 16.1716 10.5 17C10.5 17.8284 11.1716 18.5 12 18.5Z"
-							fill="#fff"
+							fill="currentColor"
 						/>
 						<path
 							d="M8.5 14C10.5 12 13.5 12 15.5 14"
-							stroke="#fff"
+							stroke="currentColor"
 							stroke-width="1.8"
 							stroke-linecap="round"
 						/>
 						<path
 							d="M5.5 10.8C9.5 7 14.5 7 18.5 10.8"
-							stroke="#fff"
+							stroke="currentColor"
 							stroke-width="1.8"
 							stroke-linecap="round"
 						/>
 						<path
 							d="M2.5 7.6C8 2.5 16 2.5 21.5 7.6"
-							stroke="#fff"
+							stroke="currentColor"
 							stroke-width="1.8"
 							stroke-linecap="round"
 						/>
 					</svg>
 				</div>
-				<h1>{{ portal.site_label || "Wi-Fi Hotspot" }}</h1>
+				<h1>{{ t("welcome_to", { site: portal.site_label || "Wi-Fi" }) }}</h1>
 				<p class="tagline">
 					{{
-						portal.vendor_name
+						portal.portal_tagline ||
+						(portal.vendor_name
 							? t("tagline_with_vendor", { vendor: portal.vendor_name })
-							: t("tagline_default")
+							: t("tagline_default"))
 					}}
 				</p>
-				<p class="premium-tag">{{ portal.portal_tagline || t("premium_tag") }}</p>
 			</div>
 
 			<template v-if="portal.site_found">
-				<div v-if="!portal.sabbath_active" class="steps">
-					<span>{{ t("step_choose") }}</span
-					><span class="chevron">&#8250;</span> <span>{{ t("step_pay") }}</span
-					><span class="chevron">&#8250;</span>
-					<span>{{ t("step_connect") }}</span>
-				</div>
-
 				<SabbathCard v-if="portal.sabbath_active" />
 				<FreeTrialCard v-if="portal.free_trial_enabled" />
 				<template v-if="!portal.sabbath_active">
-					<VoucherForm @find="modal = 'find'" />
+					<div class="tabs" role="tablist">
+						<button
+							v-for="tab in tabs"
+							:key="tab.key"
+							type="button"
+							role="tab"
+							class="tab"
+							:class="{ active: activeTab === tab.key }"
+							:aria-selected="activeTab === tab.key"
+							@click="activeTab = tab.key"
+						>
+							{{ t(tab.label) }}
+						</button>
+					</div>
 
+					<MobileMoneyForm
+						v-show="activeTab === 'mobile'"
+						:packages="portal.packages || []"
+						@unavailable="modal = 'maintenance'"
+					/>
+					<VoucherForm v-show="activeTab === 'voucher'" @find="modal = 'find'" />
+				</template>
+
+				<div v-if="status.text" class="msg show" :class="status.type">
+					{{ status.text }}
+				</div>
+
+				<template v-if="!portal.sabbath_active">
 					<div class="pay-label">{{ t("pay_label") }}</div>
 					<div class="pay-logos">
 						<div
@@ -93,26 +112,23 @@
 					</div>
 				</template>
 			</template>
+			<div v-else class="no-site">
+				{{ t("no_site") }}
+				<small v-if="portal.omada_site" class="no-site-id"
+					>Site ID: {{ portal.omada_site }}</small
+				>
+				<small v-else-if="portal.ac_name" class="no-site-id"
+					>AC Name: {{ portal.ac_name }}</small
+				>
+			</div>
 		</div>
 
 		<AdCarousel v-if="portal.ads && portal.ads.length" :ads="portal.ads" />
-
-		<div v-if="!portal.site_found" class="no-site">{{ t("no_site") }}</div>
-		<template v-else>
-			<PackageList
-				v-if="!portal.sabbath_active"
-				:packages="portal.packages || []"
-				@select="selectPackage"
-			/>
-			<div v-if="status.text" class="msg show" :class="status.type">{{ status.text }}</div>
-		</template>
 
 		<div class="footer-note">{{ t("footer_powered") }}</div>
 	</div>
 
 	<template v-if="portal.site_found">
-		<BuyModal :pkg="buyingPackage" @close="buyingPackage = null" />
-
 		<BaseModal :open="modal === 'find'" @close="modal = null">
 			<div class="info-icon">
 				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -202,11 +218,10 @@
 import { reactive, ref, watchEffect } from "vue";
 import AdCarousel from "./components/AdCarousel.vue";
 import BaseModal from "./components/BaseModal.vue";
-import BuyModal from "./components/BuyModal.vue";
 import ChatWidget from "./components/ChatWidget.vue";
 import FreeTrialCard from "./components/FreeTrialCard.vue";
 import LipaWidget from "./components/LipaWidget.vue";
-import PackageList from "./components/PackageList.vue";
+import MobileMoneyForm from "./components/MobileMoneyForm.vue";
 import SabbathCard from "./components/SabbathCard.vue";
 import VoucherForm from "./components/VoucherForm.vue";
 import { lang, setLang, t } from "./i18n";
@@ -215,14 +230,13 @@ import { portal } from "./portal";
 
 // Which of the simple modals is open: "find" | "maintenance" | null.
 const modal = ref(null);
-const buyingPackage = ref(null);
 const brokenLogos = reactive({});
 
-function selectPackage(pkg) {
-	if (portal.sabbath_active) return;
-	if (portal.online_payment_enabled) buyingPackage.value = pkg;
-	else modal.value = "maintenance";
-}
+const tabs = [
+	{ key: "mobile", label: "tab_mobile_money" },
+	{ key: "voucher", label: "tab_voucher" },
+];
+const activeTab = ref("mobile");
 
 watchEffect(() => {
 	document.documentElement.setAttribute("lang", lang.value);

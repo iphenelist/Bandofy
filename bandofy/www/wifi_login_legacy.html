@@ -865,6 +865,7 @@
 
 			<input type="hidden" id="client_mac" value="{{ client_mac }}">
 			<input type="hidden" id="ap_mac" value="{{ ap_mac }}">
+			<input type="hidden" id="omada_site" value="{{ omada_site }}">
 			<input type="hidden" id="ssid_name" value="{{ ssid_name }}">
 			<input type="hidden" id="radio_id" value="{{ radio_id }}">
 
@@ -1518,6 +1519,7 @@
 				postJson("/api/method/bandofy.api.log_ad_view", {
 					ad: adName,
 					ap_mac: val("ap_mac"),
+					omada_site: val("omada_site"),
 					client_mac: val("client_mac")
 				}).catch(function () {});
 			}
@@ -1680,7 +1682,7 @@
 			}
 
 			function pollChatMessages() {
-				var args = { ap_mac: val("ap_mac"), client_mac: val("client_mac") };
+				var args = { ap_mac: val("ap_mac"), client_mac: val("client_mac"), omada_site: val("omada_site") };
 				if (chatLastSeen) args.after = chatLastSeen;
 
 				postJson("/api/method/bandofy.api.get_chat_messages", args)
@@ -1725,6 +1727,7 @@
 
 				postJson("/api/method/bandofy.api.send_chat_message", {
 					ap_mac: val("ap_mac"),
+					omada_site: val("omada_site"),
 					client_mac: val("client_mac"),
 					message: text
 				})
@@ -1848,6 +1851,7 @@
 						package_idx: modalPackageIdx,
 						client_mac: val("client_mac"),
 						ap_mac: val("ap_mac"),
+						omada_site: val("omada_site"),
 						ssid_name: val("ssid_name"),
 						radio_id: val("radio_id")
 					})
@@ -1893,6 +1897,7 @@
 						voucher_code: code,
 						client_mac: val("client_mac"),
 						ap_mac: val("ap_mac"),
+						omada_site: val("omada_site"),
 						ssid_name: val("ssid_name"),
 						radio_id: val("radio_id")
 					})
@@ -1931,6 +1936,7 @@
 
 					postJson("/api/method/bandofy.api.claim_free_trial", {
 						ap_mac: val("ap_mac"),
+						omada_site: val("omada_site"),
 						client_mac: val("client_mac"),
 						ssid_name: val("ssid_name"),
 						radio_id: val("radio_id")

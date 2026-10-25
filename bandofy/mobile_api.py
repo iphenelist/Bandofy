@@ -57,6 +57,15 @@ def _resolve_site(site=None):
 	return _own_site_name()
 
 
+def _omada_site_for_write(site=None):
+	"""Like _resolve_site_for_write, for actions only an Omada site has
+	(controller setup, adoption, SSIDs, AP reboot)."""
+	site_name = _resolve_site_for_write(site)
+	if frappe.db.get_value("Hotspot Site", site_name, "controller_type") == "Ruijie":
+		frappe.throw(_("This is a Ruijie site: manage its access points on the Ruijie controller."))
+	return site_name
+
+
 def _resolve_site_for_write(site=None):
 	"""Like _resolve_site, but for actions that always need exactly one
 	concrete site -- a vendor is forced to their own regardless of `site`;
@@ -276,10 +285,11 @@ VOUCHER_FIELDS = [
 	"used_by_mac",
 ]
 
-# Statuses the app may set by hand. "Used" is only ever set by an actual
-# redemption (api.redeem_voucher), which also creates the Paid transaction
-# and fires the voucher-used alert.
-MANUAL_VOUCHER_STATUSES = ("Unused", "Blocked", "Expired")
+# Statuses the app may set by hand. "Used" by hand records a voucher sold
+# outside the captive portal (e.g. through the ISP router): HotspotVoucher
+# creates the same Paid transaction a portal redemption does, so the sale
+# reaches the reports.
+MANUAL_VOUCHER_STATUSES = ("Unused", "Used", "Blocked", "Expired")
 
 
 @frappe.whitelist()
@@ -353,8 +363,9 @@ def get_vouchers(
 
 @frappe.whitelist()
 def set_voucher_status(name, status, expires_on=None):
-	"""Block, unblock, or expire a single voucher -- e.g. block a code that
-	was lost or sold by mistake. A Used voucher is a record of access already
+	"""Block, unblock, expire, or mark as sold (Used) a single voucher --
+	e.g. block a code that was lost, or record one sold through the ISP
+	router so it counts as a sale at its price. A Used voucher is a record of access already
 	granted and can't be changed, so it can never be made redeemable again.
 	``expires_on`` (a date, or "" for none) is applied first, so a voucher
 	whose old expiry has passed can be made Unused in the same call."""
@@ -478,9 +489,9 @@ def get_packages():
 
 @frappe.whitelist()
 def create_site(
-	vendor_name,
 	vendor_user,
 	site_name,
+	vendor_name=None,
 	devices=None,
 	phone_number=None,
 	mobile_money_account=None,
@@ -491,6 +502,9 @@ def create_site(
 	packages=None,
 	provision_on_omada=1,
 	hotspot_ssid_name=None,
+	omada_site_id=None,
+	controller_type="Omada",
+	ruijie_ac_name=None,
 ):
 	"""Admin-only: create a new Hotspot Site from the app. Field validation
 	is left to the doctype's own rules, surfaced through the same
@@ -504,7 +518,12 @@ def create_site(
 
 	Unless ``provision_on_omada`` is 0, the site is also created on the
 	central Omada Controller right away (see bandofy.omada_provisioning) and
-	the step report is returned as ``provisioning``. ``devices`` is an
+	the step report is returned as ``provisioning``. Pass ``omada_site_id``
+	(with ``provision_on_omada=0``) for a site already set up by hand on the
+	controller, or ``controller_type="Ruijie"`` with ``ruijie_ac_name`` for a
+	Ruijie site (never provisioned). ``vendor_name`` and
+	``hotspot_ssid_name`` are accepted for older app versions but ignored:
+	both are copies of ``site_name``. ``devices`` is an
 	optional JSON list of AP MACs; usually APs are added later by adopting
 	them."""
 	if not _is_admin():
@@ -513,7 +532,6 @@ def create_site(
 	doc = frappe.get_doc(
 		{
 			"doctype": "Hotspot Site",
-			"vendor_name": vendor_name,
 			"vendor_user": vendor_user,
 			"site_name": site_name,
 			"phone_number": phone_number,
@@ -523,7 +541,9 @@ def create_site(
 			"enable_free_trial": enable_free_trial,
 			"free_trial_minutes": free_trial_minutes,
 			"success_redirect_url": success_redirect_url,
-			"hotspot_ssid_name": hotspot_ssid_name,
+			"omada_site_id": (omada_site_id or "").strip() or None,
+			"controller_type": controller_type or "Omada",
+			"ruijie_ac_name": (ruijie_ac_name or "").strip() or None,
 		}
 	)
 
@@ -539,10 +559,10 @@ def create_site(
 	frappe.db.commit()  # nosemgrep
 
 	result = {"name": doc.name, "site_name": doc.site_name, "vendor_name": doc.vendor_name}
-	if frappe.utils.cint(provision_on_omada):
+	if frappe.utils.cint(provision_on_omada) and doc.controller_type != "Ruijie":
 		from bandofy.omada_provisioning import provision_site
 
-		result["provisioning"] = provision_site(doc.name, hotspot_ssid_name)
+		result["provisioning"] = provision_site(doc.name)
 	return result
 
 
@@ -715,6 +735,15 @@ def get_site_devices(site=None):
 	if not devices:
 		return devices
 
+	# Live status comes from the Omada Open API; without its keys (or on a
+	# Ruijie site) there is nothing to ask, and every load would log an error.
+	if doc.controller_type == "Ruijie" or not frappe.db.get_single_value(
+		"Hotspot Omada Settings", "client_id"
+	):
+		for device in devices:
+			device["status"] = "unknown"
+		return devices
+
 	try:
 		from bandofy.omada_openapi import site_devices
 
@@ -792,7 +821,7 @@ def remove_site_device(site, ap_mac):
 def reboot_site_device(site, ap_mac):
 	"""Reboots one Omada-adopted device. Disconnects every client currently
 	on it -- the app requires an explicit confirmation before calling this."""
-	site_name = _resolve_site_for_write(site)
+	site_name = _omada_site_for_write(site)
 	doc = frappe.get_doc("Hotspot Site", site_name)
 
 	from bandofy.omada_openapi import OmadaApiError, reboot_device
@@ -815,6 +844,8 @@ def check_omada_connection(site=None):
 	can still see exactly what works. Read-only."""
 	site_name = _resolve_site_for_write(site)
 	doc = frappe.get_doc("Hotspot Site", site_name)
+	if doc.controller_type == "Ruijie":
+		return _ruijie_checks(doc)
 
 	try:
 		controller = omada_service.site_controller(doc)
@@ -1016,7 +1047,6 @@ def _require_admin():
 # What a vendor may change on their own Hotspot Site. Everything else on the
 # site (hardware credentials, linkage, activation) is admin-only.
 SITE_VENDOR_FIELDS = [
-	"vendor_name",
 	"site_name",
 	"phone_number",
 	"mobile_money_account",
@@ -1028,14 +1058,22 @@ SITE_VENDOR_FIELDS = [
 	"success_redirect_url",
 	"lipa_namba_image",
 ]
+# omada_site_id is admin-only: pointing a site at another vendor's Omada site
+# would route that vendor's customers (and sales) to it.
 SITE_ADMIN_FIELDS = [
 	*SITE_VENDOR_FIELDS,
 	"vendor_user",
 	"is_active",
+	"omada_site_id",
+	"controller_type",
+	"ruijie_ac_name",
 ]
 SITE_READ_ONLY_FOR_VENDOR = ["is_active"]
 # Shown to everyone; changed only through the Omada endpoints below.
 SITE_OMADA_INFO = ["hotspot_ssid_name", "omada_site_id"]
+# Copies of site_name (HotspotSite.sync_names_from_site_name). Older app
+# versions still send them; they are ignored rather than rejected.
+SITE_NAME_COPIES = ("vendor_name", "hotspot_ssid_name")
 PACKAGE_ITEM_FIELDS = [
 	"package_name",
 	"package_type",
@@ -1065,7 +1103,7 @@ def _site_settings_dict(doc):
 	admin = _is_admin()
 	fields = SITE_ADMIN_FIELDS if admin else [*SITE_VENDOR_FIELDS, *SITE_READ_ONLY_FOR_VENDOR]
 	data = {"name": doc.name, "can_edit_admin_fields": admin}
-	data.update({field: doc.get(field) for field in [*fields, *SITE_OMADA_INFO]})
+	data.update({field: doc.get(field) for field in [*fields, *SITE_OMADA_INFO, *SITE_NAME_COPIES]})
 	data["device_count"] = len(doc.devices)
 	data["packages"] = [{field: row.get(field) for field in PACKAGE_ITEM_FIELDS} for row in doc.packages]
 	return data
@@ -1093,7 +1131,7 @@ def update_site_settings(site=None, values=None, packages=None):
 	for fieldname, value in (_json_arg(values, {}) or {}).items():
 		if fieldname in allowed:
 			doc.set(fieldname, value)
-		else:
+		elif fieldname not in SITE_NAME_COPIES:
 			frappe.throw(_("You are not allowed to change {0}.").format(fieldname), frappe.PermissionError)
 
 	package_rows = _json_arg(packages)
@@ -1647,7 +1685,7 @@ def provision_omada_site(site=None, ssid_name=None):
 	site, open hotspot SSID, Bandofy portal, operator access. Returns the
 	step report [{step, ok, detail}]."""
 	_require_admin()
-	site_name = _resolve_site_for_write(site)
+	site_name = _omada_site_for_write(site)
 	from bandofy.omada_provisioning import provision_site
 
 	return provision_site(site_name, ssid_name)
@@ -1658,21 +1696,21 @@ def get_pending_devices(site=None):
 	"""APs the controller has found that are waiting to be adopted."""
 	from bandofy.omada_provisioning import list_pending_devices
 
-	return _omada_call(list_pending_devices, _resolve_site_for_write(site))
+	return _omada_call(list_pending_devices, _omada_site_for_write(site))
 
 
 @frappe.whitelist()
 def adopt_omada_device(mac, site=None, username=None, password=None):
 	from bandofy.omada_provisioning import adopt_device
 
-	return _omada_call(adopt_device, _resolve_site_for_write(site), mac, username or None, password or None)
+	return _omada_call(adopt_device, _omada_site_for_write(site), mac, username or None, password or None)
 
 
 @frappe.whitelist()
 def get_omada_ssids(site=None):
 	from bandofy.omada_provisioning import list_ssids
 
-	return _omada_call(list_ssids, _resolve_site_for_write(site))
+	return _omada_call(list_ssids, _omada_site_for_write(site))
 
 
 @frappe.whitelist()
@@ -1681,11 +1719,43 @@ def save_omada_ssid(name, site=None, ssid_id=None):
 	Bandofy portal."""
 	from bandofy.omada_provisioning import save_ssid
 
-	return _omada_call(save_ssid, _resolve_site_for_write(site), name, ssid_id or None)
+	return _omada_call(save_ssid, _omada_site_for_write(site), name, ssid_id or None)
 
 
 @frappe.whitelist()
 def delete_omada_ssid(ssid_id, site=None):
 	from bandofy.omada_provisioning import delete_ssid
 
-	return _omada_call(delete_ssid, _resolve_site_for_write(site), ssid_id)
+	return _omada_call(delete_ssid, _omada_site_for_write(site), ssid_id)
+
+
+def _ruijie_checks(doc):
+	"""What Bandofy can check for a Ruijie site from the server. Whether the
+	AC reaches the RADIUS server shows up as successful logins."""
+	settings = frappe.get_cached_doc("Hotspot Ruijie Settings")
+	secret = settings.get_password("shared_secret", raise_exception=False)
+	last_login = frappe.db.get_value(
+		"Hotspot Transaction",
+		{"site": doc.name, "omada_authorized": 1, "authorized_until": ["is", "set"]},
+		"modified",
+		order_by="modified desc",
+	)
+	return [
+		{
+			"step": _("Ruijie AC Name"),
+			"ok": bool(doc.ruijie_ac_name),
+			"detail": doc.ruijie_ac_name or _("Not set: customers can't be matched to this site."),
+		},
+		{
+			"step": _("RADIUS server"),
+			"ok": bool(settings.enabled and secret),
+			"detail": _("Enabled on UDP {0}").format(settings.auth_port or 1812)
+			if settings.enabled and secret
+			else _("Turn it on and set the shared secret in Hotspot Ruijie Settings."),
+		},
+		{
+			"step": _("Latest login issued"),
+			"ok": bool(last_login),
+			"detail": str(last_login) if last_login else _("None yet."),
+		},
+	]

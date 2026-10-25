@@ -17,8 +17,18 @@ frappe.ui.form.on("Hotspot Omada Settings", {
 					const sites = (m.sites || [])
 						.map((s) => frappe.utils.escape_html(s.name))
 						.join(", ");
+					// Without Open API keys only the operator login is checked.
+					const sites_line = m.sites
+						? `${__("Sites")}: ${sites || "-"}<br>`
+						: `${__("Controller ID")}: ${frappe.utils.escape_html(
+								m.omadac_id || ""
+						  )}<br>`;
 					const op = m.operator
-						? m.operator.found
+						? m.operator.logged_in
+							? __("Operator {0} logged in.", [
+									frappe.utils.escape_html(m.operator.name),
+							  ])
+							: m.operator.found
 							? __("Operator {0} found ({1} site(s)).", [
 									m.operator.name,
 									m.operator.sites,
@@ -31,9 +41,9 @@ frappe.ui.form.on("Hotspot Omada Settings", {
 					frappe.msgprint({
 						title: __("Connected"),
 						indicator: "green",
-						message: `${__("Controller")} ${m.controller_version || ""}<br>${__(
-							"Sites"
-						)}: ${sites || "-"}<br>${op}`,
+						message: `${__("Controller")} ${
+							m.controller_version || ""
+						}<br>${sites_line}${op}`,
 					});
 					frm.reload_doc();
 				},

@@ -1,16 +1,17 @@
 ### Bandofy
 
-Paid Wi-Fi hotspots on TP-Link Omada access points, without a MikroTik router. Bandofy is a Frappe v16 app that runs the customer captive portal, mobile money payments (Abliner), vouchers, ads and guest chat, and gives vendors and admins dashboards, a sales report and a mobile app API.
+Paid Wi-Fi hotspots on TP-Link Omada access points and Ruijie wireless controllers, without a MikroTik router. Bandofy is a Frappe v16 app that runs the customer captive portal, mobile money payments (Abliner), vouchers, ads and guest chat, and gives vendors and admins dashboards, a sales report and a mobile app API.
 
-Requires Frappe `>=16.0.0,<17.0.0` and Python 3.14. It has no other app dependencies.
+Requires Frappe `>=16.0.0,<17.0.0` and Python 3.14. It has no other app dependencies; Ruijie sites also use `pyrad`, installed with the app.
 
 ### Documentation
 
 | Page | Covers |
 | --- | --- |
-| [Sites and the Omada Controller](docs/sites-and-omada.md) | Hotspot Site, Access Points, Hotspot Omada Settings, provisioning, adoption and SSIDs |
+| [Sites and the Omada Controller](docs/sites-and-omada.md) | Setting up a site (by hand or automatically), Hotspot Site, Omada Site ID, Hotspot Omada Settings, adoption and SSIDs |
 | [Packages and vouchers](docs/packages-and-vouchers.md) | Hotspot Package, Pricing Packages, Voucher Batches, Vouchers, Staff Vouchers, print formats |
 | [Payments](docs/payments.md) | Hotspot Transaction, Hotspot Payment Settings, the Abliner STK push, webhook and fallback poll |
+| [Ruijie controllers](docs/ruijie.md) | Ruijie sites: one-time RADIUS logins, Bandofy's RADIUS server, Hotspot Ruijie Settings, AC configuration and first test |
 | [Captive portal, ads and chat](docs/captive-portal.md) | `/wifi_login`, free trial, Sabbath mode, Hotspot Ad, Ad View Log, Chat Message |
 | [Dashboards, reports and the mobile app](docs/dashboards-and-reports.md) | Vendor and admin access, `/vendor-dashboard`, Network Dashboard, Hotspot Sales Report, mobile API, realtime alerts |
 
@@ -20,7 +21,7 @@ In the v16 desk, Bandofy has its own tile on the apps screen and a **Bandofy** s
 
 ```bash
 cd $PATH_TO_YOUR_BENCH
-bench get-app $URL_OF_THIS_REPO --branch v2.0.0
+bench get-app $URL_OF_THIS_REPO --branch develop
 bench --site <site> install-app bandofy
 bench build --app bandofy
 ```
@@ -29,12 +30,17 @@ Installing creates six default packages (Masaa 6 to Mwezi).
 
 ### Setting up
 
-1. **Hotspot Omada Settings**: set the controller URL, the Open API client and operator logins, and the Portal URL (`https://<your site>/wifi_login`). Then click **Test Connection**.
+1. **Hotspot Omada Settings**: set the Controller URL and the hotspot operator's name and password (create the operator in the controller's Hotspot Manager first). Then click **Test Connection**.
 2. **Hotspot Payment Settings**: add the Abliner API key (`tsl_live_…`) and webhook secret (`whsec_…`). Register the webhook URL shown on the form with Abliner, then tick **Enabled**.
-3. **Hotspot Site**: one per location. Add the vendor's Website User, the pricing packages and the access points. Then click **Omada → Create on Omada**.
-4. Optional: the site's Lipa Namba image, portal logo and tagline, and ads.
+3. **Omada Controller**, for each location: create the site, an open SSID, and an External Portal Server portal pointing at `https://<your site>/wifi_login`, and give the operator access to the site.
+4. **Hotspot Site**: one per location. Add the vendor's Website User, the pricing packages and the site's 24-character **Omada Site ID**.
+5. Optional: the site's Lipa Namba image, portal logo and tagline, and ads.
 
-Payment network badges are read from `bandofy/public/images/payment_logos/` (`mixx_by_yas.png`, `airtel_money.png`, `halopesa.png`, `mpesa.png`). A text badge replaces any file that is missing.
+To have Bandofy do step 3 for you (useful when onboarding many vendors), fill in **Advanced: Open API** in Hotspot Omada Settings and use **Omada → Create on Omada** on each Hotspot Site. The Open API also enables AP adoption, live AP status and reboot, and package bandwidth limits. See [Sites and the Omada Controller](docs/sites-and-omada.md).
+
+For a Ruijie controller instead of Omada, set the site's Controller Type to Ruijie and follow [Ruijie controllers](docs/ruijie.md): it replaces step 3 and the Omada fields in step 4.
+
+Payment network badges are read from `bandofy/public/images/payment_logos/` (`mixx_by_yas.png`, `airtel_money.png`, `halopesa.png`). A text badge replaces any file that is missing.
 
 ### Upgrading from v1
 

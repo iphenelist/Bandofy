@@ -7,6 +7,9 @@
  "field_order": [
   "site_section",
   "site_name",
+  "controller_type",
+  "omada_site_id",
+  "ruijie_ac_name",
   "column_break_site",
   "is_active",
   "vendor_information_section",
@@ -15,16 +18,6 @@
   "column_break_vendor",
   "phone_number",
   "mobile_money_account",
-  "dashboard_tab",
-  "dashboard_html",
-  "packages_tab",
-  "pricing_section",
-  "packages",
-  "payments_section",
-  "enable_online_payment",
-  "enforce_bandwidth_limits",
-  "column_break_payments",
-  "lipa_namba_image",
   "omada_tab",
   "devices_section",
   "devices",
@@ -34,10 +27,17 @@
   "hotspot_ssid_name",
   "success_redirect_url",
   "column_break_provisioning",
-  "omada_site_id",
   "omada_wlan_id",
   "omada_ssid_id",
   "omada_portal_id",
+  "packages_tab",
+  "pricing_section",
+  "packages",
+  "payments_section",
+  "enable_online_payment",
+  "enforce_bandwidth_limits",
+  "column_break_payments",
+  "lipa_namba_image",
   "portal_tab",
   "branding_section",
   "portal_logo",
@@ -60,7 +60,9 @@
   "transactions_tab",
   "transactions_html",
   "chat_tab",
-  "chat_html"
+  "chat_html",
+  "dashboard_tab",
+  "dashboard_html"
  ],
  "fields": [
   {
@@ -69,6 +71,7 @@
    "label": "Site"
   },
   {
+   "description": "Shown on the captive portal and used as the vendor name and the hotspot Wi-Fi (SSID) name. Max 32 characters for Omada sites.",
    "fieldname": "site_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -93,11 +96,12 @@
    "label": "Vendor"
   },
   {
+   "description": "Copied from Site Name.",
    "fieldname": "vendor_name",
    "fieldtype": "Data",
-   "in_list_view": 1,
+   "hidden": 1,
    "label": "Vendor Name",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "description": "Portal login user (Website User) that will access the Vendor Dashboard for this site.",
@@ -190,7 +194,7 @@
    "label": "Access Points"
   },
   {
-   "description": "Every TP-Link AP that serves this site's captive portal. Adopting an AP from the Omada menu adds it here.",
+   "description": "Optional. Customers are matched by the Omada Site ID; this table adds labels and is a fallback for sites without one.",
    "fieldname": "devices",
    "fieldtype": "Table",
    "label": "Access Points",
@@ -206,16 +210,18 @@
    "fieldtype": "HTML"
   },
   {
+   "description": "Optional: with Open API keys in Hotspot Omada Settings, Omada > Create on Omada sets up the site, SSID and portal for you. Without them, set those up in the Omada Controller and fill in the Omada Site ID on the Details tab.",
    "fieldname": "omada_provisioning_section",
    "fieldtype": "Section Break",
-   "label": "Omada Provisioning",
-   "description": "Set up on the central Omada Controller from Hotspot Omada Settings. Use the Omada > Create on Omada button."
+   "label": "Omada"
   },
   {
-   "description": "Open Wi-Fi network customers join; the captive portal handles payment.",
+   "description": "Copied from Site Name.",
    "fieldname": "hotspot_ssid_name",
    "fieldtype": "Data",
-   "label": "Hotspot SSID Name"
+   "hidden": 1,
+   "label": "Hotspot SSID Name",
+   "read_only": 1
   },
   {
    "default": "https://www.youtube.com",
@@ -229,16 +235,18 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "omada_site_id",
+   "depends_on": "eval:doc.controller_type!='Ruijie'",
+   "description": "The 24-character ID of this site on the Omada Controller. Copy it from the portal address (site=...) or the controller URL, or let Omada > Create on Omada fill it in. Customers are matched to this site by it.",
    "fieldname": "omada_site_id",
    "fieldtype": "Data",
-   "label": "Omada Site ID (Open API)",
-   "read_only": 1
+   "label": "Omada Site ID",
+   "unique": 1
   },
   {
    "depends_on": "omada_site_id",
    "fieldname": "omada_wlan_id",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Omada WLAN Group ID",
    "read_only": 1
   },
@@ -246,6 +254,7 @@
    "depends_on": "omada_site_id",
    "fieldname": "omada_ssid_id",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Omada SSID ID",
    "read_only": 1
   },
@@ -253,6 +262,7 @@
    "depends_on": "omada_site_id",
    "fieldname": "omada_portal_id",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Omada Portal ID",
    "read_only": 1
   },
@@ -372,11 +382,29 @@
   {
    "fieldname": "chat_html",
    "fieldtype": "HTML"
+  },
+  {
+   "default": "Omada",
+   "description": "Omada: customers are authorized through the Omada Controller. Ruijie: a locally configured Ruijie AC logs them in through Bandofy's RADIUS server.",
+   "fieldname": "controller_type",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Controller Type",
+   "options": "Omada\nRuijie"
+  },
+  {
+   "depends_on": "eval:doc.controller_type=='Ruijie'",
+   "description": "The controller's name exactly as it sends it in the portal redirect (wlanacname), e.g. the AC's hostname. Customers are matched to this site by it, so give every vendor's AC a different name.",
+   "fieldname": "ruijie_ac_name",
+   "fieldtype": "Data",
+   "label": "Ruijie AC Name",
+   "mandatory_depends_on": "eval:doc.controller_type=='Ruijie'",
+   "unique": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-23 18:00:00.000000",
+ "modified": "2026-10-25 08:22:19.072363",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Site",
@@ -400,6 +428,6 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "vendor_name",
+ "title_field": "site_name",
  "track_changes": 1
 }

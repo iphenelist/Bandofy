@@ -8,12 +8,19 @@
   "controller_url",
   "omadac_id",
   "column_break_controller",
-  "client_id",
-  "client_secret",
+  "request_timeout",
+  "verify_ssl",
   "operator_section",
   "operator_name",
   "column_break_operator",
   "operator_password",
+  "portal_section",
+  "default_success_redirect_url",
+  "notes",
+  "open_api_section",
+  "client_id",
+  "column_break_open_api",
+  "client_secret",
   "new_site_section",
   "default_region",
   "default_timezone",
@@ -25,20 +32,14 @@
   "adopt_password",
   "portal_section_new",
   "portal_url",
-  "default_ssid_name",
-  "connection_section",
-  "request_timeout",
-  "column_break_1",
-  "verify_ssl",
-  "portal_section",
-  "default_success_redirect_url",
-  "notes"
+  "default_ssid_name"
  ],
  "fields": [
   {
+   "description": "All Bandofy needs to connect paying customers: the controller address and a hotspot operator.",
    "fieldname": "controller_section",
    "fieldtype": "Section Break",
-   "label": "Central Controller"
+   "label": "Omada Controller"
   },
   {
    "description": "e.g. https://169.58.222.183:8043",
@@ -58,18 +59,22 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "From Omada: Settings > Platform Integration > Open API > Add New App (Client mode, Admin role, all sites).",
-   "fieldname": "client_id",
-   "fieldtype": "Data",
-   "label": "Open API Client ID"
+   "default": "10",
+   "description": "How long to wait for an Omada Controller to answer when authorizing a customer, listing devices or rebooting one.",
+   "fieldname": "request_timeout",
+   "fieldtype": "Int",
+   "label": "Request Timeout (Seconds)",
+   "non_negative": 1
   },
   {
-   "fieldname": "client_secret",
-   "fieldtype": "Password",
-   "label": "Open API Client Secret"
+   "default": "0",
+   "description": "Check the controller's HTTPS certificate. Leave off for local controllers and OC200s, which use self-signed certificates; turn on only if every controller has a valid certificate (e.g. Omada Cloud).",
+   "fieldname": "verify_ssl",
+   "fieldtype": "Check",
+   "label": "Verify Controller SSL Certificate"
   },
   {
-   "description": "The Omada hotspot operator Bandofy uses to connect customers after payment. Every site Bandofy creates is added to this operator's Site Privileges.",
+   "description": "The Omada hotspot operator Bandofy uses to connect customers after payment. Create it in the controller's Hotspot Manager and give it every Bandofy site (automatic setup adds new sites to it for you).",
    "fieldname": "operator_section",
    "fieldtype": "Section Break",
    "label": "Hotspot Operator"
@@ -90,9 +95,52 @@
    "label": "Operator Password"
   },
   {
+   "fieldname": "portal_section",
+   "fieldtype": "Section Break",
+   "label": "Captive Portal"
+  },
+  {
+   "default": "https://www.youtube.com",
+   "description": "Where customers are sent after they are connected, for sites that leave their own Success Redirect URL blank.",
+   "fieldname": "default_success_redirect_url",
+   "fieldtype": "Data",
+   "label": "Default Success Redirect URL",
+   "options": "URL"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "client_id",
+   "description": "Only needed for automatic setup: Omada > Create on Omada, Adopt Device and Wi-Fi Networks on a Hotspot Site, live AP status and reboot, and package bandwidth limits. Without it, set up each site in the Omada Controller and enter its Omada Site ID on the Hotspot Site.",
+   "fieldname": "open_api_section",
+   "fieldtype": "Section Break",
+   "label": "Advanced: Open API (optional)"
+  },
+  {
+   "description": "From Omada: Settings > Platform Integration > Open API > Add New App (Client mode, Admin role, all sites).",
+   "fieldname": "client_id",
+   "fieldtype": "Data",
+   "label": "Open API Client ID"
+  },
+  {
+   "fieldname": "column_break_open_api",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "client_secret",
+   "fieldtype": "Password",
+   "label": "Open API Client Secret"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "client_id",
    "fieldname": "new_site_section",
    "fieldtype": "Section Break",
-   "label": "New Site Defaults"
+   "label": "Open API: New Site Defaults"
   },
   {
    "default": "Tanzania",
@@ -142,9 +190,11 @@
    "label": "Adopt Password"
   },
   {
+   "collapsible": 1,
+   "depends_on": "client_id",
    "fieldname": "portal_section_new",
    "fieldtype": "Section Break",
-   "label": "Portal for New Sites"
+   "label": "Open API: Portal for New Sites"
   },
   {
    "description": "Your public Bandofy address that Omada's External Portal sends customers to, e.g. https://bandofy.example.com/wifi_login. Required to create sites; phones must be able to open it.",
@@ -158,54 +208,12 @@
    "fieldname": "default_ssid_name",
    "fieldtype": "Data",
    "label": "Default Hotspot SSID Name"
-  },
-  {
-   "fieldname": "connection_section",
-   "fieldtype": "Section Break",
-   "label": "Controller Connection"
-  },
-  {
-   "default": "10",
-   "description": "How long to wait for an Omada Controller to answer when authorizing a customer, listing devices or rebooting one.",
-   "fieldname": "request_timeout",
-   "fieldtype": "Int",
-   "label": "Request Timeout (Seconds)",
-   "non_negative": 1
-  },
-  {
-   "fieldname": "column_break_1",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "description": "Check the controller's HTTPS certificate. Leave off for local controllers and OC200s, which use self-signed certificates; turn on only if every controller has a valid certificate (e.g. Omada Cloud).",
-   "fieldname": "verify_ssl",
-   "fieldtype": "Check",
-   "label": "Verify Controller SSL Certificate"
-  },
-  {
-   "fieldname": "portal_section",
-   "fieldtype": "Section Break",
-   "label": "Captive Portal"
-  },
-  {
-   "default": "https://www.youtube.com",
-   "description": "Where customers are sent after they are connected, for sites that leave their own Success Redirect URL blank.",
-   "fieldname": "default_success_redirect_url",
-   "fieldtype": "Data",
-   "label": "Default Success Redirect URL",
-   "options": "URL"
-  },
-  {
-   "fieldname": "notes",
-   "fieldtype": "Small Text",
-   "label": "Notes"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-07 20:00:00.000000",
+ "modified": "2026-10-25 08:00:00.000000",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Omada Settings",

@@ -90,7 +90,12 @@ def provision_site(site_name, ssid_name=None):
 	def add(step, ok, detail):
 		steps.append({"step": step, "ok": bool(ok), "detail": detail})
 
-	ssid_name = (ssid_name or site.hotspot_ssid_name or settings.default_ssid_name or "Bandofy").strip()
+	# The hotspot SSID is the site's name (HotspotSite.sync_names_from_site_name);
+	# a different name passed in renames the site to match.
+	ssid_name = (ssid_name or site.site_name or settings.default_ssid_name or "Bandofy").strip()
+	if ssid_name != site.site_name:
+		site.site_name = ssid_name
+		site.save(ignore_permissions=True)
 
 	try:
 		# 1. Omada site
@@ -151,7 +156,6 @@ def provision_site(site_name, ssid_name=None):
 				add(_("Hotspot SSID"), True, _("Created open SSID {0}").format(ssid_name))
 		site.omada_wlan_id = wlan["wlanId"]
 		site.omada_ssid_id = ssid["ssidId"]
-		site.hotspot_ssid_name = ssid_name
 		site.save(ignore_permissions=True)
 		frappe.db.commit()  # nosemgrep
 
@@ -279,7 +283,8 @@ def list_ssids(site_name):
 
 def save_ssid(site_name, name, ssid_id=None):
 	"""Renames an SSID, or creates a new open one bound to the Bandofy
-	portal. Renaming the hotspot SSID keeps the Hotspot Site in step."""
+	portal. Renaming the hotspot SSID renames the Hotspot Site too, since
+	the site's name is its SSID."""
 	site = frappe.get_doc("Hotspot Site", site_name)
 	_require_provisioned(site)
 	name = (name or "").strip()
@@ -297,7 +302,9 @@ def save_ssid(site_name, name, ssid_id=None):
 		)
 
 	if ssid_id == site.omada_ssid_id:
-		site.db_set("hotspot_ssid_name", name, commit=True)
+		site.site_name = name
+		site.save(ignore_permissions=True)
+		frappe.db.commit()  # nosemgrep
 	return list_ssids(site_name)
 
 

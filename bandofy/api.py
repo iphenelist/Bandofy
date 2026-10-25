@@ -13,7 +13,8 @@ from frappe.utils import add_to_date, cint, get_datetime_str, get_url, getdate, 
 
 from bandofy.omada_openapi import set_client_rate_limit
 from bandofy.omada_service import authorize_client, site_controller
-from bandofy.utils import find_site_by_ap_mac, has_used_free_trial, is_sabbath_now, normalize_mac
+from bandofy.ruijie import is_ruijie, issue_login, login_form
+from bandofy.utils import find_site, has_used_free_trial, is_sabbath_now, normalize_mac
 
 DEFAULT_SUCCESS_REDIRECT_URL = "https://www.youtube.com"
 PAYMENT_POLL_GRACE_SECONDS = 90  # give the webhook this long to arrive before polling
@@ -28,20 +29,23 @@ SABBATH_MESSAGE = (
 
 
 @frappe.whitelist(allow_guest=True)
-def initiate_payment(phone, package_idx, client_mac, ap_mac, ssid_name=None, radio_id=None):
+def initiate_payment(
+	phone, package_idx, client_mac, ap_mac=None, ssid_name=None, radio_id=None, omada_site=None, ac_name=None
+):
 	"""Create a Pending Hotspot Transaction and kick off the STK push.
 
 	Called by the captive portal (wifi_login.html) once a customer picks a
 	plan and enters their Mobile Money number.
 	"""
-	if not (phone and package_idx and client_mac and ap_mac):
+	if not (phone and package_idx and client_mac and (ap_mac or ac_name)):
 		frappe.throw(_("Missing required parameters."))
 
-	found = find_site_by_ap_mac(ap_mac)
+	found = find_site(omada_site, ap_mac, ac_name=ac_name)
 	if not found:
 		frappe.throw(_("This access point is not registered or is currently inactive."))
 
 	site = frappe.get_doc("Hotspot Site", found.name)
+	_require_ap_mac(site, ap_mac)
 
 	if not site.enable_online_payment:
 		frappe.throw(_("Mfumo wa kulipa kwa pesa upo katika matengenezo."))
@@ -340,14 +344,17 @@ def sync_pending_payments():
 
 
 @frappe.whitelist(allow_guest=True)
-def redeem_voucher(voucher_code, client_mac, ap_mac, ssid_name=None, radio_id=None):
+def redeem_voucher(
+	voucher_code, client_mac, ap_mac=None, ssid_name=None, radio_id=None, omada_site=None, ac_name=None
+):
 	"""Redeem a pre-generated Hotspot Voucher in place of an STK Push payment."""
-	if not (voucher_code and client_mac and ap_mac):
+	if not (voucher_code and client_mac and (ap_mac or ac_name)):
 		frappe.throw(_("Missing required parameters."))
 
-	found = find_site_by_ap_mac(ap_mac)
+	found = find_site(omada_site, ap_mac, ac_name=ac_name, fields=["name", "controller_type"])
 	if not found:
 		frappe.throw(_("This access point is not registered or is currently inactive."))
+	_require_ap_mac(found, ap_mac)
 	site_name = found.name
 
 	voucher_code = voucher_code.strip().upper()
@@ -414,8 +421,8 @@ def redeem_voucher(voucher_code, client_mac, ap_mac, ssid_name=None, radio_id=No
 	# an already-consumed voucher stuck with no authorization attempt.
 	site = frappe.get_doc("Hotspot Site", site_name)
 	try:
-		_authorize_transaction_on_omada(txn, site)
-		result["redirect_url"] = _success_redirect_url(site.success_redirect_url)
+		_authorize_transaction(txn, site)
+		result.update(_connect_details(txn, site))
 	except Exception:
 		frappe.log_error(
 			title=f"Bandofy Omada Authorization Failed: {txn.name}",
@@ -480,8 +487,8 @@ def _redeem_staff_voucher(voucher_code, site_name, client_mac, ap_mac, ssid_name
 
 	# Same synchronous-authorize-now shortcut redeem_voucher uses.
 	try:
-		_authorize_transaction_on_omada(txn, site)
-		result["redirect_url"] = _success_redirect_url(site.success_redirect_url)
+		_authorize_transaction(txn, site)
+		result.update(_connect_details(txn, site))
 	except Exception:
 		frappe.log_error(
 			title=f"Bandofy Staff Omada Authorization Failed: {txn.name}",
@@ -533,7 +540,9 @@ def _watched_free_trial_ad(site_name, client_mac):
 
 
 @frappe.whitelist(allow_guest=True)
-def claim_free_trial(ap_mac, client_mac, ssid_name=None, radio_id=None):
+def claim_free_trial(
+	ap_mac=None, client_mac=None, ssid_name=None, radio_id=None, omada_site=None, ac_name=None
+):
 	"""One-time free-trial connection: authorizes a brand-new device for
 	``Hotspot Site.free_trial_minutes`` (default 15), same as a paid voucher
 	but at zero cost and with no code to enter. The resulting Hotspot
@@ -542,14 +551,15 @@ def claim_free_trial(ap_mac, client_mac, ssid_name=None, radio_id=None):
 	block a second claim from the same MAC, and the portal itself won't
 	render the button again once that check fails.
 	"""
-	if not (ap_mac and client_mac):
+	if not (client_mac and (ap_mac or ac_name)):
 		frappe.throw(_("Missing required parameters."))
 
-	found = find_site_by_ap_mac(ap_mac)
+	found = find_site(omada_site, ap_mac, ac_name=ac_name)
 	if not found:
 		frappe.throw(_("This access point is not registered or is currently inactive."))
 
 	site = frappe.get_doc("Hotspot Site", found.name)
+	_require_ap_mac(site, ap_mac)
 
 	if not site.enable_free_trial:
 		frappe.throw(_("Free trial is not available on this network."))
@@ -592,8 +602,8 @@ def claim_free_trial(ap_mac, client_mac, ssid_name=None, radio_id=None):
 	# is an immediate-response flow, not a payment waiting on a webhook,
 	# so authorize right away and hand back a redirect_url directly.
 	try:
-		_authorize_transaction_on_omada(txn, site)
-		result["redirect_url"] = _success_redirect_url(site.success_redirect_url)
+		_authorize_transaction(txn, site)
+		result.update(_connect_details(txn, site))
 	except Exception:
 		frappe.log_error(
 			title=f"Bandofy Free Trial Omada Authorization Failed: {txn.name}",
@@ -610,14 +620,14 @@ def claim_free_trial(ap_mac, client_mac, ssid_name=None, radio_id=None):
 
 
 @frappe.whitelist(allow_guest=True)
-def log_ad_view(ad, ap_mac=None, client_mac=None):
+def log_ad_view(ad, ap_mac=None, client_mac=None, omada_site=None, ac_name=None):
 	"""Record an ad impression on the captive portal and bump its view count."""
 	if not ad or not frappe.db.exists("Hotspot Ad", ad):
 		return {"ok": False}
 
 	site_name = None
-	if ap_mac:
-		found = find_site_by_ap_mac(ap_mac, active_only=False)
+	if ap_mac or omada_site or ac_name:
+		found = find_site(omada_site, ap_mac, active_only=False, ac_name=ac_name)
 		site_name = found.name if found else None
 
 	frappe.get_doc(
@@ -637,13 +647,13 @@ def log_ad_view(ad, ap_mac=None, client_mac=None):
 
 
 @frappe.whitelist(allow_guest=True)
-def send_chat_message(ap_mac, client_mac, message):
+def send_chat_message(ap_mac=None, client_mac=None, message=None, omada_site=None, ac_name=None):
 	"""Guest sends a chat message to the site's admin from the captive portal.
 
 	Guests are anonymous -- the thread is keyed on (site, client_mac), the
 	same identity every other guest-facing record in this app uses.
 	"""
-	if not (ap_mac and client_mac and message):
+	if not (client_mac and message and (ap_mac or ac_name)):
 		frappe.throw(_("Missing required parameters."))
 
 	message = message.strip()
@@ -651,7 +661,7 @@ def send_chat_message(ap_mac, client_mac, message):
 		frappe.throw(_("Message cannot be empty."))
 	message = message[:CHAT_MESSAGE_MAX_LENGTH]
 
-	found = find_site_by_ap_mac(ap_mac, active_only=False)
+	found = find_site(omada_site, ap_mac, active_only=False, ac_name=ac_name)
 	if not found:
 		frappe.throw(_("This access point is not registered or is currently inactive."))
 
@@ -671,17 +681,17 @@ def send_chat_message(ap_mac, client_mac, message):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_chat_messages(ap_mac, client_mac, after=None):
+def get_chat_messages(ap_mac=None, client_mac=None, after=None, omada_site=None, ac_name=None):
 	"""Guest polls this to load/refresh their chat thread with the admin.
 
 	``after`` (a previously-seen message's name) limits the response to
 	messages created strictly after it, for cheap incremental polling once
 	the initial history has been loaded.
 	"""
-	if not (ap_mac and client_mac):
+	if not (client_mac and (ap_mac or ac_name)):
 		frappe.throw(_("Missing required parameters."))
 
-	found = find_site_by_ap_mac(ap_mac, active_only=False)
+	found = find_site(omada_site, ap_mac, active_only=False, ac_name=ac_name)
 	if not found:
 		return {"messages": []}
 
@@ -702,13 +712,45 @@ def get_chat_messages(ap_mac, client_mac, after=None):
 	return {"messages": rows}
 
 
-def _authorize_transaction_on_omada(txn, site):
-	"""Call omada_service.authorize_client for this transaction/site and, on
-	success, flag the transaction so the portal page's status poll (see
-	get_omada_connection_status) knows it can redirect the browser out of
-	the captive portal. Raises OmadaAuthError/Exception on failure -- callers
-	decide whether to retry synchronously or via the queue.
+def _require_ap_mac(site, ap_mac):
+	"""Omada authorizes a client against the AP it is on; Ruijie sites log
+	the client in through the AC and don't need it."""
+	if not ap_mac and not is_ruijie(site):
+		frappe.throw(_("Missing required parameters."))
+
+
+def _authorize_transaction(txn, site):
+	"""Let this Paid transaction's device online, then flag the transaction
+	so the portal page's status poll (see get_omada_connection_status) knows
+	it can move on. Raises on failure -- callers decide whether to retry
+	synchronously or via the queue.
+
+	- Omada sites: authorize the client's MAC on the Omada Controller.
+	- Ruijie sites: issue the one-time RADIUS login the portal page then
+	  submits to the AC (see bandofy.ruijie).
 	"""
+	if is_ruijie(site):
+		issue_login(txn)
+		txn.db_set("omada_authorized", 1, commit=True)
+		return
+
+	_authorize_on_omada(txn, site)
+	txn.db_set("omada_authorized", 1, commit=True)
+	_apply_package_bandwidth(txn, site)
+
+
+def _connect_details(txn, site):
+	"""What the portal page needs to finish connecting an authorized device:
+	where to send the browser (Omada), or the login form to submit to the
+	AC (Ruijie)."""
+	redirect_url = _success_redirect_url(site.get("success_redirect_url"))
+	if is_ruijie(site):
+		return {"login": login_form(txn, redirect_url)}
+	return {"redirect_url": redirect_url}
+
+
+def _authorize_on_omada(txn, site):
+	"""Call omada_service.authorize_client for this transaction/site."""
 	controller = site_controller(site)
 	authorize_client(
 		omada_host=controller["omada_host"],
@@ -722,8 +764,6 @@ def _authorize_transaction_on_omada(txn, site):
 		duration_minutes=txn.duration_minutes,
 		radio_id=txn.radio_id,
 	)
-	txn.db_set("omada_authorized", 1, commit=True)
-	_apply_package_bandwidth(txn, site)
 
 
 def _apply_package_bandwidth(txn, site):
@@ -732,6 +772,10 @@ def _apply_package_bandwidth(txn, site):
 	Staff Access etc. have no package row, so any earlier cap is removed).
 	Never fails the authorization -- the customer is already online."""
 	if not (site.get("enforce_bandwidth_limits") and site.omada_site_id):
+		return
+	# Rate limits are set through the Open API; without its keys there is
+	# nothing to call (and every authorization would log an error).
+	if not frappe.db.get_single_value("Hotspot Omada Settings", "client_id"):
 		return
 	package = next((p for p in site.packages if p.package_name == txn.package_name), None)
 	digits = normalize_mac(txn.client_mac).upper()
@@ -747,7 +791,9 @@ def _apply_package_bandwidth(txn, site):
 
 
 def authorize_mac_on_omada(transaction_id):
-	"""Authorize a paying client's MAC address on its site's Omada controller.
+	"""Get a paying client online: authorize its MAC on the site's Omada
+	controller, or issue its RADIUS login on a Ruijie site (the name is kept
+	for jobs already queued).
 
 	Enqueued from :func:`payment_callback`/:func:`sync_pending_payments` once
 	a transaction is marked Paid, and as a retry fallback when the
@@ -760,7 +806,7 @@ def authorize_mac_on_omada(transaction_id):
 	site = frappe.get_doc("Hotspot Site", txn.site)
 
 	try:
-		_authorize_transaction_on_omada(txn, site)
+		_authorize_transaction(txn, site)
 		frappe.logger("bandofy").info(f"Authorized {txn.client_mac} on {site.name} ({transaction_id})")
 	except Exception:
 		frappe.log_error(
@@ -770,16 +816,17 @@ def authorize_mac_on_omada(transaction_id):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_omada_connection_status(transaction_id):
-	"""Polled by the portal page: reports
-	whether authorize_mac_on_omada has completed for this transaction yet,
-	and the URL to send the browser to once it has, to break it out of the
-	captive portal.
+def get_omada_connection_status(transaction_id, client_mac=None):
+	"""Polled by the portal page: reports whether authorize_mac_on_omada
+	has completed for this transaction yet and, once it has, the URL to
+	send the browser to (Omada) or the login form to submit to the AC
+	(Ruijie). A Ruijie login is only handed to the device that paid
+	(``client_mac``), since transaction IDs are guessable.
 	"""
 	txn = frappe.db.get_value(
 		"Hotspot Transaction",
 		transaction_id,
-		["status", "omada_authorized", "site"],
+		["name", "status", "omada_authorized", "site", "client_mac"],
 		as_dict=True,
 	)
 	if not txn:
@@ -791,8 +838,12 @@ def get_omada_connection_status(transaction_id):
 	if not txn.omada_authorized:
 		return {"ready": False}
 
-	redirect_url = frappe.db.get_value("Hotspot Site", txn.site, "success_redirect_url")
-	return {"ready": True, "redirect_url": _success_redirect_url(redirect_url)}
+	site = frappe.db.get_value(
+		"Hotspot Site", txn.site, ["controller_type", "success_redirect_url"], as_dict=True
+	)
+	if is_ruijie(site) and normalize_mac(client_mac) != normalize_mac(txn.client_mac):
+		frappe.throw(_("Transaction not found."))
+	return {"ready": True, **_connect_details(txn, site)}
 
 
 def restrict_desk_access():

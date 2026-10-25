@@ -1,5 +1,6 @@
 <template>
 	<div class="voucher-hero">
+		<label class="field-step" for="voucher-code">{{ t("step_voucher_code") }}</label>
 		<div class="voucher-input-wrap">
 			<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 				<path
@@ -10,6 +11,7 @@
 				<path d="M2 10h20" stroke="currentColor" stroke-width="1.8" />
 			</svg>
 			<input
+				id="voucher-code"
 				v-model.trim="code"
 				type="text"
 				:placeholder="t('voucher_placeholder')"

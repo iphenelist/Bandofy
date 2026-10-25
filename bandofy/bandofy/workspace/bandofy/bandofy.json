@@ -179,6 +179,17 @@
    "type": "Link"
   },
   {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Hotspot Ruijie Settings",
+   "link_count": 0,
+   "link_to": "Hotspot Ruijie Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
    "hidden": 0,
    "icon": "chart",
    "is_query_report": 0,
@@ -211,7 +222,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-08-26 00:00:00.000000",
+ "modified": "2026-10-25 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Bandofy",

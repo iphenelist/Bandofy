@@ -13,8 +13,9 @@ Module: **Bandofy**. Sidebar: **Ads & Chat → Hotspot Ad, Hotspot Ad View Log, 
 | `ssidName` | `ssid` |
 | `radioId` | `radio_id` |
 | `origUrl` | `orig_url` |
+| `site` (Omada site ID) | none |
 
-The site is found from the AP MAC, using any active row of a site's Access Points table, ignoring `:`/`-` and case. The page shows:
+The site is found from the `site` parameter Omada adds to the redirect (the Hotspot Site's Omada Site ID), or else from the AP MAC, using any active row of a site's Access Points table, ignoring `:`/`-` and case. Every guest API call sends both, as `omada_site` and `ap_mac`. The page shows:
 
 - the site's packages, grouped into Unlimited and Bundle; **Nunua Sasa** asks for the paying number and starts the STK push (see [payments.md](payments.md));
 - a voucher box for customer and staff codes;
