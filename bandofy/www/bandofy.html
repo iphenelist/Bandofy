@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f1117">
+<title>Bandofy — Start Your Hotspot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f1117; --card:#1a2332; --card2:#1f2a3c;
+  --border:rgba(255,255,255,0.07); --bstrong:rgba(255,255,255,0.14);
+  --teal:#00c896; --teal-l:#33d9a8; --teal-d:rgba(0,200,150,0.12);
+  --teal-r:rgba(0,200,150,0.28);
+  --text:#e0e6ed; --dim:rgba(224,230,237,0.55); --faint:rgba(224,230,237,0.25);
+  --red:#ef4444; --amber:#f59e0b; --blue:#3b82f6;
+  --r:14px; --rs:9px; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column}
+
+/* ── Nav ─────────────────────────────── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid var(--border);background:rgba(15,17,23,0.92);backdrop-filter:blur(12px);position:sticky;top:0;z-index:40}
+.nav-logo{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;text-decoration:none;color:var(--text)}
+.nav-mark{width:34px;height:34px;border-radius:9px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-mark img{width:34px;height:34px;display:block}
+.nav-links{display:flex;align-items:center;gap:6px}
+.nav-link{padding:7px 14px;border-radius:var(--rs);font-size:13px;font-weight:600;color:var(--dim);text-decoration:none;transition:color .2s,background .2s}
+.nav-link:hover{color:var(--text);background:var(--card)}
+.nav-btn{padding:8px 18px;border-radius:var(--rs);font-size:13px;font-weight:700;background:var(--teal);color:#0a1f18;text-decoration:none;border:none;cursor:pointer;transition:opacity .2s}
+.nav-btn:hover{opacity:.88}
+
+/* ── Hero ────────────────────────────── */
+.hero{text-align:center;padding:90px 24px 70px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,200,150,0.14) 0%, transparent 70%);pointer-events:none}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:var(--teal-d);border:1px solid var(--teal-r);font-size:11px;font-weight:700;color:var(--teal-l);text-transform:uppercase;letter-spacing:.8px;margin-bottom:22px}
+.hero-eyebrow svg{width:12px;height:12px}
+h1{font-size:clamp(34px,6vw,62px);font-weight:900;line-height:1.06;max-width:700px;margin:0 auto 20px;letter-spacing:-1.5px}
+h1 span{color:var(--teal)}
+.hero-sub{font-size:clamp(15px,2vw,18px);color:var(--dim);max-width:520px;margin:0 auto 36px;line-height:1.65}
+.hero-cta{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:var(--rs);background:var(--teal);color:#0a1f18;font-size:14px;font-weight:800;text-decoration:none;border:none;cursor:pointer;transition:opacity .2s,transform .15s}
+.btn-primary:hover{opacity:.88;transform:translateY(-1px)}
+.btn-primary svg{width:16px;height:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:12px 22px;border-radius:var(--rs);border:1.5px solid var(--bstrong);color:var(--dim);font-size:14px;font-weight:600;text-decoration:none;transition:border-color .2s,color .2s}
+.btn-ghost:hover{border-color:var(--teal-r);color:var(--teal)}
+
+/* ── Features ────────────────────────── */
+.section{padding:72px 24px;max-width:1100px;margin:0 auto;width:100%}
+.sec-label{font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px}
+.sec-h2{font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-.5px;margin-bottom:12px}
+.sec-p{color:var(--dim);font-size:15px;line-height:1.7;max-width:540px;margin-bottom:48px}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px 20px;transition:border-color .2s}
+.feat-card:hover{border-color:var(--teal-r)}
+.feat-icon{width:40px;height:40px;border-radius:10px;background:var(--teal-d);display:flex;align-items:center;justify-content:center;margin-bottom:14px;color:var(--teal)}
+.feat-icon svg{width:20px;height:20px}
+.feat-title{font-size:14px;font-weight:700;margin-bottom:6px}
+.feat-desc{font-size:12.5px;color:var(--dim);line-height:1.65}
+
+/* ── How It Works ────────────────────── */
+.steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px 18px;position:relative}
+.step-num{width:36px;height:36px;border-radius:50%;background:var(--teal);color:#0a1f18;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.step-title{font-size:14px;font-weight:700;margin-bottom:6px}
+.step-desc{font-size:12.5px;color:var(--dim);line-height:1.65}
+
+/* ── Hardware ────────────────────────── */
+.hw-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.hw-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px 20px;display:flex;gap:14px;align-items:flex-start}
+.hw-icon{width:44px;height:44px;border-radius:10px;background:var(--teal-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--teal)}
+.hw-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.hw-badge.blue{background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.25)}
+.hw-badge.amber{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.25)}
+.hw-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.hw-desc{font-size:12.5px;color:var(--dim);line-height:1.65}
+.hw-note{text-align:center;margin-top:16px;font-size:12.5px;color:var(--faint)}
+
+/* ── Pricing ─────────────────────────── */
+.pricing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.price-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:26px 22px;text-align:center;transition:border-color .2s;display:flex;flex-direction:column}
+.price-card-body{flex:1}
+.price-card.popular{border-color:var(--teal-r);background:linear-gradient(145deg,#1a2d26,#1a2332)}
+.price-tag{font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:5px}
+.price-name{font-size:17px;font-weight:800;margin-bottom:8px}
+.price-amount{font-size:36px;font-weight:900;margin-bottom:4px;font-variant-numeric:tabular-nums}
+.price-amount sup{font-size:16px;font-weight:700;vertical-align:super}
+.price-period{font-size:12px;color:var(--dim);margin-bottom:20px}
+.price-list{list-style:none;text-align:left;margin-bottom:22px;display:flex;flex-direction:column;gap:8px}
+.price-list li{font-size:12.5px;color:var(--dim);display:flex;align-items:center;gap:7px}
+.price-list li::before{content:'✓';color:var(--teal);font-weight:700;flex-shrink:0}
+
+/* ── Signup Form ─────────────────────── */
+.signup-wrap{display:flex;align-items:center;justify-content:center;padding:60px 24px;background:linear-gradient(180deg,transparent 0%,rgba(0,200,150,0.04) 100%)}
+.signup-card{width:100%;max-width:480px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:36px 32px}
+.signup-head{text-align:center;margin-bottom:28px}
+.signup-head h2{font-size:22px;font-weight:800;margin-bottom:6px}
+.signup-head p{font-size:13px;color:var(--dim)}
+.form-group{margin-bottom:14px}
+label{display:block;font-size:11.5px;font-weight:600;color:var(--dim);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+input,select{width:100%;padding:11px 14px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-size:13.5px;font-family:inherit;outline:none;transition:border-color .2s}
+input:focus,select:focus{border-color:var(--teal-r)}
+input::placeholder{color:var(--faint)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:40px}
+.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--dim);cursor:pointer;padding:2px;display:flex}
+.pw-toggle svg{width:16px;height:16px}
+.form-hint{font-size:11px;color:var(--faint);margin-top:4px}
+.form-err{font-size:11.5px;color:var(--red);margin-top:4px;display:none}
+.form-err.show{display:block}
+.submit-btn{width:100%;padding:13px;border-radius:var(--rs);background:var(--teal);color:#0a1f18;font-size:14px;font-weight:800;border:none;cursor:pointer;margin-top:6px;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.submit-btn:hover{opacity:.88}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+.spinner{width:16px;height:16px;border:2.5px solid rgba(10,31,24,0.3);border-top-color:#0a1f18;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.submit-btn.loading .spinner{display:block}
+.submit-btn.loading .btn-text{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.global-err{padding:10px 14px;border-radius:var(--rs);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:var(--red);font-size:12.5px;margin-bottom:14px;display:none}
+.global-err.show{display:block}
+.login-link{text-align:center;margin-top:16px;font-size:12.5px;color:var(--dim)}
+.login-link a{color:var(--teal);font-weight:600;text-decoration:none}
+
+/* ── Footer ──────────────────────────── */
+footer{margin-top:auto;border-top:1px solid var(--border);padding:24px 32px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--faint)}
+footer a{color:var(--faint);text-decoration:none}
+
+/* ── Responsive ──────────────────────── */
+@media(max-width:1100px){.pricing-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.features-grid,.hw-grid{grid-template-columns:1fr 1fr}.steps-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.features-grid,.pricing-grid,.hw-grid,.steps-grid{grid-template-columns:1fr}.nav-links{display:none}.form-row{grid-template-columns:1fr}}
+
+/* ── Animations ──────────────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse-teal{0%,100%{box-shadow:0 0 0 0 rgba(0,200,150,0)}50%{box-shadow:0 0 0 8px rgba(0,200,150,0.14)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+nav{animation:slideDown .5s ease both}
+.hero-eyebrow{animation:fadeUp .55s .1s ease both}
+h1{animation:fadeUp .6s .2s ease both}
+.hero-sub{animation:fadeUp .6s .32s ease both}
+.hero-cta{animation:fadeUp .6s .44s ease both}
+
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .55s ease,transform .55s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-scale{opacity:0;transform:scale(.93);transition:opacity .5s ease,transform .5s ease}
+.reveal-scale.visible{opacity:1;transform:scale(1)}
+
+.feat-card{transition:border-color .2s,transform .2s,box-shadow .2s}
+.feat-card:hover{border-color:var(--teal-r);transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.35)}
+.price-card{transition:border-color .2s,transform .2s,box-shadow .2s}
+.price-card:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.4)}
+.price-card.popular{animation:pulse-teal 3s ease 1.5s infinite}
+.btn-primary{transition:opacity .2s,transform .15s,box-shadow .2s}
+.btn-primary:hover{opacity:.88;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,200,150,0.35)}
+.nav-mark img{transition:transform .3s ease}
+.nav-logo:hover .nav-mark img{transform:rotate(-8deg) scale(1.1)}
+.step-card{transition:border-color .2s,transform .2s}
+.step-card:hover{border-color:var(--teal-r);transform:translateY(-3px)}
+.hw-card{transition:border-color .2s,transform .2s}
+.hw-card:hover{border-color:var(--teal-r);transform:translateY(-3px)}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a class="nav-logo" href="/bandofy">
+    <div class="nav-mark"><img src="/assets/bandofy/images/bandofy-logo.svg" alt="Bandofy"></div>
+    Bandofy
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="#features">Features</a>
+    <a class="nav-link" href="#how-it-works">How It Works</a>
+    <a class="nav-link" href="#pricing">Pricing</a>
+    <a class="nav-link" href="/vendor-dashboard">Dashboard</a>
+  </div>
+  <a class="nav-btn" href="#signup-form">Get Started</a>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-eyebrow">
+    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 5c1.4-2 3.5-3 5-3s3.6 1 5 3M4 8c.6-1 1.2-1.5 2-1.5S7.4 7 8 8M6 10.5h.01"/></svg>
+    Hotspot Management
+  </div>
+  <h1>Sell Wi-Fi.<br><span>Grow your business.</span></h1>
+  <p class="hero-sub">Manage your hotspot, sell vouchers, track revenue, and monitor live connections — all from one simple dashboard.</p>
+  <div class="hero-cta">
+    <a class="btn-primary" href="#signup-form">
+      Create Your Hotspot
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 8h10M9 5l3 3-3 3"/></svg>
+    </a>
+    <a class="btn-ghost" href="/vendor-dashboard">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+      View Demo
+    </a>
+  </div>
+</div>
+
+<!-- Features -->
+<div id="features" class="section reveal">
+  <div class="sec-label">Features</div>
+  <h2 class="sec-h2">Everything you need to run a hotspot</h2>
+  <p class="sec-p">From live connection monitoring to voucher printing, Bandofy gives you the tools to manage your Wi-Fi business effortlessly.</p>
+  <div class="features-grid">
+    <div class="feat-card">
+      <div class="feat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6c2.5-3.3 6-5 8-5s5.5 1.7 8 5M6 11c1-1.7 2.4-2.5 4-2.5s3 .8 4 2.5M9 15h2"/></svg></div>
+      <div class="feat-title">Live Monitoring</div>
+      <div class="feat-desc">See who's connected right now — device count, bandwidth usage, and live revenue flowing in.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="14" height="11" rx="1"/><path d="M7 6V5a3 3 0 0 1 6 0v1"/><path d="M10 11v2.5M9 12h2"/></svg></div>
+      <div class="feat-title">Voucher Sales</div>
+      <div class="feat-desc">Generate, print, and sell time-based vouchers. Set your own packages and prices.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 14l4-8 4 3 4-7 4 12"/><path d="M2 18h16"/></svg></div>
+      <div class="feat-title">Revenue Analytics</div>
+      <div class="feat-desc">Daily and monthly revenue charts, transaction history, and package performance insights.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2z"/><path d="M10 6v4l3 3"/></svg></div>
+      <div class="feat-title">Mobile Payments</div>
+      <div class="feat-desc">Accept M-Pesa payments directly on your hotspot portal. Customers pay and connect instantly.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="16" height="16" rx="2"/><path d="M6 10h8M10 6v8"/></svg></div>
+      <div class="feat-title">Custom Packages</div>
+      <div class="feat-desc">Define hourly, daily, and weekly plans. Set bandwidth limits for each tier.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h12v8H4zM8 16h4M10 12v4"/></svg></div>
+      <div class="feat-title">Ad Campaigns</div>
+      <div class="feat-desc">Show ads on your portal page and track impressions. Monetise your hotspot beyond data sales.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="7" r="3"/><path d="M3 17c0-3.3 3.1-6 7-6s7 2.7 7 6"/><path d="M14 5a2 2 0 1 1 0-4"/><path d="M15 9h3"/></svg></div>
+      <div class="feat-title">Branded Portal</div>
+      <div class="feat-desc">Upload your logo, choose your accent color and tagline. Your hotspot looks like your brand, not a generic page.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6c2.5-3.3 6-5 8-5s5.5 1.7 8 5"/><rect x="6" y="11" width="8" height="6" rx="1"/><path d="M10 11V8"/></svg></div>
+      <div class="feat-title">Device Management</div>
+      <div class="feat-desc">Register every access point by MAC address. Choose Omada or Ruijie integration per AP, toggle active status anytime.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="14" height="11" rx="1"/><path d="M7 6V5a3 3 0 0 1 6 0v1"/><path d="M8 12h4M10 10v4"/></svg></div>
+      <div class="feat-title">Staff Vouchers</div>
+      <div class="feat-desc">Create reusable codes for staff. Limit by device count, set daily session minutes, no payment needed.</div>
+    </div>
+  </div>
+</div>
+
+<!-- How It Works -->
+<div id="how-it-works" class="section reveal" style="padding-top:0">
+  <div class="sec-label">How It Works</div>
+  <h2 class="sec-h2">From signup to live hotspot in minutes</h2>
+  <p class="sec-p">Four simple steps to start selling Wi-Fi and tracking your revenue.</p>
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-title">Sign Up</div>
+      <div class="step-desc">Create a free account with your name, email and hotspot name. Your 7-day trial starts immediately — no card needed.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-title">Connect Your Hardware</div>
+      <div class="step-desc">Add your Omada or Ruijie access points by MAC address. Enter your controller's Site ID or AC name.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-title">Build Your Packages</div>
+      <div class="step-desc">Set hourly, daily or weekly plans with your prices. Add bandwidth limits and device caps per plan.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <div class="step-title">Go Live</div>
+      <div class="step-desc">Guests see your branded portal, pay via M-Pesa or Airtel Money, and connect instantly. Watch revenue come in.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Hardware Compatibility -->
+<div class="section reveal" style="padding-top:0">
+  <div class="sec-label">Hardware Support</div>
+  <h2 class="sec-h2">Works with your existing equipment</h2>
+  <p class="sec-p">Bandofy integrates with two major hotspot controller platforms — no new hardware required.</p>
+  <div class="hw-grid">
+    <div class="hw-card">
+      <div class="hw-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M2 6c2.5-3.3 6-5 8-5s5.5 1.7 8 5M6 11c1-1.7 2.4-2.5 4-2.5s3 .8 4 2.5M9 15h2"/></svg></div>
+      <div>
+        <span class="hw-badge blue">Supported</span>
+        <div class="hw-title">TP-Link Omada</div>
+        <div class="hw-desc">Connect your Omada Controller. Bandofy provisions the guest SSID and manages authorisations through the Omada API — no manual portal setup.</div>
+      </div>
+    </div>
+    <div class="hw-card">
+      <div class="hw-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><rect x="2" y="8" width="16" height="8" rx="1"/><path d="M6 8V6a4 4 0 0 1 8 0v2"/><circle cx="10" cy="12" r="1.5"/></svg></div>
+      <div>
+        <span class="hw-badge amber">Supported</span>
+        <div class="hw-title">Ruijie AC / Reyee</div>
+        <div class="hw-desc">Uses Bandofy's built-in RADIUS server. No separate controller required — the AC authenticates customers directly against Bandofy.</div>
+      </div>
+    </div>
+  </div>
+  <p class="hw-note">More hardware integrations coming soon. <a href="mailto:support@bandofy.com" style="color:var(--teal)">Contact us</a> if your brand is not listed.</p>
+</div>
+
+<!-- Pricing -->
+<div id="pricing" class="section reveal" style="padding-top:0">
+  <div class="sec-label">Pricing</div>
+  <h2 class="sec-h2">Start free. Pay when you grow.</h2>
+  <p class="sec-p">Every new account gets a full 7-day trial with all features unlocked. No credit card required. All features are included on every paid plan — plans only differ by site and AP limits.</p>
+  <div class="pricing-grid">
+    <!-- Free Trial -->
+    <div class="price-card">
+      <div class="price-card-body">
+        <div class="price-tag" style="color:var(--teal)">Free Trial</div>
+        <div class="price-name">Starter</div>
+        <div class="price-amount"><sup style="font-size:13px;vertical-align:super">TZS </sup>0</div>
+        <div class="price-period">7 days · no credit card</div>
+        <ul class="price-list">
+          <li>1 hotspot site</li>
+          <li>1 Omada AP or 1 Ruijie AP</li>
+          <li>M-Pesa &amp; Airtel Money</li>
+          <li>Vouchers &amp; staff codes</li>
+          <li>Branded portal</li>
+          <li>Device management</li>
+          <li>Revenue analytics + CSV export</li>
+          <li>SMS payment confirmation</li>
+          <li>Withdraw earnings</li>
+        </ul>
+      </div>
+      <div>
+        <a class="btn-primary" href="#signup-form" style="display:block;text-decoration:none;text-align:center;border-radius:var(--rs);padding:10px">Start Free Trial →</a>
+        <p style="font-size:11px;color:var(--faint);text-align:center;margin-top:8px">No payment required</p>
+      </div>
+    </div>
+    <!-- Growth -->
+    <div class="price-card">
+      <div class="price-card-body">
+        <div class="price-name">Growth</div>
+        <div class="price-amount"><sup style="font-size:13px;vertical-align:super">TZS </sup>12,000</div>
+        <div class="price-period">per month, after 7-day trial</div>
+        <ul class="price-list">
+          <li>2 hotspot sites</li>
+          <li>1 Omada AP · 1 Ruijie AP</li>
+          <li>M-Pesa &amp; Airtel Money</li>
+          <li>Vouchers &amp; staff codes</li>
+          <li>Branded portal</li>
+          <li>Device management</li>
+          <li>Revenue analytics + CSV export</li>
+          <li>SMS payment confirmation</li>
+          <li>Withdraw earnings</li>
+        </ul>
+      </div>
+      <div>
+        <a class="btn-primary" href="#signup-form" style="display:block;text-decoration:none;text-align:center;border-radius:var(--rs);padding:10px">Start 7-Day Free Trial</a>
+        <p style="font-size:11px;color:var(--faint);text-align:center;margin-top:8px">7 days free · no credit card</p>
+      </div>
+    </div>
+    <!-- Power -->
+    <div class="price-card popular">
+      <div class="price-card-body">
+        <div class="price-tag">
+          <svg viewBox="0 0 12 12" fill="currentColor" width="10" height="10"><path d="M6 1l1.5 3 3.5.5-2.5 2.5.5 3.5L6 9 3 10.5l.5-3.5L1 4.5 4.5 4z"/></svg>
+          Most Popular
+        </div>
+        <div class="price-name">Power</div>
+        <div class="price-amount"><sup style="font-size:13px;vertical-align:super">TZS </sup>25,000</div>
+        <div class="price-period">per month, after 7-day trial</div>
+        <ul class="price-list">
+          <li>5 hotspot sites</li>
+          <li>3 Omada APs · 3 Ruijie APs</li>
+          <li>M-Pesa &amp; Airtel Money</li>
+          <li>Vouchers &amp; staff codes</li>
+          <li>Branded portal</li>
+          <li>Device management</li>
+          <li>Revenue analytics + CSV export</li>
+          <li>SMS payment confirmation</li>
+          <li>Withdraw earnings</li>
+          <li>Priority support</li>
+          <li>Sabbath mode</li>
+          <li>Guest-to-admin chat</li>
+        </ul>
+      </div>
+      <div>
+        <a class="btn-primary" href="#signup-form" style="display:block;text-decoration:none;text-align:center;border-radius:var(--rs);padding:10px">Start 7-Day Free Trial</a>
+        <p style="font-size:11px;color:var(--faint);text-align:center;margin-top:8px">7 days free · no credit card</p>
+      </div>
+    </div>
+    <!-- Ultra -->
+    <div class="price-card">
+      <div class="price-card-body">
+        <div class="price-name">Ultra</div>
+        <div class="price-amount"><sup style="font-size:13px;vertical-align:super">TZS </sup>50,000</div>
+        <div class="price-period">per month, after 7-day trial</div>
+        <ul class="price-list">
+          <li>10 hotspot sites</li>
+          <li>5 Omada APs · 5 Ruijie APs</li>
+          <li>M-Pesa &amp; Airtel Money</li>
+          <li>Vouchers &amp; staff codes</li>
+          <li>Branded portal</li>
+          <li>Device management</li>
+          <li>Revenue analytics + CSV export</li>
+          <li>SMS payment confirmation</li>
+          <li>Withdraw earnings</li>
+          <li>Priority support</li>
+          <li>Sabbath mode</li>
+          <li>Guest-to-admin chat</li>
+          <li>Customer SMS campaigns</li>
+          <li>Bulk voucher exports</li>
+        </ul>
+      </div>
+      <div>
+        <a class="btn-primary" href="#signup-form" style="display:block;text-decoration:none;text-align:center;border-radius:var(--rs);padding:10px">Start 7-Day Free Trial</a>
+        <p style="font-size:11px;color:var(--faint);text-align:center;margin-top:8px">7 days free · no credit card</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Signup Form -->
+<div id="signup-form" class="signup-wrap reveal">
+  <div class="signup-card">
+    <div class="signup-head">
+      <div class="nav-mark" style="margin:0 auto 14px;width:48px;height:48px"><img src="/assets/bandofy/images/bandofy-logo.svg" alt="Bandofy" style="width:48px;height:48px"></div>
+      <h2>Start your free trial</h2>
+      <p>7 days full access · no credit card required</p>
+    </div>
+
+    <div class="global-err" id="globalErr"></div>
+
+    <form id="regForm" autocomplete="off">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="fullName" placeholder="e.g. John Mwangi" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="email" placeholder="you@example.com" required autocomplete="username">
+          <div class="form-err" id="emailErr"></div>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="phone" placeholder="0712 345 678">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Wi-Fi / Hotspot Name</label>
+        <input type="text" id="siteName" placeholder="e.g. Kitonga Wifi" required maxlength="32">
+        <div class="form-hint">This will be your Wi-Fi network name (max 32 chars)</div>
+        <div class="form-err" id="siteErr"></div>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="password" placeholder="Min 8 characters" required autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('password',this)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>
+          </button>
+        </div>
+        <div class="form-err" id="passErr"></div>
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="password2" placeholder="Repeat password" required autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('password2',this)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>
+          </button>
+        </div>
+        <div class="form-err" id="pass2Err"></div>
+      </div>
+      <button type="submit" class="submit-btn" id="submitBtn">
+        <span class="btn-text">Start Free Trial →</span>
+        <div class="spinner"></div>
+      </button>
+    </form>
+    <div class="login-link">
+      Already have an account? <a href="/login?redirect-to=/vendor-dashboard">Sign in</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>© 2026 Orion Digital Tz · Hotspot Management</span>
+  <div style="display:flex;gap:18px">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="mailto:support@bandofy.com">Support</a>
+  </div>
+</footer>
+
+<script>
+var _csrf = {{ (frappe.session.csrf_token or "") | tojson }};
+
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+document.getElementById('regForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  // Clear errors
+  ['globalErr','emailErr','siteErr','passErr','pass2Err'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '';
+    el.classList.remove('show');
+  });
+
+  const fullName = document.getElementById('fullName').value.trim();
+  const email    = document.getElementById('email').value.trim().toLowerCase();
+  const phone    = document.getElementById('phone').value.trim();
+  const siteName = document.getElementById('siteName').value.trim();
+  const password = document.getElementById('password').value;
+  const pass2    = document.getElementById('password2').value;
+
+  // Client-side validation
+  let ok = true;
+  if (password.length < 8) {
+    document.getElementById('passErr').textContent = 'Password must be at least 8 characters.';
+    document.getElementById('passErr').classList.add('show');
+    ok = false;
+  }
+  if (password !== pass2) {
+    document.getElementById('pass2Err').textContent = 'Passwords do not match.';
+    document.getElementById('pass2Err').classList.add('show');
+    ok = false;
+  }
+  if (!siteName) {
+    document.getElementById('siteErr').textContent = 'Please enter a hotspot name.';
+    document.getElementById('siteErr').classList.add('show');
+    ok = false;
+  }
+  if (!ok) return;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.classList.add('loading');
+
+  try {
+    const resp = await fetch('/api/method/bandofy.api.register_manager', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Frappe-CSRF-Token': frappe_csrf_token()},
+      credentials: 'same-origin',
+      body: JSON.stringify({full_name: fullName, email, password, phone, site_name: siteName})
+    });
+    const data = await resp.json();
+
+    if (data.message && data.message.redirect) {
+      window.location.href = data.message.redirect;
+    } else if (data.exc || data._server_messages) {
+      let msg = 'Registration failed. Please try again.';
+      if (data._server_messages) {
+        try {
+          const msgs = JSON.parse(data._server_messages);
+          const first = typeof msgs[0] === 'string' ? JSON.parse(msgs[0]) : msgs[0];
+          msg = first.message || msg;
+        } catch(e) { msg = data._server_messages; }
+      } else if (data.exc) {
+        msg = data.exc_type === 'ValidationError' || data.exc_type === 'MandatoryError'
+          ? (data.exc.split('\n').filter(Boolean).pop() || msg)
+          : msg;
+      }
+      showGlobalErr(msg);
+    } else if (!resp.ok) {
+      showGlobalErr(data.message || 'Request failed. Please try again.');
+    } else {
+      showGlobalErr('Unexpected response. Please try again.');
+    }
+  } catch (err) {
+    showGlobalErr('Network error. Please check your connection and try again.');
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+});
+
+function showGlobalErr(msg) {
+  // Strip HTML tags from Frappe error messages
+  const plain = msg.replace(/<[^>]*>/g, '').replace(/\n/g, ' ').trim();
+  const el = document.getElementById('globalErr');
+  el.textContent = plain;
+  el.classList.add('show');
+}
+
+function frappe_csrf_token() {
+  return _csrf || document.cookie.split(';').map(c => c.trim()).filter(c => c.startsWith('csrftoken=')).map(c => c.slice(10))[0] || '';
+}
+
+// ── Scroll animations ────────────────────────────────────────────────────────
+(function() {
+  // Sections fade-up
+  const ioSection = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        ioSection.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => ioSection.observe(el));
+
+  // Cards stagger scale-in
+  document.querySelectorAll('.features-grid .feat-card, .pricing-grid .price-card, .steps-grid .step-card, .hw-grid .hw-card').forEach((el, i) => {
+    el.classList.add('reveal-scale');
+    el.dataset.delay = i * 90;
+  });
+  const ioCard = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, parseInt(entry.target.dataset.delay || 0));
+        ioCard.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.07 });
+  document.querySelectorAll('.reveal-scale').forEach(el => ioCard.observe(el));
+})();
+</script>
+</body>
+</html>

@@ -197,7 +197,7 @@
    "label": "Open API: Portal for New Sites"
   },
   {
-   "description": "Your public Bandofy address that Omada's External Portal sends customers to, e.g. https://bandofy.example.com/wifi_login. Required to create sites; phones must be able to open it.",
+   "description": "Your public Bandofy address that Omada's External Portal sends customers to, e.g. https://bandofy.example.com/landing. Required to create sites; phones must be able to open it.",
    "fieldname": "portal_url",
    "fieldtype": "Data",
    "label": "Portal URL",

@@ -9,7 +9,7 @@ from frappe.utils import add_to_date, now_datetime
 
 from bandofy import api
 from bandofy.bandofy.doctype.hotspot_site.test_hotspot_site import SiteTestCase, random_mac
-from bandofy.ruijie import check_login
+from bandofy.radius_auth import check_login
 from bandofy.utils import find_site
 
 

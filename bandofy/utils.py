@@ -49,7 +49,7 @@ def is_omada_site_id(value):
 	return bool(value and OMADA_SITE_ID.match(value.strip()))
 
 
-def find_site(omada_site=None, ap_mac=None, fields=None, active_only=True, ac_name=None):
+def find_site(omada_site=None, ap_mac=None, fields=None, active_only=True, ac_name=None, nas_id=None):
 	"""The Hotspot Site a captive-portal request belongs to.
 
 	Tries, in order:
@@ -57,8 +57,10 @@ def find_site(omada_site=None, ap_mac=None, fields=None, active_only=True, ac_na
 	  Portal redirect as ``site`` (Omada sites);
 	- ``ac_name``: the Ruijie controller's name it sends as ``wlanacname``
 	  (Ruijie sites);
+	- ``nas_id``: the NAS-Identifier a RADIUS site sends in portal redirects
+	  (Ruijie, RADIUS, Omada RADIUS sites);
 	- ``ap_mac``: any active row of a site's Access Points table, for
-	  requests without either and for sites that haven't filled them in.
+	  requests without any of the above.
 	So a site needs no Access Points rows, and APs added on the controller
 	work at once."""
 	fields = list(fields) if fields else ["name"]
@@ -67,6 +69,8 @@ def find_site(omada_site=None, ap_mac=None, fields=None, active_only=True, ac_na
 		lookups.append({"omada_site_id": omada_site.strip()})
 	if ac_name and ac_name.strip():
 		lookups.append({"ruijie_ac_name": ac_name.strip(), "controller_type": "Ruijie"})
+	if nas_id and nas_id.strip():
+		lookups.append({"nas_identifier": nas_id.strip(), "controller_type": ["in", ["Ruijie", "RADIUS", "Omada RADIUS"]]})
 	for filters in lookups:
 		if active_only:
 			filters["is_active"] = 1

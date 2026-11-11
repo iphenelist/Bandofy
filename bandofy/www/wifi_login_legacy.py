@@ -5,6 +5,6 @@
 # Vue version of /wifi_login is verified on real Omada hardware. Delete this
 # file and wifi_login_legacy.html once that's done.
 
-from bandofy.www.wifi_login import get_context
+from bandofy.www.landing import get_context
 
 no_cache = 1

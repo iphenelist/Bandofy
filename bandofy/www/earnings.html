@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f1117">
+<title>Earnings — {{ site.site_name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0f1117;
+  --sidebar:  #131920;
+  --card:     #1a2332;
+  --card2:    #1f2a3c;
+  --border:   rgba(255,255,255,0.07);
+  --bstrong:  rgba(255,255,255,0.14);
+  --teal:     #00c896;
+  --teal-l:   #33d9a8;
+  --teal-d:   rgba(0,200,150,0.15);
+  --teal-r:   rgba(0,200,150,0.30);
+  --amber:    #f59e0b;
+  --amber-bg: rgba(245,158,11,0.14);
+  --red:      #ef4444;
+  --red-bg:   rgba(239,68,68,0.14);
+  --text:     #e0e6ed;
+  --dim:      rgba(224,230,237,0.50);
+  --faint:    rgba(224,230,237,0.25);
+  --r:        12px;
+  --rs:       8px;
+  color-scheme: dark;
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html,body { height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
+body { font-family: 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; display: flex; -webkit-font-smoothing: antialiased; }
+
+.sidebar { width: 220px; flex-shrink: 0; height: 100vh; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--card2); }
+.sb-logo { display: flex; align-items: center; gap: 10px; padding: 18px 16px 14px; font-size: 15px; font-weight: 800; color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border); }
+.sb-mark { width: 32px; height: 32px; border-radius: 8px; background: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; color: #0a1f18; }
+.sb-section { padding: 14px 12px 4px; font-size: 9.5px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; }
+.sb-item { display: flex; align-items: center; gap: 9px; padding: 8px 14px; border-radius: var(--rs); margin: 1px 6px; font-size: 12.5px; font-weight: 500; color: var(--dim); text-decoration: none; cursor: pointer; border: none; background: none; transition: background .18s, color .15s; width: calc(100% - 12px); }
+.sb-item:hover { background: var(--card); color: var(--text); }
+.sb-item.active { background: var(--teal-d); color: var(--teal); font-weight: 600; }
+.sb-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+.sb-footer { margin-top: auto; padding: 12px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 9px; }
+.sb-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--teal-d); border: 1.5px solid var(--teal-r); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--teal); flex-shrink: 0; }
+.sb-user-name { font-size: 12px; font-weight: 600; }
+.sb-user-role { font-size: 10px; color: var(--dim); }
+.sb-logout { margin-left: auto; color: var(--dim); background: none; border: none; cursor: pointer; padding: 4px; border-radius: 5px; transition: color .2s; text-decoration: none; display: flex; }
+.sb-logout:hover { color: var(--red); }
+.sb-logout svg { width: 14px; height: 14px; }
+
+.main-wrap { flex: 1; min-width: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { display: flex; align-items: center; gap: 12px; padding: 0 24px; height: 56px; flex-shrink: 0; border-bottom: 1px solid var(--border); background: var(--bg); }
+.topbar-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--teal); }
+.topbar-title svg { width: 15px; height: 15px; }
+.topbar-spacer { flex: 1; }
+.topbar-user { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: var(--rs); border: 1px solid var(--border); background: var(--card); }
+.topbar-user-av { width: 26px; height: 26px; border-radius: 50%; background: var(--teal-d); border: 1.5px solid var(--teal-r); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--teal); }
+.topbar-user-name { font-size: 12px; font-weight: 600; }
+
+.content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 22px 24px 30px; }
+.content::-webkit-scrollbar { width: 4px; }
+.content::-webkit-scrollbar-thumb { background: var(--card2); border-radius: 4px; }
+
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 18px; }
+.card-sm { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; }
+.card-label { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .7px; }
+.card-value { font-size: 28px; font-weight: 800; margin-top: 4px; line-height: 1; font-variant-numeric: tabular-nums; }
+.sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.sec-title { font-size: 13px; font-weight: 700; }
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; }
+.bt { background: var(--teal-d); color: var(--teal); }
+.ba { background: var(--amber-bg); color: var(--amber); }
+.br { background: var(--red-bg); color: var(--red); }
+
+.wd-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.wd-table th { text-align: left; padding: 7px 10px; font-size: 10px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: .7px; border-bottom: 1px solid var(--border); }
+.wd-table td { padding: 10px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.wd-table tr:last-child td { border-bottom: none; }
+.wd-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.btn-primary { padding: 10px 20px; border-radius: var(--rs); border: none; background: var(--teal); color: #0a1f18; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: filter .2s; }
+.btn-primary:hover { filter: brightness(1.08); }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-overlay.hidden { display: none; }
+.modal-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 100%; max-width: 420px; }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 18px; }
+.field-group { margin-bottom: 14px; }
+.field-label { font-size: 11px; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 6px; }
+.field-input { width: 100%; padding: 10px 12px; background: var(--card2); border: 1px solid var(--border); border-radius: var(--rs); color: var(--text); font-size: 14px; font-family: inherit; outline: none; }
+.field-input:focus { border-color: var(--teal-r); }
+.modal-footer { display: flex; gap: 10px; margin-top: 20px; }
+.btn-cancel { padding: 10px 20px; border-radius: var(--rs); border: 1px solid var(--border); background: none; color: var(--dim); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+@media (max-width: 900px) { .sidebar { width: 56px; } .sb-item span,.sb-section,.sb-user-name,.sb-user-role,.sb-logo span { display: none; } .sb-item { justify-content: center; padding: 10px; } .sb-logo { justify-content: center; } .sb-footer { justify-content: center; } .sb-logout { display: none; } }
+@media (max-width: 700px) { .sidebar { display: none; } .grid-3 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <a class="sb-logo" href="/vendor-dashboard">
+    <div class="sb-mark">Bw</div>
+    <span>Bandofy</span>
+  </a>
+
+  <div class="sb-section">Website</div>
+  <a class="sb-item" href="/start">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6c1.9-2.5 4.7-4 7-4s5.1 1.5 7 4M4 9c1-1.3 2.4-2 4-2s3 .7 4 2M7 12h2"/></svg>
+    <span>Landing Page</span>
+  </a>
+
+  <div class="sb-section">Dashboards</div>
+  <a class="sb-item" href="/vendor-dashboard">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    <span>Overview</span>
+  </a>
+  <a class="sb-item" href="/transactions">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 11 5 6 9 8 15 3"/><path d="M1 15h14"/></svg>
+    <span>Transactions</span>
+  </a>
+  <a class="sb-item active" href="/earnings">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5.5 7.5h4a1 1 0 0 1 0 2h-4"/></svg>
+    <span>Earnings</span>
+  </a>
+
+  <div class="sb-section">Manage</div>
+  <a class="sb-item" href="/devices"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M5 13v2M11 13v2M3 16h10"/></svg><span>Devices</span></a>
+  <a class="sb-item" href="/vouchers"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V4a3 3 0 0 1 6 0v1"/></svg><span>Vouchers</span></a>
+  <a class="sb-item" href="/packages"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h12M2 8h8M2 13h5"/></svg><span>Packages</span></a>
+  <a class="sb-item" href="/site_settings"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M13 3l-1.5 1.5M4.5 11.5 3 13"/></svg><span>Settings</span></a>
+
+  <div class="sb-footer">
+    <div class="sb-avatar">{{ (site.vendor_name or "V")[0] | upper }}</div>
+    <div>
+      <div class="sb-user-name">{{ site.vendor_name or "Vendor" }}</div>
+      <div class="sb-user-role">Hotspot Manager</div>
+    </div>
+    <a class="sb-logout" href="/api/method/logout" title="Log out">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3M7 5L3 8l4 3M3 8h8"/></svg>
+    </a>
+  </div>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="topbar-title">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5.5 7.5h4a1 1 0 0 1 0 2h-4"/></svg>
+      Earnings
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-user">
+      <div class="topbar-user-av">{{ (site.vendor_name or "V")[0] | upper }}</div>
+      <div class="topbar-user-name">{{ site.vendor_name or "Vendor" }}</div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <div class="grid-3">
+      <div class="card-sm">
+        <div class="card-label">Total Earned</div>
+        <div class="card-value" style="color:var(--teal)">{{ frappe.utils.fmt_money(total_earned) }}</div>
+      </div>
+      <div class="card-sm">
+        <div class="card-label">This Month</div>
+        <div class="card-value">{{ frappe.utils.fmt_money(this_month) }}</div>
+      </div>
+      <div class="card-sm">
+        <div class="card-label">Available Balance</div>
+        <div class="card-value" style="color:var(--teal)">{{ frappe.utils.fmt_money(available_balance) }}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-head">
+        <div class="sec-title">Withdrawal History</div>
+        <button class="btn-primary" onclick="document.getElementById('wdModal').classList.remove('hidden')">Request Withdrawal</button>
+      </div>
+
+      {% if withdrawals %}
+      <table class="wd-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Phone</th>
+            <th>Network</th>
+            <th>Status</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in withdrawals %}
+          <tr>
+            <td style="color:var(--dim);font-size:12px">{{ frappe.utils.format_datetime(w.requested_on, "dd MMM yyyy · HH:mm") }}</td>
+            <td style="font-weight:700;font-variant-numeric:tabular-nums">{{ frappe.utils.fmt_money(w.amount) }}</td>
+            <td style="color:var(--dim)">{{ w.phone_number or "—" }}</td>
+            <td style="color:var(--dim)">{{ w.network or "—" }}</td>
+            <td>
+              {% if w.status == "Approved" %}<span class="badge bt">Approved</span>
+              {% elif w.status == "Rejected" %}<span class="badge br">Rejected</span>
+              {% else %}<span class="badge ba">Pending</span>{% endif %}
+            </td>
+            <td style="color:var(--dim);font-size:12px">{{ w.notes or "—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p style="color:var(--dim);text-align:center;padding:30px 0">No withdrawal requests yet.</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<!-- Withdrawal modal -->
+<div class="modal-overlay hidden" id="wdModal">
+  <div class="modal-box">
+    <div class="modal-title">Request Withdrawal</div>
+    <div class="field-group">
+      <div class="field-label">Amount (TZS)</div>
+      <input class="field-input" type="number" id="wdAmount" placeholder="Enter amount" min="1">
+    </div>
+    <div class="field-group">
+      <div class="field-label">Mobile Money Number</div>
+      <input class="field-input" type="tel" id="wdPhone" placeholder="e.g. 0712345678">
+    </div>
+    <div class="field-group">
+      <div class="field-label">Network</div>
+      <select class="field-input" id="wdNetwork">
+        <option value="M-Pesa">M-Pesa</option>
+        <option value="Airtel Money">Airtel Money</option>
+      </select>
+    </div>
+    <div id="wdError" style="color:var(--red);font-size:13px;margin-top:8px;display:none"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="submitWithdrawal()">Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function closeModal() {
+  document.getElementById('wdModal').classList.add('hidden');
+  document.getElementById('wdError').style.display = 'none';
+}
+function submitWithdrawal() {
+  const amount = parseFloat(document.getElementById('wdAmount').value);
+  const phone = document.getElementById('wdPhone').value.trim();
+  const network = document.getElementById('wdNetwork').value;
+  const errEl = document.getElementById('wdError');
+  if (!amount || amount <= 0) { errEl.textContent = 'Enter a valid amount.'; errEl.style.display = ''; return; }
+  if (!phone) { errEl.textContent = 'Enter your mobile money number.'; errEl.style.display = ''; return; }
+  frappe.call({
+    method: 'bandofy.api.request_withdrawal',
+    args: { site: '{{ site.name }}', amount, phone_number: phone, network },
+    callback: function(r) {
+      if (r.exc) { errEl.textContent = r.exc || 'Error submitting request.'; errEl.style.display = ''; return; }
+      closeModal();
+      location.reload();
+    }
+  });
+}
+</script>
+</body>
+</html>

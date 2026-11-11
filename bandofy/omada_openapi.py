@@ -17,7 +17,7 @@ import frappe
 import requests
 from frappe import _
 
-from bandofy.omada_service import _new_session, _settings
+from bandofy.omada_auth import _new_session, _settings
 
 TOKEN_CACHE_KEY = "bandofy:omada_openapi_token"
 PAGE_SIZE = 1000

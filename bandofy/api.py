@@ -12,8 +12,7 @@ from frappe import _
 from frappe.utils import add_to_date, cint, get_datetime_str, get_url, getdate, now_datetime, nowdate
 
 from bandofy.omada_openapi import set_client_rate_limit
-from bandofy.omada_service import authorize_client, site_controller
-from bandofy.ruijie import is_ruijie, issue_login, login_form
+from bandofy.omada_auth import authorize_client, site_controller
 from bandofy.utils import find_site, has_used_free_trial, is_sabbath_now, normalize_mac
 
 DEFAULT_SUCCESS_REDIRECT_URL = "https://www.youtube.com"
@@ -513,7 +512,7 @@ def _watched_free_trial_ad(site_name, client_mac):
 	"""True when the site has no full-screen ads, or this device's portal
 	logged a view of one at least FREE_TRIAL_AD_SECONDS ago (the portal
 	logs the view when the ad appears and claims when its countdown ends)."""
-	from bandofy.www.wifi_login import free_trial_ads, get_active_ads
+	from bandofy.www.landing import free_trial_ads, get_active_ads
 
 	ads = [ad.name for ad in free_trial_ads(get_active_ads(site_name))]
 	if not ads:
@@ -713,25 +712,22 @@ def get_chat_messages(ap_mac=None, client_mac=None, after=None, omada_site=None,
 
 
 def _require_ap_mac(site, ap_mac):
-	"""Omada authorizes a client against the AP it is on; Ruijie sites log
-	the client in through the AC and don't need it."""
-	if not ap_mac and not is_ruijie(site):
+	if not ap_mac:
 		frappe.throw(_("Missing required parameters."))
 
 
 def _authorize_transaction(txn, site):
 	"""Let this Paid transaction's device online, then flag the transaction
 	so the portal page's status poll (see get_omada_connection_status) knows
-	it can move on. Raises on failure -- callers decide whether to retry
-	synchronously or via the queue.
+	it can move on.
 
-	- Omada sites: authorize the client's MAC on the Omada Controller.
-	- Ruijie sites: issue the one-time RADIUS login the portal page then
-	  submits to the AC (see bandofy.ruijie).
+	Omada sites: authorize the client's MAC on the Omada Controller.
+	Ruijie sites: set authorized_until (the AC handles the redirect itself).
 	"""
-	if is_ruijie(site):
-		issue_login(txn)
-		txn.db_set("omada_authorized", 1, commit=True)
+	if site.get("controller_type") == "Ruijie":
+		from frappe.utils import add_to_date
+		until = add_to_date(now_datetime(), minutes=max(int(txn.duration_minutes or 0), 1))
+		txn.db_set({"authorized_until": until, "omada_authorized": 1}, commit=True)
 		return
 
 	_authorize_on_omada(txn, site)
@@ -741,12 +737,8 @@ def _authorize_transaction(txn, site):
 
 def _connect_details(txn, site):
 	"""What the portal page needs to finish connecting an authorized device:
-	where to send the browser (Omada), or the login form to submit to the
-	AC (Ruijie)."""
-	redirect_url = _success_redirect_url(site.get("success_redirect_url"))
-	if is_ruijie(site):
-		return {"login": login_form(txn, redirect_url)}
-	return {"redirect_url": redirect_url}
+	the redirect URL to send the browser to once authorized."""
+	return {"redirect_url": _success_redirect_url(site.get("success_redirect_url"))}
 
 
 def _authorize_on_omada(txn, site):
@@ -791,9 +783,8 @@ def _apply_package_bandwidth(txn, site):
 
 
 def authorize_mac_on_omada(transaction_id):
-	"""Get a paying client online: authorize its MAC on the site's Omada
-	controller, or issue its RADIUS login on a Ruijie site (the name is kept
-	for jobs already queued).
+	"""Get a paying client online: authorize its MAC on the Omada controller
+	(Omada sites) or record authorized_until (Ruijie sites).
 
 	Enqueued from :func:`payment_callback`/:func:`sync_pending_payments` once
 	a transaction is marked Paid, and as a retry fallback when the
@@ -818,10 +809,8 @@ def authorize_mac_on_omada(transaction_id):
 @frappe.whitelist(allow_guest=True)
 def get_omada_connection_status(transaction_id, client_mac=None):
 	"""Polled by the portal page: reports whether authorize_mac_on_omada
-	has completed for this transaction yet and, once it has, the URL to
-	send the browser to (Omada) or the login form to submit to the AC
-	(Ruijie). A Ruijie login is only handed to the device that paid
-	(``client_mac``), since transaction IDs are guessable.
+	has completed for this transaction yet and, once it has, the redirect URL
+	to send the browser to.
 	"""
 	txn = frappe.db.get_value(
 		"Hotspot Transaction",
@@ -841,17 +830,11 @@ def get_omada_connection_status(transaction_id, client_mac=None):
 	site = frappe.db.get_value(
 		"Hotspot Site", txn.site, ["controller_type", "success_redirect_url"], as_dict=True
 	)
-	if is_ruijie(site) and normalize_mac(client_mac) != normalize_mac(txn.client_mac):
-		frappe.throw(_("Transaction not found."))
 	return {"ready": True, **_connect_details(txn, site)}
 
 
 def restrict_desk_access():
-	"""before_request hook: bounce non-System Manager users away from /app.
-
-	Vendors only ever have access to the /vendor-dashboard portal page; they
-	must never reach the Frappe Desk backend.
-	"""
+	"""before_request hook: bounce non-System Manager users away from /app."""
 	request = getattr(frappe.local, "request", None)
 	if not request or not request.path.startswith("/app"):
 		return
@@ -859,8 +842,331 @@ def restrict_desk_access():
 	if frappe.session.user == "Guest":
 		return
 
-	if "System Manager" in frappe.get_roles(frappe.session.user):
+	roles = frappe.get_roles(frappe.session.user)
+
+	if "System Manager" in roles:
+		return
+
+	if "Occasion Manager" in roles and request.path.startswith("/app/occasion"):
 		return
 
 	frappe.local.flags.redirect_location = "/vendor-dashboard"
 	raise frappe.Redirect
+
+
+@frappe.whitelist()
+def update_site_settings(site, site_name=None, phone_number=None, portal_tagline=None,
+                          mobile_money_account=None, enable_online_payment=0,
+                          enable_free_trial=0, free_trial_minutes=10, portal_primary_color=None):
+	"""Update basic site settings from the /site-settings web page."""
+	site_doc = frappe.get_doc("Hotspot Site", site)
+	if site_doc.vendor_user != frappe.session.user and "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not authorised."), frappe.PermissionError)
+
+	if site_name:
+		site_doc.site_name = site_name.strip()
+	if phone_number is not None:
+		site_doc.phone_number = phone_number
+	if portal_tagline is not None:
+		site_doc.portal_tagline = portal_tagline
+	if mobile_money_account is not None:
+		site_doc.mobile_money_account = mobile_money_account
+	if portal_primary_color is not None:
+		site_doc.portal_primary_color = portal_primary_color
+	site_doc.enable_online_payment = int(enable_online_payment or 0)
+	site_doc.enable_free_trial = int(enable_free_trial or 0)
+	site_doc.free_trial_minutes = int(free_trial_minutes or 10)
+	site_doc.save(ignore_permissions=True)
+	frappe.db.commit()
+	return {"updated": site}
+
+
+@frappe.whitelist()
+def add_package(site, package_name, package_type, price, duration_minutes, bandwidth_down_kbps=0, bandwidth_up_kbps=0, device_limit=0, data_limit_mb=0):
+	"""Create a Hotspot Package and add it to the site's packages list."""
+	site_doc = frappe.get_doc("Hotspot Site", site)
+	if site_doc.vendor_user != frappe.session.user and "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not authorised."), frappe.PermissionError)
+
+	pkg = frappe.new_doc("Hotspot Package")
+	pkg.package_name = package_name
+	pkg.package_type = package_type
+	pkg.price = float(price)
+	pkg.duration_minutes = int(duration_minutes)
+	pkg.bandwidth_down_kbps = int(bandwidth_down_kbps or 0)
+	pkg.bandwidth_up_kbps = int(bandwidth_up_kbps or 0)
+	pkg.device_limit = cint(device_limit)
+	pkg.data_limit_mb = cint(data_limit_mb)
+	pkg.insert(ignore_permissions=True)
+
+	site_doc.append("packages", {
+		"package_name": pkg.name,
+		"package_type": pkg.package_type,
+		"price": pkg.price,
+		"duration_minutes": pkg.duration_minutes,
+		"bandwidth_down_kbps": pkg.bandwidth_down_kbps,
+		"bandwidth_up_kbps": pkg.bandwidth_up_kbps,
+		"device_limit": pkg.device_limit,
+		"data_limit_mb": pkg.data_limit_mb,
+	})
+	site_doc.save(ignore_permissions=True)
+	frappe.db.commit()
+	return {"package": pkg.name}
+
+
+@frappe.whitelist()
+def remove_package(site, package_name):
+	"""Remove a package from the site's packages list."""
+	site_doc = frappe.get_doc("Hotspot Site", site)
+	if site_doc.vendor_user != frappe.session.user and "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not authorised."), frappe.PermissionError)
+
+	site_doc.packages = [p for p in site_doc.packages if p.package_name != package_name]
+	if not site_doc.packages:
+		frappe.throw(_("Cannot remove the last package. A site must have at least one package."))
+	site_doc.save(ignore_permissions=True)
+	frappe.db.commit()
+	return {"removed": package_name}
+
+
+@frappe.whitelist()
+def add_device(site, ap_mac, label="", controller_type="Omada", ac_name=""):
+	"""Add an Access Point to the site's devices child table."""
+	site_doc = frappe.get_doc("Hotspot Site", site)
+	if site_doc.vendor_user != frappe.session.user and "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not authorised."), frappe.PermissionError)
+
+	ap_mac = ap_mac.strip().upper()
+	if not ap_mac:
+		frappe.throw(_("AP MAC Address is required."))
+
+	if controller_type not in ("Omada", "Ruijie"):
+		frappe.throw(_("Invalid integration type."))
+
+	if controller_type == "Ruijie" and not ac_name.strip():
+		frappe.throw(_("AC Name is required for Ruijie integration."))
+
+	for row in site_doc.devices:
+		if row.ap_mac.upper() == ap_mac:
+			frappe.throw(_("This MAC address is already registered."))
+
+	site_doc.append("devices", {
+		"ap_mac": ap_mac,
+		"label": label.strip(),
+		"controller_type": controller_type,
+		"ac_name": ac_name.strip(),
+		"is_active": 1,
+	})
+	site_doc.save(ignore_permissions=True)
+	frappe.db.commit()
+	return {"added": ap_mac}
+
+
+@frappe.whitelist()
+def remove_device(site, ap_mac):
+	"""Remove an Access Point from the site's devices child table."""
+	site_doc = frappe.get_doc("Hotspot Site", site)
+	if site_doc.vendor_user != frappe.session.user and "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not authorised."), frappe.PermissionError)
+
+	ap_mac = ap_mac.strip().upper()
+	site_doc.devices = [row for row in site_doc.devices if row.ap_mac.upper() != ap_mac]
+	site_doc.save(ignore_permissions=True)
+	frappe.db.commit()
+	return {"removed": ap_mac}
+
+
+@frappe.whitelist()
+def toggle_device(site, ap_mac, is_active):
+	"""Toggle active/inactive status of an Access Point."""
+	site_doc = frappe.get_doc("Hotspot Site", site)
+	if site_doc.vendor_user != frappe.session.user and "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not authorised."), frappe.PermissionError)
+
+	ap_mac = ap_mac.strip().upper()
+	for row in site_doc.devices:
+		if row.ap_mac.upper() == ap_mac:
+			row.is_active = int(is_active)
+			break
+	site_doc.save(ignore_permissions=True)
+	frappe.db.commit()
+	return {"toggled": ap_mac, "is_active": int(is_active)}
+
+
+@frappe.whitelist()
+def create_voucher_batch(site, package_name, quantity):
+	"""Create a Hotspot Voucher Batch and generate individual vouchers for it.
+	Called from /vouchers page by Bandofy Manager users.
+	"""
+	quantity = int(quantity or 0)
+	if quantity < 1 or quantity > 500:
+		frappe.throw(_("Quantity must be between 1 and 500."))
+
+	site_doc = frappe.get_doc("Hotspot Site", site)
+	if site_doc.vendor_user != frappe.session.user and "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not authorised."), frappe.PermissionError)
+
+	# Fetch package details
+	pkg = frappe.get_doc("Hotspot Package", package_name)
+
+	batch = frappe.new_doc("Hotspot Voucher Batch")
+	batch.site = site
+	batch.package_name = package_name
+	batch.quantity = quantity
+	batch.insert(ignore_permissions=True)
+
+	# Generate individual vouchers
+	import random, string
+	for _ in range(quantity):
+		code = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
+		v = frappe.new_doc("Hotspot Voucher")
+		v.voucher_code = code
+		v.site = site
+		v.batch = batch.name
+		v.package_name = package_name
+		v.price = pkg.price
+		v.duration_minutes = pkg.duration_minutes
+		v.status = "Unused"
+		v.insert(ignore_permissions=True)
+
+	frappe.db.commit()
+	return {"batch": batch.name, "count": quantity}
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def register_manager(full_name, email, password, phone, site_name):
+	"""Public signup: create a User + Hotspot Site, assign Bandofy Manager role,
+	log the user in, and return a redirect to /vendor-dashboard.
+	"""
+	email = (email or "").strip().lower()
+	full_name = (full_name or "").strip()
+	site_name = (site_name or "").strip()
+	phone = (phone or "").strip()
+
+	# ── Validate ────────────────────────────────────────────────────────
+	if not email or not full_name or not password or not site_name:
+		frappe.throw(_("All fields are required."))
+
+	if frappe.db.exists("User", email):
+		frappe.throw(_("An account with this email already exists."))
+
+	if frappe.db.exists("Hotspot Site", {"site_name": site_name}):
+		frappe.throw(_("A hotspot site with that name already exists. Please choose a different name."))
+
+	if len(password) < 8:
+		frappe.throw(_("Password must be at least 8 characters."))
+
+	# ── Create User ─────────────────────────────────────────────────────
+	names = full_name.split(" ", 1)
+	user = frappe.new_doc("User")
+	user.email = email
+	user.first_name = names[0]
+	user.last_name = names[1] if len(names) > 1 else ""
+	user.phone = phone
+	user.mobile_no = phone
+	user.send_welcome_email = 0
+	user.append("roles", {"role": "Bandofy Manager"})
+	user.insert(ignore_permissions=True)
+	frappe.utils.password.update_password(email, password)
+
+	# ── Read platform defaults ───────────────────────────────────────────
+	try:
+		ps = frappe.get_single("Hotspot Platform Settings")
+		pkg_name = ps.default_pkg_name or "1 Hour"
+		pkg_price = ps.default_pkg_price or 500
+		pkg_duration = ps.default_pkg_duration or 60
+		trial_days = ps.trial_days or 7
+	except Exception:
+		pkg_name = "1 Hour"
+		pkg_price = 500
+		pkg_duration = 60
+		trial_days = 7
+
+	# ── Create Hotspot Site ──────────────────────────────────────────────
+	# Create a default package first
+	pkg = frappe.new_doc("Hotspot Package")
+	pkg.package_name = pkg_name
+	pkg.package_type = "Unlimited"
+	pkg.price = pkg_price
+	pkg.duration_minutes = pkg_duration
+	pkg.insert(ignore_permissions=True)
+
+	site = frappe.new_doc("Hotspot Site")
+	site.site_name = site_name
+	site.vendor_name = site_name
+	site.vendor_user = email
+	site.phone_number = phone
+	site.is_active = 1
+	site.controller_type = "Omada"
+	site.subscription_status = "Trial"
+	site.trial_expires_on = frappe.utils.add_days(frappe.utils.today(), trial_days)
+	site.append("packages", {
+		"package_name": pkg.name,
+		"package_type": pkg.package_type,
+		"price": pkg.price,
+		"duration_minutes": pkg.duration_minutes,
+	})
+	site.insert(ignore_permissions=True)
+	site.db_set("nas_identifier", f"bdy-{site.name}")
+
+	frappe.db.commit()
+
+	# ── Log the user in ──────────────────────────────────────────────────
+	frappe.local.login_manager.login_as(email)
+
+	return {"redirect": "/onboarding"}
+
+
+@frappe.whitelist()
+def get_device_statuses(site):
+	"""Return device list with online status for the Devices page."""
+	site_doc = frappe.get_doc("Hotspot Site", site)
+	if frappe.session.user != site_doc.vendor_user and "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	return [
+		{
+			"ap_mac": d.ap_mac,
+			"label": d.label,
+			"controller_type": d.controller_type,
+			"is_active": d.is_active,
+			"online": None,
+		}
+		for d in site_doc.devices
+	]
+
+
+@frappe.whitelist()
+def request_withdrawal(site, amount, phone_number, network):
+	"""Submit a withdrawal request against the site's available earnings balance."""
+	site_doc = frappe.get_doc("Hotspot Site", site)
+	if frappe.session.user != site_doc.vendor_user and "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+	amount = frappe.utils.flt(amount)
+	if amount <= 0:
+		frappe.throw(_("Amount must be greater than zero"))
+
+	total_earned = frappe.db.get_value(
+		"Hotspot Transaction",
+		{"site": site, "status": "Paid"},
+		"sum(amount)",
+	) or 0
+	total_withdrawn = frappe.db.get_value(
+		"Hotspot Withdrawal",
+		{"site": site, "status": "Approved"},
+		"sum(amount)",
+	) or 0
+	available = frappe.utils.flt(total_earned) - frappe.utils.flt(total_withdrawn)
+	if amount > available:
+		frappe.throw(_(f"Amount exceeds available balance of TZS {available:,.0f}"))
+
+	doc = frappe.new_doc("Hotspot Withdrawal")
+	doc.site = site
+	doc.amount = amount
+	doc.phone_number = phone_number
+	doc.network = network
+	doc.status = "Pending"
+	doc.requested_on = frappe.utils.now()
+	doc.insert(ignore_permissions=True)
+	frappe.db.commit()
+	return doc.name

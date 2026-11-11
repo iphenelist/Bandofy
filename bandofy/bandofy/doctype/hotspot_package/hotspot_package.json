@@ -14,7 +14,9 @@
   "bandwidth_section",
   "bandwidth_down_kbps",
   "column_break_2",
-  "bandwidth_up_kbps"
+  "bandwidth_up_kbps",
+  "device_limit",
+  "data_limit_mb"
  ],
  "fields": [
   {
@@ -75,11 +77,26 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Upload Bandwidth (Kbps)"
+  },
+  {
+   "default": "0",
+   "description": "Max concurrent devices per session. 0 = unlimited.",
+   "fieldname": "device_limit",
+   "fieldtype": "Int",
+   "label": "Max Devices"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.package_type == 'Bundle'",
+   "description": "Bundle data cap in MB. 0 = unlimited.",
+   "fieldname": "data_limit_mb",
+   "fieldtype": "Int",
+   "label": "Data Limit (MB)"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-11 13:30:00.000000",
+ "modified": "2026-11-04 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Bandofy",
  "name": "Hotspot Package",
@@ -97,6 +114,19 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 0,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bandofy Manager",
+   "share": 0,
+   "write": 1,
+   "apply_user_permissions": 1
   }
  ],
  "sort_field": "modified",

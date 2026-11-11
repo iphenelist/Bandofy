@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f1117">
+<title>Packages — {{ site.site_name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--sidebar:#131920;--card:#1a2332;--card2:#1f2a3c;--border:rgba(255,255,255,0.07);--bstrong:rgba(255,255,255,0.14);--teal:#00c896;--teal-l:#33d9a8;--teal-d:rgba(0,200,150,0.12);--teal-r:rgba(0,200,150,0.28);--blue:#3b82f6;--blue-bg:rgba(59,130,246,0.12);--amber:#f59e0b;--amber-bg:rgba(245,158,11,0.12);--red:#ef4444;--red-bg:rgba(239,68,68,0.12);--purple:#8b5cf6;--text:#e0e6ed;--dim:rgba(224,230,237,0.5);--faint:rgba(224,230,237,0.24);--r:12px;--rs:8px;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;background:var(--bg)}body{height:100%;width:100%;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;display:flex}
+.sidebar{width:240px;flex-shrink:0;height:100vh;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--card2)}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:18px 16px 14px;font-size:18px;font-weight:800;color:var(--text);text-decoration:none;border-bottom:1px solid var(--border)}
+.sb-mark{width:32px;height:32px;border-radius:8px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#0a1f18}
+.sb-section{padding:14px 12px 4px;font-size:12px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:1px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:var(--rs);margin:1px 6px;font-size:15px;font-weight:500;color:var(--dim);text-decoration:none;cursor:pointer;border:none;background:none;width:calc(100% - 14px);transition:background .18s,color .15s}
+.sb-item:hover{background:var(--card);color:var(--text)}.sb-item.active{background:var(--teal-d);color:var(--teal);font-weight:600}
+.sb-item svg{width:15px;height:15px;flex-shrink:0}
+.sb-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--teal-d);border:1.5px solid var(--teal-r);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--teal);flex-shrink:0}
+.sb-user-name{font-size:15px;font-weight:600}.sb-user-role{font-size:13px;color:var(--dim)}
+.sb-logout{margin-left:auto;color:var(--dim);background:none;border:none;cursor:pointer;padding:4px;border-radius:5px;text-decoration:none;display:flex;transition:color .2s}.sb-logout:hover{color:var(--red)}.sb-logout svg{width:14px;height:14px}
+.main-wrap{flex:1;min-width:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 24px;height:62px;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--bg)}
+.topbar-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600;color:var(--teal)}.topbar-title svg{width:15px;height:15px}
+.topbar-spacer{flex:1}
+.topbar-user{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--card)}
+.topbar-user-av{width:26px;height:26px;border-radius:50%;background:var(--teal-d);border:1.5px solid var(--teal-r);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--teal)}
+.topbar-user-name{font-size:15px;font-weight:600}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:22px 24px 30px}
+.content::-webkit-scrollbar{width:4px}.content::-webkit-scrollbar-thumb{background:var(--card2);border-radius:4px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-title{font-size:16px;font-weight:700}
+.hero-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--rs);border:1.5px solid var(--teal-r);background:var(--teal-d);color:var(--teal-l);font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;border:1.5px solid var(--teal-r)}
+.hero-btn:hover{background:rgba(0,200,150,0.2)}.hero-btn svg{width:13px;height:13px}
+.pkg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.pkg-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px 18px;transition:border-color .2s;position:relative}
+.pkg-card:hover{border-color:var(--bstrong)}
+.pkg-badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:700;background:var(--teal-d);color:var(--teal);margin-bottom:10px}
+.pkg-name{font-size:18px;font-weight:800;margin-bottom:4px}
+.pkg-price{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums;margin-bottom:2px}
+.pkg-price sup{font-size:16px;font-weight:700;vertical-align:super}
+.pkg-duration{font-size:14px;color:var(--dim);margin-bottom:12px}
+.pkg-meta{font-size:14px;color:var(--dim);display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.pkg-meta-row{display:flex;justify-content:space-between}
+.pkg-meta-row strong{color:var(--text)}
+.pkg-actions{display:flex;gap:7px}
+.btn-del{padding:6px 12px;border-radius:var(--rs);border:1px solid rgba(239,68,68,0.3);background:var(--red-bg);color:var(--red);font-size:14px;font-weight:700;cursor:pointer}
+.btn-del:hover{background:rgba(239,68,68,0.2)}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.bt{background:var(--teal-d);color:var(--teal)}.bb{background:var(--blue-bg);color:var(--blue)}.ba{background:var(--amber-bg);color:var(--amber)}
+.empty{text-align:center;padding:50px;color:var(--dim);font-size:16px}
+@media(max-width:900px){.sidebar{width:56px}.sb-item span,.sb-section,.sb-user-name,.sb-user-role,.sb-logo span{display:none}.sb-item{justify-content:center;padding:10px}.sb-logo{justify-content:center}.sb-footer{justify-content:center}.sb-logout{display:none}}
+@media(max-width:700px){.sidebar{display:none}}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <a class="sb-logo" href="/vendor-dashboard"><div class="sb-mark">Bw</div><span>Bandofy</span></a>
+  <div class="sb-section">Website</div>
+  <a class="sb-item" href="/start"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6c2-2.5 4.7-4 7-4s5 1.5 7 4M4 9c1-1.3 2.4-2 4-2s3 .7 4 2M7 12h2"/></svg><span>Landing Page</span></a>
+  <div class="sb-section">Dashboards</div>
+  <a class="sb-item" href="/vendor-dashboard"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg><span>Overview</span></a>
+  <a class="sb-item" href="/transactions"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 11 5 6 9 8 15 3"/></svg><span>Transactions</span></a>
+  <div class="sb-section">Manage</div>
+  <a class="sb-item" href="/devices"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M5 13v2M11 13v2M3 16h10"/></svg><span>Devices</span></a>
+  <a class="sb-item" href="/vouchers"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V4a3 3 0 0 1 6 0v1"/></svg><span>Vouchers</span></a>
+  <a class="sb-item active" href="/packages"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h12M2 8h8M2 13h5"/></svg><span>Packages</span></a>
+  <a class="sb-item" href="/site_settings"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M13 3l-1.5 1.5M4.5 11.5 3 13"/></svg><span>Settings</span></a>
+  <div class="sb-footer">
+    <div class="sb-avatar">{{ (site.vendor_name or "V")[0] | upper }}</div>
+    <div><div class="sb-user-name">{{ site.vendor_name or "Vendor" }}</div><div class="sb-user-role">Hotspot Manager</div></div>
+    <a class="sb-logout" href="/api/method/logout"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3M7 5L3 8l4 3M3 8h8"/></svg></a>
+  </div>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="topbar-title"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h12M2 8h8M2 13h5"/></svg>Packages</div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-user"><div class="topbar-user-av">{{ (site.vendor_name or "V")[0] | upper }}</div><div class="topbar-user-name">{{ site.vendor_name }}</div></div>
+  </header>
+  <div class="content">
+
+    <div class="sec-head">
+      <div class="sec-title">Pricing Packages ({{ packages | length }})</div>
+      <button class="hero-btn" onclick="document.getElementById('modal').style.display='flex'">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 2v12M2 8h12"/></svg>
+        Add Package
+      </button>
+    </div>
+
+    {% if packages %}
+    <div class="pkg-grid">
+      {% for p in packages %}
+      <div class="pkg-card" id="pkg-{{ p.name | replace(' ','-') | replace('/','-') }}">
+        <div class="pkg-badge">{{ p.package_type or "Unlimited" }}</div>
+        <div class="pkg-name">{{ p.package_name or p.name }}</div>
+        <div class="pkg-price"><sup>TZS </sup>{{ "%.0f" | format(p.price) }}</div>
+        <div class="pkg-duration">
+          {% if p.duration_minutes >= 1440 %}{{ (p.duration_minutes / 1440) | round(0) | int }} day(s)
+          {% elif p.duration_minutes >= 60 %}{{ (p.duration_minutes / 60) | round(1) }} hr(s)
+          {% else %}{{ p.duration_minutes }} min{% endif %}
+        </div>
+        <div class="pkg-meta">
+          {% if p.bandwidth_down_kbps %}
+          <div class="pkg-meta-row"><span>Download</span><strong>{{ p.bandwidth_down_kbps // 1024 if p.bandwidth_down_kbps >= 1024 else p.bandwidth_down_kbps }} {{ "Mbps" if p.bandwidth_down_kbps >= 1024 else "Kbps" }}</strong></div>
+          {% endif %}
+          {% if p.bandwidth_up_kbps %}
+          <div class="pkg-meta-row"><span>Upload</span><strong>{{ p.bandwidth_up_kbps // 1024 if p.bandwidth_up_kbps >= 1024 else p.bandwidth_up_kbps }} {{ "Mbps" if p.bandwidth_up_kbps >= 1024 else "Kbps" }}</strong></div>
+          {% endif %}
+          {% if p.device_limit %}
+          <div class="pkg-meta-row"><span>Max Devices</span><strong>{{ p.device_limit }}</strong></div>
+          {% endif %}
+          {% if p.data_limit_mb %}
+          <div class="pkg-meta-row"><span>Data Limit</span><strong>{{ p.data_limit_mb }} MB</strong></div>
+          {% endif %}
+        </div>
+        <div class="pkg-actions">
+          <button class="btn-del" onclick="removePackage('{{ p.name }}', this)">Remove</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">No packages yet. Add your first pricing package above.</div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- Add Package Modal -->
+<div id="modal" style="display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px)">
+  <div style="background:var(--card);border:1px solid var(--bstrong);border-radius:var(--r);padding:30px;width:100%;max-width:460px;position:relative">
+    <button onclick="document.getElementById('modal').style.display='none'" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--dim);cursor:pointer;font-size:22px;line-height:1">×</button>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:18px">Add New Package</h3>
+    <div id="pkgErr" style="display:none;padding:9px 12px;border-radius:var(--rs);background:var(--red-bg);border:1px solid rgba(239,68,68,0.25);color:var(--red);font-size:15px;margin-bottom:12px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div>
+        <label style="font-size:14px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Package Name</label>
+        <input id="pName" type="text" placeholder="e.g. 1 Hour Plan" style="width:100%;padding:10px 12px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;font-family:inherit;outline:none">
+      </div>
+      <div>
+        <label style="font-size:14px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Type</label>
+        <select id="pType" style="width:100%;padding:10px 12px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;font-family:inherit;outline:none">
+          <option value="Unlimited">Unlimited</option>
+          <option value="Bundle">Bundle</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div>
+        <label style="font-size:14px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Price (KSh)</label>
+        <input id="pPrice" type="number" min="0" step="0.01" placeholder="50" style="width:100%;padding:10px 12px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;font-family:inherit;outline:none">
+      </div>
+      <div>
+        <label style="font-size:14px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Duration (minutes)</label>
+        <input id="pDuration" type="number" min="1" placeholder="60" style="width:100%;padding:10px 12px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;font-family:inherit;outline:none">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div>
+        <label style="font-size:14px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Download (Kbps, 0=unlimited)</label>
+        <input id="pDown" type="number" min="0" placeholder="0" value="0" style="width:100%;padding:10px 12px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;font-family:inherit;outline:none">
+      </div>
+      <div>
+        <label style="font-size:14px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Upload (Kbps, 0=unlimited)</label>
+        <input id="pUp" type="number" min="0" placeholder="0" value="0" style="width:100%;padding:10px 12px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;font-family:inherit;outline:none">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+      <div>
+        <label style="font-size:14px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Max Devices (0=unlimited)</label>
+        <input id="pDeviceLimit" type="number" min="0" placeholder="0" value="0" style="width:100%;padding:10px 12px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;font-family:inherit;outline:none">
+      </div>
+      <div id="dataLimitRow">
+        <label style="font-size:14px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Data Limit MB (0=unlimited)</label>
+        <input id="pDataLimit" type="number" min="0" placeholder="0" value="0" style="width:100%;padding:10px 12px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;font-family:inherit;outline:none">
+      </div>
+    </div>
+    <button id="pBtn" onclick="addPackage()" style="width:100%;padding:11px;border-radius:var(--rs);background:var(--teal);color:#0a1f18;font-size:13.5px;font-weight:800;border:none;cursor:pointer">Add Package</button>
+  </div>
+</div>
+
+<script>
+const SITE = "{{ site.name }}";
+function getCsrf(){ return document.cookie.split(';').map(c=>c.trim()).filter(c=>c.startsWith('csrftoken=')).map(c=>c.slice(10))[0]||''; }
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('pType').addEventListener('change', function() {
+    document.getElementById('dataLimitRow').style.opacity = this.value === 'Bundle' ? '1' : '0.4';
+  });
+});
+async function addPackage() {
+  const name = document.getElementById('pName').value.trim();
+  const type = document.getElementById('pType').value;
+  const price = parseFloat(document.getElementById('pPrice').value);
+  const dur = parseInt(document.getElementById('pDuration').value);
+  const down = parseInt(document.getElementById('pDown').value)||0;
+  const up = parseInt(document.getElementById('pUp').value)||0;
+  const deviceLimit = parseInt(document.getElementById('pDeviceLimit').value)||0;
+  const dataLimit = parseInt(document.getElementById('pDataLimit').value)||0;
+  const err = document.getElementById('pkgErr');
+  err.style.display = 'none';
+  if (!name || !price || !dur) { err.textContent='Package name, price, and duration are required.'; err.style.display='block'; return; }
+  const btn = document.getElementById('pBtn'); btn.disabled=true; btn.textContent='Adding…';
+  try {
+    const r = await fetch('/api/method/bandofy.api.add_package', {
+      method:'POST', headers:{'Content-Type':'application/json','X-Frappe-CSRF-Token':getCsrf()},
+      body: JSON.stringify({site:SITE, package_name:name, package_type:type, price, duration_minutes:dur, bandwidth_down_kbps:down, bandwidth_up_kbps:up, device_limit:deviceLimit, data_limit_mb:dataLimit})
+    });
+    const d = await r.json();
+    if (d.exc) { err.textContent=frappeErrMsg(d); err.style.display='block'; }
+    else { window.location.reload(); }
+  } catch(e) { err.textContent='Network error.'; err.style.display='block'; }
+  finally { btn.disabled=false; btn.textContent='Add Package'; }
+}
+async function removePackage(pkgName, btn) {
+  if (!confirm('Remove package "'+pkgName+'" from this site?')) return;
+  btn.disabled=true; btn.textContent='Removing…';
+  try {
+    const r = await fetch('/api/method/bandofy.api.remove_package', {
+      method:'POST', headers:{'Content-Type':'application/json','X-Frappe-CSRF-Token':getCsrf()},
+      body: JSON.stringify({site:SITE, package_name:pkgName})
+    });
+    const d = await r.json();
+    if (d.exc) { alert(frappeErrMsg(d)); btn.disabled=false; btn.textContent='Remove'; }
+    else { window.location.reload(); }
+  } catch(e) { btn.disabled=false; btn.textContent='Remove'; }
+}
+function frappeErrMsg(d) {
+  try { return JSON.parse(d._server_messages||'[]').map(m=>{try{return JSON.parse(m).message;}catch{return m;}}).join(' '); }
+  catch { return 'Error.'; }
+}
+</script>
+</body>
+</html>

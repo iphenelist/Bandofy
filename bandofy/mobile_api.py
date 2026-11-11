@@ -30,7 +30,7 @@ from frappe.query_builder import Case, Criterion, Field
 from frappe.query_builder.functions import Coalesce, Count, Date, Max, Sum
 from frappe.utils import get_first_day, get_last_day, today
 
-from bandofy import omada_service
+from bandofy import omada_auth as omada_service
 from bandofy.dashboard_utils import get_omada_live_stats, get_revenue, get_revenue_trend
 from bandofy.utils import is_admin_user as _is_admin
 from bandofy.utils import normalize_mac, site_ap_macs

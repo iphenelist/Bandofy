@@ -81,7 +81,7 @@ def test_connection():
 
 def _test_operator_connection(settings):
 	from bandofy.omada_openapi import OmadaApiError, controller_info
-	from bandofy.omada_service import OmadaAuthError, _operator_login
+	from bandofy.omada_auth import OmadaAuthError, _operator_login
 
 	password = settings.get_password("operator_password", raise_exception=False)
 	if not (settings.controller_url and settings.operator_name and password):

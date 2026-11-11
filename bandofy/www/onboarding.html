@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f1117">
+<title>Setup — Bandofy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0f1117;
+  --sidebar:  #131920;
+  --card:     #1a2332;
+  --card2:    #1f2a3c;
+  --border:   rgba(255,255,255,0.07);
+  --bstrong:  rgba(255,255,255,0.14);
+  --teal:     #00c896;
+  --teal-l:   #33d9a8;
+  --teal-d:   rgba(0,200,150,0.15);
+  --teal-r:   rgba(0,200,150,0.30);
+  --amber:    #f59e0b;
+  --red:      #ef4444;
+  --text:     #e0e6ed;
+  --dim:      rgba(224,230,237,0.50);
+  --faint:    rgba(224,230,237,0.25);
+  --r:        12px;
+  --rs:       8px;
+  color-scheme: dark;
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html,body { height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
+body { font-family: 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; display: flex; -webkit-font-smoothing: antialiased; }
+
+.sidebar { width: 220px; flex-shrink: 0; height: 100vh; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--card2); }
+.sb-logo { display: flex; align-items: center; gap: 10px; padding: 18px 16px 14px; font-size: 15px; font-weight: 800; color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border); }
+.sb-mark { width: 32px; height: 32px; border-radius: 8px; background: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; color: #0a1f18; }
+.sb-section { padding: 14px 12px 4px; font-size: 9.5px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; }
+.sb-item { display: flex; align-items: center; gap: 9px; padding: 8px 14px; border-radius: var(--rs); margin: 1px 6px; font-size: 12.5px; font-weight: 500; color: var(--dim); text-decoration: none; cursor: pointer; border: none; background: none; transition: background .18s, color .15s; width: calc(100% - 12px); }
+.sb-item:hover { background: var(--card); color: var(--text); }
+.sb-item.active { background: var(--teal-d); color: var(--teal); font-weight: 600; }
+.sb-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+.sb-footer { margin-top: auto; padding: 12px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 9px; }
+.sb-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--teal-d); border: 1.5px solid var(--teal-r); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--teal); flex-shrink: 0; }
+.sb-user-name { font-size: 12px; font-weight: 600; }
+.sb-user-role { font-size: 10px; color: var(--dim); }
+.sb-logout { margin-left: auto; color: var(--dim); background: none; border: none; cursor: pointer; padding: 4px; border-radius: 5px; transition: color .2s; text-decoration: none; display: flex; }
+.sb-logout:hover { color: var(--red); }
+.sb-logout svg { width: 14px; height: 14px; }
+
+.main-wrap { flex: 1; min-width: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { display: flex; align-items: center; gap: 12px; padding: 0 24px; height: 56px; flex-shrink: 0; border-bottom: 1px solid var(--border); background: var(--bg); }
+.topbar-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--teal); }
+.topbar-title svg { width: 15px; height: 15px; }
+.topbar-spacer { flex: 1; }
+.topbar-user { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: var(--rs); border: 1px solid var(--border); background: var(--card); }
+.topbar-user-av { width: 26px; height: 26px; border-radius: 50%; background: var(--teal-d); border: 1.5px solid var(--teal-r); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--teal); }
+.topbar-user-name { font-size: 12px; font-weight: 600; }
+
+.content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 22px 24px 30px; }
+.content::-webkit-scrollbar { width: 4px; }
+.content::-webkit-scrollbar-thumb { background: var(--card2); border-radius: 4px; }
+
+.progress-bar-wrap { margin-bottom: 24px; }
+.progress-label { font-size: 13px; font-weight: 600; color: var(--dim); margin-bottom: 8px; }
+.progress-label strong { color: var(--teal); }
+.progress-track { height: 6px; background: var(--card2); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--teal); border-radius: 99px; transition: width .6s cubic-bezier(.22,1,.36,1); }
+
+.steps-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.step-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; display: flex; align-items: flex-start; gap: 14px; }
+.step-card.done { border-color: rgba(0,200,150,0.2); }
+.step-num { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; flex-shrink: 0; }
+.step-num.done { background: var(--teal); color: #0a1f18; }
+.step-num.pending { background: var(--card2); color: var(--faint); }
+.step-body { flex: 1; min-width: 0; }
+.step-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+.step-desc { font-size: 12px; color: var(--dim); line-height: 1.5; margin-bottom: 10px; }
+.step-action { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: var(--rs); background: var(--teal); color: #0a1f18; font-size: 12px; font-weight: 700; text-decoration: none; border: none; cursor: pointer; font-family: inherit; transition: filter .2s; }
+.step-action:hover { filter: brightness(1.08); }
+.step-badge-done { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: var(--teal-d); color: var(--teal); font-size: 11px; font-weight: 700; }
+
+.done-banner { background: var(--teal-d); border: 1px solid var(--teal-r); border-radius: var(--r); padding: 20px 24px; text-align: center; margin-bottom: 24px; }
+.done-banner h2 { font-size: 20px; font-weight: 800; color: var(--teal); margin-bottom: 6px; }
+.done-banner p { font-size: 13px; color: var(--dim); margin-bottom: 14px; }
+.done-btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 22px; border-radius: var(--rs); background: var(--teal); color: #0a1f18; font-size: 14px; font-weight: 800; text-decoration: none; }
+
+.trial-pill { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); border-radius: var(--rs); padding: 6px 14px; font-size: 12px; color: var(--amber); font-weight: 600; }
+
+.skip-link { text-align: center; margin-top: 8px; }
+.skip-link a { font-size: 13px; color: var(--dim); text-decoration: none; }
+.skip-link a:hover { color: var(--text); }
+
+@media (max-width: 900px) { .sidebar { width: 56px; } .sb-item span,.sb-section,.sb-user-name,.sb-user-role,.sb-logo span { display: none; } .sb-item { justify-content: center; padding: 10px; } .sb-logo { justify-content: center; } .sb-footer { justify-content: center; } .sb-logout { display: none; } }
+@media (max-width: 700px) { .sidebar { display: none; } }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <a class="sb-logo" href="/vendor-dashboard">
+    <div class="sb-mark">Bw</div>
+    <span>Bandofy</span>
+  </a>
+
+  <div class="sb-section">Website</div>
+  <a class="sb-item" href="/start">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6c1.9-2.5 4.7-4 7-4s5.1 1.5 7 4M4 9c1-1.3 2.4-2 4-2s3 .7 4 2M7 12h2"/></svg>
+    <span>Landing Page</span>
+  </a>
+
+  <div class="sb-section">Dashboards</div>
+  <a class="sb-item" href="/vendor-dashboard">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    <span>Overview</span>
+  </a>
+  <a class="sb-item" href="/transactions">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 11 5 6 9 8 15 3"/><path d="M1 15h14"/></svg>
+    <span>Transactions</span>
+  </a>
+  <a class="sb-item" href="/earnings">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5.5 7.5h4a1 1 0 0 1 0 2h-4"/></svg>
+    <span>Earnings</span>
+  </a>
+
+  <div class="sb-section">Manage</div>
+  <a class="sb-item" href="/devices"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M5 13v2M11 13v2M3 16h10"/></svg><span>Devices</span></a>
+  <a class="sb-item" href="/vouchers"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V4a3 3 0 0 1 6 0v1"/></svg><span>Vouchers</span></a>
+  <a class="sb-item" href="/packages"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h12M2 8h8M2 13h5"/></svg><span>Packages</span></a>
+  <a class="sb-item" href="/site_settings"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M13 3l-1.5 1.5M4.5 11.5 3 13"/></svg><span>Settings</span></a>
+
+  <div class="sb-footer">
+    <div class="sb-avatar">{{ (site.vendor_name or "V")[0] | upper }}</div>
+    <div>
+      <div class="sb-user-name">{{ site.vendor_name or "Vendor" }}</div>
+      <div class="sb-user-role">Hotspot Manager</div>
+    </div>
+    <a class="sb-logout" href="/api/method/logout" title="Log out">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3M7 5L3 8l4 3M3 8h8"/></svg>
+    </a>
+  </div>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="topbar-title">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1L2 7l6 6 6-6-6-6zM8 7v5"/></svg>
+      Setup Guide
+    </div>
+    <div class="topbar-spacer"></div>
+    {% if trial_days_left is defined and trial_days_left >= 0 %}
+    <div class="trial-pill">{{ trial_days_left }} day{{ 's' if trial_days_left != 1 else '' }} left in trial</div>
+    {% endif %}
+    <div class="topbar-user">
+      <div class="topbar-user-av">{{ (site.vendor_name or "V")[0] | upper }}</div>
+      <div class="topbar-user-name">{{ site.vendor_name or "Vendor" }}</div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    {% if all_done %}
+    <div class="done-banner">
+      <h2>&#x1F389; You're all set!</h2>
+      <p>Your hotspot is fully configured and ready to serve guests.</p>
+      <a class="done-btn" href="/vendor-dashboard">Open Dashboard &rarr;</a>
+    </div>
+    {% endif %}
+
+    <div class="progress-bar-wrap">
+      <div class="progress-label"><strong>{{ steps_done }} of {{ total_steps }}</strong> setup steps complete</div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width:{{ (steps_done / total_steps * 100) | round(0) | int }}%"></div>
+      </div>
+    </div>
+
+    <div class="steps-list">
+      {% for step in steps %}
+      <div class="step-card {% if step.done %}done{% endif %}">
+        <div class="step-num {% if step.done %}done{% else %}pending{% endif %}">
+          {% if step.done %}&#x2713;{% else %}{{ loop.index }}{% endif %}
+        </div>
+        <div class="step-body">
+          <div class="step-title">{{ step.title }}</div>
+          <div class="step-desc">{{ step.description }}</div>
+          {% if step.done %}
+          <div class="step-badge-done">&#x2713; Done</div>
+          {% elif step.action_url %}
+          <a class="step-action" href="{{ step.action_url }}">Go &rarr;</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="skip-link">
+      <a href="/vendor-dashboard">Skip for now &mdash; Go to Dashboard</a>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,138 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"shortcuts\",\"type\":\"shortcut\"},{\"id\":\"links\",\"type\":\"card\"}]",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "wifi",
+ "is_hidden": 0,
+ "label": "Bandofy Manager",
+ "links": [
+  {
+   "dependencies": "",
+   "doctype": "Hotspot Site",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "My Site",
+   "link_count": 0,
+   "link_to": "Hotspot Site",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Hotspot Voucher Batch",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Voucher Batches",
+   "link_count": 0,
+   "link_to": "Hotspot Voucher Batch",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Hotspot Voucher",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Vouchers",
+   "link_count": 0,
+   "link_to": "Hotspot Voucher",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Hotspot Transaction",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Transactions",
+   "link_count": 0,
+   "link_to": "Hotspot Transaction",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Hotspot Package",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Packages",
+   "link_count": 0,
+   "link_to": "Hotspot Package",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Hotspot Ad",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Ads",
+   "link_count": 0,
+   "link_to": "Hotspot Ad",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "module": "Bandofy",
+ "name": "Bandofy Manager",
+ "number_cards": [],
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "Bandofy Manager"
+  }
+ ],
+ "sequence_id": 100,
+ "shortcuts": [
+  {
+   "color": "Green",
+   "doctype": "",
+   "format": "",
+   "label": "Dashboard",
+   "link_to": "/vendor-dashboard",
+   "stats_filter": "",
+   "type": "URL"
+  },
+  {
+   "color": "",
+   "doctype": "Hotspot Site",
+   "format": "",
+   "label": "My Site",
+   "link_to": "Hotspot Site",
+   "stats_filter": "",
+   "type": "DocType"
+  },
+  {
+   "color": "",
+   "doctype": "Hotspot Voucher Batch",
+   "format": "",
+   "label": "New Vouchers",
+   "link_to": "Hotspot Voucher Batch",
+   "stats_filter": "",
+   "type": "DocType"
+  },
+  {
+   "color": "",
+   "doctype": "Hotspot Transaction",
+   "format": "",
+   "label": "Transactions",
+   "link_to": "Hotspot Transaction",
+   "stats_filter": "",
+   "type": "DocType"
+  }
+ ],
+ "title": "Bandofy Manager"
+}

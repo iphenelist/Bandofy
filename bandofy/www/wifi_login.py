@@ -74,6 +74,7 @@ def get_context(context):
 	context.payment_providers = PAYMENT_PROVIDERS
 	context.portal_logo = None
 	context.portal_tagline = None
+	context.portal_primary_color = None
 
 	if ap_mac or omada_site or ac_name:
 		site = find_site(
@@ -93,6 +94,7 @@ def get_context(context):
 				"vendor_user",
 				"portal_logo",
 				"portal_tagline",
+				"portal_primary_color",
 				"lipa_namba_image",
 			],
 		)
@@ -112,6 +114,7 @@ def get_context(context):
 			context.sabbath_active = is_sabbath_now(site)
 			context.portal_logo = site.portal_logo
 			context.portal_tagline = site.portal_tagline
+			context.portal_primary_color = site.portal_primary_color or "#00c896"
 			apply_preview_overrides(context, site)
 			context.lipa_images, context.lipa_default = get_lipa_images(site.lipa_namba_image)
 			context.packages = frappe.get_all(
@@ -180,6 +183,7 @@ def build_portal_data(context):
 		"payment_providers",
 		"portal_logo",
 		"portal_tagline",
+		"portal_primary_color",
 	]
 	return {key: context.get(key) for key in keys}
 

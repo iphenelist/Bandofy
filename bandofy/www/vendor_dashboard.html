@@ -1,124 +1,845 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>{{ site.site_name }} - Vendor Dashboard</title>
-	<script src="https://cdn.tailwindcss.com"></script>
-	<style>
-		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-	</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f1117">
+<title>{{ site.site_name }} — Bandofy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:       #0f1117;
+  --sidebar:  #131920;
+  --card:     #1a2332;
+  --card2:    #1f2a3c;
+  --border:   rgba(255,255,255,0.07);
+  --bstrong:  rgba(255,255,255,0.14);
+  --teal:     #00c896;
+  --teal-l:   #33d9a8;
+  --teal-d:   rgba(0,200,150,0.15);
+  --teal-r:   rgba(0,200,150,0.30);
+  --hero-bg:  linear-gradient(135deg,#0b3d30 0%,#0d5540 50%,#0a4838 100%);
+  --blue:     #3b82f6;
+  --blue-bg:  rgba(59,130,246,0.14);
+  --amber:    #f59e0b;
+  --amber-bg: rgba(245,158,11,0.14);
+  --red:      #ef4444;
+  --red-bg:   rgba(239,68,68,0.14);
+  --purple:   #8b5cf6;
+  --purple-bg:rgba(139,92,246,0.14);
+  --text:     #e0e6ed;
+  --dim:      rgba(224,230,237,0.50);
+  --faint:    rgba(224,230,237,0.25);
+  --r:        12px;
+  --rs:       8px;
+  color-scheme: dark;
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html,body { height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
+body {
+  font-family: 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  display: flex; -webkit-font-smoothing: antialiased;
+}
+
+/* ── Sidebar ─────────────────────────────────────────── */
+.sidebar {
+  width: 220px; flex-shrink: 0; height: 100vh;
+  background: var(--sidebar); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden;
+}
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--card2); }
+.sb-logo {
+  display: flex; align-items: center; gap: 10px; padding: 18px 16px 14px;
+  font-size: 15px; font-weight: 800; color: var(--text); text-decoration: none;
+  border-bottom: 1px solid var(--border);
+}
+.sb-mark {
+  width: 32px; height: 32px; border-radius: 8px; background: var(--teal);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900; color: #0a1f18;
+}
+.sb-section { padding: 14px 12px 4px; font-size: 9.5px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; }
+.sb-item {
+  display: flex; align-items: center; gap: 9px; padding: 8px 14px;
+  border-radius: var(--rs); margin: 1px 6px; font-size: 12.5px; font-weight: 500;
+  color: var(--dim); text-decoration: none; cursor: pointer; border: none; background: none;
+  transition: background .18s, color .15s; width: calc(100% - 12px);
+}
+.sb-item:hover { background: var(--card); color: var(--text); }
+.sb-item.active { background: var(--teal-d); color: var(--teal); font-weight: 600; }
+.sb-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+.sb-footer {
+  margin-top: auto; padding: 12px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 9px;
+}
+.sb-avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--teal-d);
+  border: 1.5px solid var(--teal-r); display: flex; align-items: center;
+  justify-content: center; font-size: 12px; font-weight: 700; color: var(--teal); flex-shrink: 0;
+}
+.sb-user-name { font-size: 12px; font-weight: 600; }
+.sb-user-role { font-size: 10px; color: var(--dim); }
+.sb-logout {
+  margin-left: auto; color: var(--dim); background: none; border: none;
+  cursor: pointer; padding: 4px; border-radius: 5px; transition: color .2s;
+  text-decoration: none; display: flex;
+}
+.sb-logout:hover { color: var(--red); }
+.sb-logout svg { width: 14px; height: 14px; }
+
+/* ── Main area ───────────────────────────────────────── */
+.main-wrap { flex: 1; min-width: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── Top bar ─────────────────────────────────────────── */
+.topbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 24px; height: 56px; flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.topbar-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--teal); }
+.topbar-title svg { width: 15px; height: 15px; }
+.topbar-spacer { flex: 1; }
+.topbar-icon {
+  width: 34px; height: 34px; border-radius: var(--rs); border: 1px solid var(--border);
+  background: var(--card); display: flex; align-items: center; justify-content: center;
+  color: var(--dim); cursor: pointer; transition: border-color .2s, color .2s;
+}
+.topbar-icon:hover { border-color: var(--bstrong); color: var(--text); }
+.topbar-icon svg { width: 15px; height: 15px; }
+.topbar-user {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px; border-radius: var(--rs); border: 1px solid var(--border);
+  background: var(--card); cursor: pointer; transition: border-color .2s;
+}
+.topbar-user:hover { border-color: var(--bstrong); }
+.topbar-user-av {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--teal-d);
+  border: 1.5px solid var(--teal-r); display: flex; align-items: center;
+  justify-content: center; font-size: 11px; font-weight: 700; color: var(--teal);
+}
+.topbar-user-name { font-size: 12px; font-weight: 600; }
+.topbar-user svg { width: 12px; height: 12px; color: var(--dim); }
+
+/* ── Content scroll ──────────────────────────────────── */
+.content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 22px 24px 30px; }
+.content::-webkit-scrollbar { width: 4px; }
+.content::-webkit-scrollbar-thumb { background: var(--card2); border-radius: 4px; }
+
+/* ── Welcome hero ────────────────────────────────────── */
+.hero {
+  background: var(--hero-bg); border-radius: var(--r);
+  padding: 22px 24px; margin-bottom: 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 80% 50%, rgba(0,200,150,0.18) 0%, transparent 60%);
+}
+.hero-text { position: relative; }
+.hero-text h2 { font-size: 20px; font-weight: 800; margin-bottom: 5px; }
+.hero-text p { font-size: 12.5px; color: rgba(224,230,237,0.75); }
+.hero-text p strong { color: var(--teal-l); }
+.hero-btn {
+  position: relative; display: flex; align-items: center; gap: 6px;
+  padding: 9px 16px; border-radius: var(--rs); border: 1.5px solid rgba(0,200,150,0.4);
+  background: rgba(0,200,150,0.12); color: var(--teal-l);
+  font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none;
+  transition: background .2s, border-color .2s;
+}
+.hero-btn:hover { background: rgba(0,200,150,0.22); border-color: rgba(0,200,150,0.6); }
+.hero-btn svg { width: 14px; height: 14px; }
+
+/* ── Grid layouts ────────────────────────────────────── */
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
+.grid-3-1 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+/* ── Cards ───────────────────────────────────────────── */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 18px 18px;
+}
+.card-sm { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; }
+.card-label { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .7px; }
+.card-value { font-size: 28px; font-weight: 800; margin-top: 4px; line-height: 1; font-variant-numeric: tabular-nums; }
+.card-value-sm { font-size: 20px; font-weight: 800; margin-top: 4px; line-height: 1; font-variant-numeric: tabular-nums; }
+.card-delta { font-size: 11px; font-weight: 600; margin-top: 5px; display: flex; align-items: center; gap: 3px; }
+.delta-up   { color: var(--teal); }
+.delta-dn   { color: var(--red); }
+
+/* ── Sec head ────────────────────────────────────────── */
+.sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.sec-title { font-size: 13px; font-weight: 700; }
+.sec-meta  { font-size: 11px; color: var(--dim); font-weight: 500; }
+.sec-link  { font-size: 11px; color: var(--teal); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 3px; }
+.sec-link svg { width: 12px; height: 12px; }
+.muted-btn { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 15px; padding: 0 2px; }
+
+/* ── Badges ──────────────────────────────────────────── */
+.badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-size: 9.5px; font-weight: 700; }
+.bt { background: var(--teal-d);  color: var(--teal); }
+.bb { background: var(--blue-bg); color: var(--blue); }
+.ba { background: var(--amber-bg);color: var(--amber); }
+.br { background: var(--red-bg);  color: var(--red); }
+.bp { background: var(--purple-bg);color: var(--purple); }
+
+/* ── Donut chart ─────────────────────────────────────── */
+.donut-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+.donut-label { position: absolute; text-align: center; }
+.donut-pct { font-size: 26px; font-weight: 800; }
+.donut-sub { font-size: 10px; color: var(--dim); margin-top: 2px; }
+
+/* ── Funnel bars ─────────────────────────────────────── */
+.funnel-rows { display: flex; flex-direction: column; gap: 10px; }
+.funnel-row  { display: flex; flex-direction: column; gap: 4px; }
+.funnel-meta { display: flex; justify-content: space-between; font-size: 11px; }
+.funnel-lbl  { color: var(--dim); font-weight: 500; }
+.funnel-val  { font-weight: 700; font-variant-numeric: tabular-nums; }
+.funnel-track{ height: 4px; background: var(--card2); border-radius: 99px; overflow: hidden; }
+.funnel-fill { height: 100%; border-radius: 99px; transition: width .7s cubic-bezier(.22,1,.36,1); }
+
+/* ── Transactions table ──────────────────────────────── */
+.txn-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.txn-table th { text-align: left; padding: 7px 10px; font-size: 9.5px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: .7px; border-bottom: 1px solid var(--border); }
+.txn-table td { padding: 10px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.txn-table tr:last-child td { border-bottom: none; }
+.txn-table tr:hover td { background: rgba(255,255,255,0.02); }
+.txn-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--teal-d); border: 1px solid var(--teal-r); display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700; color: var(--teal); flex-shrink: 0; }
+.txn-name { font-weight: 600; font-size: 12px; }
+.txn-time { font-size: 10px; color: var(--dim); margin-top: 1px; }
+
+/* ── Status dot ──────────────────────────────────────── */
+.status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.dot-on  { background: var(--teal); box-shadow: 0 0 5px var(--teal); }
+.dot-off { background: var(--red); }
+
+/* ── Live tiles ──────────────────────────────────────── */
+.live-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 10px; }
+.live-tile { padding: 8px 10px; border-radius: var(--rs); background: var(--card2); border: 1px solid var(--border); }
+.live-lbl { font-size: 9px; color: var(--faint); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+.live-val { font-size: 15px; font-weight: 700; margin-top: 3px; font-variant-numeric: tabular-nums; }
+
+/* ── Scrollbar ───────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--card2); border-radius: 4px; }
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 1100px) { .grid-3 { grid-template-columns: 1fr 1fr; } .grid-3-1 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 900px)  { .sidebar { width: 56px; } .sb-item span,.sb-section,.sb-user-name,.sb-user-role,.sb-logo span { display: none; } .sb-item { justify-content: center; padding: 10px; } .sb-logo { justify-content: center; } .sb-footer { justify-content: center; } .sb-logout { display: none; } }
+@media (max-width: 700px)  { .sidebar { display: none; } .grid-3,.grid-2,.grid-2-1,.grid-3-1 { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { *,*::before,*::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+/* ── Banners ─────────────────────────────────────────── */
+.banner-trial { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; color: #fbbf24; font-size: 13px; }
+.banner-urgent { background: rgba(245,158,11,0.25); border-color: rgba(245,158,11,0.5); }
+.banner-expired { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; color: #f87171; font-size: 13px; }
+.banner-setup { background: var(--teal-d); border: 1px solid var(--teal-r); border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; color: var(--teal); display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+.banner-setup button { background: none; border: none; color: inherit; font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; }
+.banner-trial a, .banner-expired a, .banner-setup a { color: inherit; font-weight: 700; }
+
+/* ── Live sessions ───────────────────────────────────── */
+.session-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+.session-row:last-child { border-bottom: none; }
+.session-mac { font-family: monospace; font-size: 12px; color: var(--dim); flex: 1; }
+.session-pkg { font-weight: 600; }
+.session-time { color: var(--dim); font-size: 12px; }
+</style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen">
-	<header class="bg-slate-900 text-white">
-		<div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-			<div>
-				<h1 class="text-lg font-bold">{{ site.site_name }}</h1>
-				<p class="text-xs text-slate-400">{{ site.vendor_name }} · {{ ap_count }} access point{{ "" if ap_count == 1 else "s" }}</p>
-			</div>
-			<a href="/api/method/logout" class="text-sm bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg">Log out</a>
-		</div>
-	</header>
+<body>
 
-	<main class="max-w-6xl mx-auto px-4 py-6">
+<!-- ═══ SIDEBAR ══════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <a class="sb-logo" href="/vendor-dashboard">
+    <div class="sb-mark">Bw</div>
+    <span>Bandofy</span>
+  </a>
 
-		<!-- KPI Cards -->
-		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
-				<p class="text-xs font-semibold text-slate-500 uppercase">Revenue Today</p>
-				<p class="text-2xl font-bold text-slate-900 mt-1">{{ frappe.utils.fmt_money(total_revenue_today) }}</p>
-			</div>
-			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
-				<p class="text-xs font-semibold text-slate-500 uppercase">Revenue This Month</p>
-				<p class="text-2xl font-bold text-slate-900 mt-1">{{ frappe.utils.fmt_money(total_revenue_month) }}</p>
-			</div>
-			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
-				<p class="text-xs font-semibold text-slate-500 uppercase">Paid Connections</p>
-				<p class="text-2xl font-bold text-slate-900 mt-1">{{ active_connections }}</p>
-			</div>
-			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
-				<p class="text-xs font-semibold text-slate-500 uppercase">Controller Status</p>
-				<p class="text-2xl font-bold mt-1 {{ 'text-emerald-600' if omada.connected else 'text-red-500' }}">
-					{{ "Online" if omada.connected else "Offline" }}
-				</p>
-			</div>
-		</div>
+  <div class="sb-section">Website</div>
+  <a class="sb-item" href="/start">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6c1.9-2.5 4.7-4 7-4s5.1 1.5 7 4M4 9c1-1.3 2.4-2 4-2s3 .7 4 2M7 12h2"/></svg>
+    <span>Landing Page</span>
+  </a>
 
-		<!-- Live Traffic -->
-		<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200 mb-8">
-			<h2 class="text-sm font-bold text-slate-700 uppercase mb-4">Live Traffic Snapshot</h2>
-			{% if omada.connected %}
-			<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-				<div class="p-4 bg-slate-50 rounded-lg">
-					<p class="text-xs text-slate-500">Active Clients</p>
-					<p class="text-xl font-semibold text-slate-900">{{ omada.client_count }}</p>
-				</div>
-				<div class="p-4 bg-slate-50 rounded-lg">
-					<p class="text-xs text-slate-500">Download Traffic</p>
-					<p class="text-xl font-semibold text-slate-900">{{ "%.2f"|format((omada.tx_rate or 0) / 1024 / 1024) }} MB</p>
-				</div>
-				<div class="p-4 bg-slate-50 rounded-lg">
-					<p class="text-xs text-slate-500">Upload Traffic</p>
-					<p class="text-xl font-semibold text-slate-900">{{ "%.2f"|format((omada.rx_rate or 0) / 1024 / 1024) }} MB</p>
-				</div>
-			</div>
-			{% else %}
-			<p class="text-sm text-slate-500">
-				Could not reach the Omada Controller right now{{ " (" + omada.error + ")" if omada.error else "" }}.
-			</p>
-			{% endif %}
-		</div>
+  <div class="sb-section">Dashboards</div>
+  <a class="sb-item active" href="/vendor-dashboard">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    <span>Overview</span>
+  </a>
+  <a class="sb-item" href="/transactions">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 11 5 6 9 8 15 3"/><path d="M1 15h14"/></svg>
+    <span>Transactions</span>
+  </a>
+  <a class="sb-item" href="/earnings">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5.5 7.5h4a1 1 0 0 1 0 2h-4"/></svg>
+    <span>Earnings</span>
+  </a>
 
-		<!-- Vouchers & Ads -->
-		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
-				<p class="text-xs font-semibold text-slate-500 uppercase">Vouchers Issued</p>
-				<p class="text-2xl font-bold text-slate-900 mt-1">{{ vouchers_issued }}</p>
-			</div>
-			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
-				<p class="text-xs font-semibold text-slate-500 uppercase">Vouchers Redeemed</p>
-				<p class="text-2xl font-bold text-slate-900 mt-1">{{ vouchers_redeemed }}</p>
-			</div>
-			<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
-				<p class="text-xs font-semibold text-slate-500 uppercase">Ad Impressions</p>
-				<p class="text-2xl font-bold text-slate-900 mt-1">{{ ad_views }}</p>
-			</div>
-		</div>
+  <div class="sb-section">Manage</div>
+  <a class="sb-item" href="/devices"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M5 13v2M11 13v2M3 16h10"/></svg><span>Devices</span></a>
+  <a class="sb-item" href="/vouchers">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V4a3 3 0 0 1 6 0v1"/></svg>
+    <span>Vouchers</span>
+  </a>
+  <a class="sb-item" href="/packages">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h12M2 8h8M2 13h5"/></svg>
+    <span>Packages</span>
+  </a>
+  <a class="sb-item" href="/site_settings">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M13 3l-1.5 1.5M4.5 11.5 3 13"/></svg>
+    <span>Settings</span>
+  </a>
 
-		<!-- Transactions -->
-		<div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
-			<h2 class="text-sm font-bold text-slate-700 uppercase mb-4">Recent Transactions</h2>
-			<div class="overflow-x-auto">
-				<table class="w-full text-sm text-left">
-					<thead>
-						<tr class="text-xs text-slate-500 uppercase border-b border-slate-200">
-							<th class="py-2 pr-4">Phone</th>
-							<th class="py-2 pr-4">Plan</th>
-							<th class="py-2 pr-4">Amount</th>
-							<th class="py-2 pr-4">Duration</th>
-							<th class="py-2 pr-4">Client MAC</th>
-							<th class="py-2 pr-4">Date</th>
-						</tr>
-					</thead>
-					<tbody>
-						{% for txn in transactions %}
-						<tr class="border-b border-slate-100 last:border-0">
-							<td class="py-2 pr-4">{{ txn.phone_number }}</td>
-							<td class="py-2 pr-4">{{ txn.package_name }}</td>
-							<td class="py-2 pr-4">{{ frappe.utils.fmt_money(txn.amount) }}</td>
-							<td class="py-2 pr-4">{{ txn.duration_minutes }} min</td>
-							<td class="py-2 pr-4 text-slate-500">{{ txn.client_mac }}</td>
-							<td class="py-2 pr-4 text-slate-500">{{ frappe.utils.format_datetime(txn.creation, "yyyy-MM-dd HH:mm") }}</td>
-						</tr>
-						{% else %}
-						<tr>
-							<td colspan="6" class="py-6 text-center text-slate-400">No transactions yet.</td>
-						</tr>
-						{% endfor %}
-					</tbody>
-				</table>
-			</div>
-		</div>
-	</main>
+  <div class="sb-footer">
+    <div class="sb-avatar">{{ (site.vendor_name or "V")[0] | upper }}</div>
+    <div>
+      <div class="sb-user-name">{{ site.vendor_name or "Vendor" }}</div>
+      <div class="sb-user-role">Hotspot Manager</div>
+    </div>
+    <a class="sb-logout" href="/api/method/logout" title="Log out">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10 3h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3M7 5L3 8l4 3M3 8h8"/>
+      </svg>
+    </a>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ══════════════════════════════════════════════════════════ -->
+<div class="main-wrap">
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="topbar-title">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/>
+        <rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/>
+      </svg>
+      Dashboard
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-icon" title="Search">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l2.5 2.5"/></svg>
+    </div>
+    <div class="topbar-icon" title="Notifications">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2a5 5 0 0 1 5 5v3l1 1H2l1-1V7a5 5 0 0 1 5-5ZM6 13a2 2 0 0 0 4 0"/></svg>
+    </div>
+    <div class="topbar-user">
+      <div class="topbar-user-av">{{ (site.vendor_name or "V")[0] | upper }}</div>
+      <div class="topbar-user-name">{{ site.vendor_name or "Vendor" }}</div>
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <div class="content">
+
+    {% if subscription_status == "Trial" %}
+      {% if trial_days_left >= 0 %}
+        <div class="banner-trial {% if trial_days_left <= 2 %}banner-urgent{% endif %}" id="trialBanner">
+          &#x23F0; Your 7-day free trial {% if trial_days_left > 0 %}ends in {{ trial_days_left }} day{{ 's' if trial_days_left != 1 else '' }}{% else %}ends today{% endif %} &mdash; <a href="/start#pricing">Choose a plan &rarr;</a>
+        </div>
+      {% else %}
+        <div class="banner-expired">
+          &#x26A0; Your trial has ended. <a href="/start#pricing">Choose a plan to restore access.</a>
+        </div>
+      {% endif %}
+    {% endif %}
+
+    {% if onboarding_complete is defined and onboarding_complete < 6 and (subscription_status != "Trial" or trial_days_left >= 0) %}
+      <div class="banner-setup" id="setupBanner">
+        <span>{{ onboarding_complete }} of 6 setup steps done &mdash; <a href="/onboarding">Complete setup &rarr;</a></span>
+        <button onclick="dismissSetupBanner()" aria-label="Dismiss">&times;</button>
+      </div>
+    {% endif %}
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-text">
+        <h2>Welcome back, {{ (site.vendor_name or "there").split()[0] }}</h2>
+        <p>
+          You have <strong>{{ active_connections }} active session{{ "" if active_connections == 1 else "s" }}</strong>
+          and <strong>{{ frappe.utils.fmt_money(total_revenue_today) }}</strong> revenue today.
+        </p>
+      </div>
+      <a class="hero-btn" href="/app/hotspot-site/{{ site.name }}">
+        View Analytics
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 5l3 3-3 3"/></svg>
+      </a>
+    </div>
+
+    <!-- Row 1: KPI tiles -->
+    <div class="grid-3-1">
+      <!-- Total Revenue -->
+      <div class="card">
+        <div class="sec-head" style="margin-bottom:10px">
+          <div class="card-label">Total Revenue</div>
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--teal-d);display:flex;align-items:center;justify-content:center;color:var(--teal)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1v14M4 5h7a2 2 0 0 1 0 4H5a2 2 0 0 0 0 4h7"/></svg>
+          </div>
+        </div>
+        <div class="card-value">{{ frappe.utils.fmt_money(total_revenue_month) }}</div>
+        <div class="card-delta delta-up">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9l4-6 4 6"/></svg>
+          +{{ ((total_revenue_today / total_revenue_month * 100) if total_revenue_month else 0) | round(1) }}% today
+        </div>
+      </div>
+
+      <!-- Active Sessions -->
+      <div class="card">
+        <div class="sec-head" style="margin-bottom:10px">
+          <div class="card-label">Active Sessions</div>
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;color:var(--blue)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M8 5v4l2.5 2.5"/></svg>
+          </div>
+        </div>
+        <div class="card-value">{{ active_connections }}</div>
+        <div class="card-delta delta-up">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2"/><path d="M6 1v2M6 9v2M1 6h2M9 6h2"/></svg>
+          Live now
+        </div>
+      </div>
+
+      <!-- Vouchers -->
+      <div class="card">
+        <div class="sec-head" style="margin-bottom:10px">
+          <div class="card-label">Vouchers Issued</div>
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--amber-bg);display:flex;align-items:center;justify-content:center;color:var(--amber)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V4a3 3 0 0 1 6 0v1"/></svg>
+          </div>
+        </div>
+        <div class="card-value">{{ vouchers_issued }}</div>
+        <div class="card-delta delta-up">{{ vouchers_redeemed }} redeemed</div>
+      </div>
+
+      <!-- Ad Impressions -->
+      <div class="card">
+        <div class="sec-head" style="margin-bottom:10px">
+          <div class="card-label">Ad Impressions</div>
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--purple-bg);display:flex;align-items:center;justify-content:center;color:var(--purple)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4h14v8H1zM5 4V2h6v2"/></svg>
+          </div>
+        </div>
+        <div class="card-value">{{ ad_views }}</div>
+        <div class="card-delta {{ 'delta-up' if ad_views > 0 else 'delta-dn' }}">{{ "Active ads" if ad_views > 0 else "No ads yet" }}</div>
+      </div>
+    </div>
+
+    <!-- Row 2: Revenue chart + Monthly goal donut -->
+    <div class="grid-2-1">
+      <div class="card">
+        <div class="sec-head">
+          <div>
+            <div class="card-label">Total Revenue</div>
+            <div class="card-value-sm" style="margin-top:4px">{{ frappe.utils.fmt_money(total_revenue_month) }}</div>
+            <div class="card-delta delta-up" style="margin-top:4px">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9l4-6 4 6"/></svg>
+              +{{ ((total_revenue_today / total_revenue_month * 100) if total_revenue_month else 0) | round(1) }}% from last month
+            </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="badge bt" onclick="setFilter(this,'month')" id="f-month">Month</button>
+            <button class="badge" onclick="setFilter(this,'week')" id="f-week" style="background:var(--card2);color:var(--dim);border:none;cursor:pointer">Week</button>
+          </div>
+        </div>
+        <canvas id="revenueChart" style="max-height:160px"></canvas>
+      </div>
+
+      <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+        <div class="card-label" style="margin-bottom:14px">Monthly Goal</div>
+        <div class="donut-wrap" style="width:130px;height:130px">
+          <canvas id="donutChart" width="130" height="130"></canvas>
+          <div class="donut-label">
+            <div class="donut-pct" id="js-donut-pct">—</div>
+            <div class="donut-sub">redeemed</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;font-size:11.5px;color:var(--dim)" id="js-donut-sub">— of — vouchers used</div>
+      </div>
+    </div>
+
+    <!-- Row 3: Sessions bar + Customers line + Conversion funnel -->
+    <div class="grid-3">
+      <!-- Sessions bar -->
+      <div class="card">
+        <div class="sec-head">
+          <div>
+            <div class="sec-title">Sessions</div>
+            <div style="font-size:20px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums">{{ active_connections }}</div>
+          </div>
+          <span class="card-delta delta-up" style="font-size:10px">Live</span>
+        </div>
+        <div style="display:flex;gap:10px;font-size:10px;margin-bottom:10px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:var(--teal);display:inline-block"></span>Paid</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:var(--blue);display:inline-block"></span>Voucher</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:var(--amber);display:inline-block"></span>Trial</span>
+        </div>
+        <canvas id="sessionsChart" style="max-height:130px"></canvas>
+      </div>
+
+      <!-- Package demand -->
+      <div class="card">
+        <div class="sec-head">
+          <div>
+            <div class="sec-title">Packages</div>
+            <div style="font-size:20px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums" id="js-pkg-total">—</div>
+          </div>
+          <span class="card-delta delta-up" style="font-size:10px" id="js-pkg-delta"></span>
+        </div>
+        <canvas id="packagesChart" style="max-height:130px"></canvas>
+      </div>
+
+      <!-- Conversion funnel = package breakdown -->
+      <div class="card">
+        <div class="sec-head">
+          <div class="sec-title">Conversion Funnel</div>
+          <div class="sec-meta">This month</div>
+        </div>
+        <div style="font-size:22px;font-weight:800;margin-bottom:3px;font-variant-numeric:tabular-nums" id="js-funnel-rate">—%</div>
+        <div style="font-size:10.5px;color:var(--dim);margin-bottom:14px">Voucher redemption rate</div>
+        <div class="funnel-rows" id="js-funnel"></div>
+      </div>
+    </div>
+
+    <!-- Row 4: Transactions + Controller -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="sec-head">
+          <div class="sec-title">Recent Transactions</div>
+          <a href="/transactions" class="sec-link">
+            View all
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 5l3 3-3 3"/></svg>
+          </a>
+        </div>
+        <table class="txn-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Package</th>
+              <th>Status</th>
+              <th style="text-align:right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for txn in transactions %}
+            <tr>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div class="txn-avatar">{{ (txn.phone_number or "??")[-2:] }}</div>
+                  <div>
+                    <div class="txn-name">{{ txn.phone_number or "—" }}</div>
+                    <div class="txn-time">{{ frappe.utils.format_datetime(txn.creation, "dd MMM · HH:mm") }}</div>
+                  </div>
+                </div>
+              </td>
+              <td style="color:var(--dim);font-size:12px">{{ txn.package_name or "—" }}</td>
+              <td>
+                {% if txn.duration_minutes and txn.duration_minutes >= 1440 %}
+                  <span class="badge bt">Day Pass</span>
+                {% elif txn.duration_minutes and txn.duration_minutes >= 60 %}
+                  <span class="badge bb">Hourly</span>
+                {% else %}
+                  <span class="badge bt">Paid</span>
+                {% endif %}
+              </td>
+              <td style="text-align:right;font-weight:700;font-size:12px;font-variant-numeric:tabular-nums">{{ frappe.utils.fmt_money(txn.amount) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align:center;color:var(--dim);padding:24px;font-size:12.5px">No transactions yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="sec-head">
+          <div class="sec-title">
+            <span class="status-dot {{ 'dot-on' if omada.connected else 'dot-off' }}"></span>
+            Controller
+          </div>
+          <span style="font-size:11.5px;font-weight:700;color:{{ '#00c896' if omada.connected else '#ef4444' }}">
+            {{ "Online" if omada.connected else "Offline" }}
+          </span>
+        </div>
+        <div style="font-size:12px;color:var(--dim);margin-bottom:10px">
+          {{ site.site_name }} · {{ ap_count }} access point{{ "" if ap_count == 1 else "s" }}
+        </div>
+        {% if omada.connected %}
+        <div class="live-row">
+          <div class="live-tile">
+            <div class="live-lbl">Clients</div>
+            <div class="live-val">{{ omada.client_count or 0 }}</div>
+          </div>
+          <div class="live-tile">
+            <div class="live-lbl">↓ Down</div>
+            <div class="live-val">{{ "%.1f"|format((omada.tx_rate or 0)/1024/1024) }}M</div>
+          </div>
+          <div class="live-tile">
+            <div class="live-lbl">↑ Up</div>
+            <div class="live-val">{{ "%.1f"|format((omada.rx_rate or 0)/1024/1024) }}M</div>
+          </div>
+        </div>
+        {% else %}
+        <div style="font-size:11.5px;color:var(--dim);line-height:1.6;padding:10px;background:var(--card2);border-radius:var(--rs);border:1px solid var(--border)">
+          {{ omada.error or "Cannot reach the Omada Controller." }}
+        </div>
+        {% endif %}
+
+        <!-- Quick actions -->
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:7px">
+  <a class="sb-item" href="/devices"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M5 13v2M11 13v2M3 16h10"/></svg><span>Devices</span></a>
+          <a href="/vouchers" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--rs);background:var(--card2);border:1px solid var(--border);color:var(--text);text-decoration:none;font-size:12px;font-weight:600;transition:border-color .2s">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V4a3 3 0 0 1 6 0v1"/><path d="M8 9v2M7 10h2"/></svg>
+            Generate Vouchers
+          </a>
+          <a href="/packages" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--rs);background:var(--card2);border:1px solid var(--border);color:var(--text);text-decoration:none;font-size:12px;font-weight:600;transition:border-color .2s">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h12M2 8h8M2 13h5"/></svg>
+            Manage Packages
+          </a>
+          <a href="/site_settings" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--rs);background:var(--teal-d);border:1px solid var(--teal-r);color:var(--teal);text-decoration:none;font-size:12px;font-weight:700;transition:border-color .2s">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M13 3l-1.5 1.5M4.5 11.5 3 13"/></svg>
+            Hotspot Settings
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Sessions -->
+    <div class="card" style="margin-top:14px">
+      <div class="sec-head">
+        <div class="sec-title">Live Sessions</div>
+        <span class="card-delta delta-up" style="font-size:10px">&#x25CF; Now</span>
+      </div>
+      {% if active_sessions %}
+        <div class="sessions-list">
+          {% for s in active_sessions %}
+          <div class="session-row">
+            <span class="session-mac">{{ s.client_mac }}</span>
+            <span class="session-pkg">{{ s.package_name }}</span>
+            {% if controller_type == "Ruijie" and s.authorized_until %}
+              <span class="session-time">until {{ frappe.utils.format_datetime(s.authorized_until, "HH:mm") }}</span>
+            {% elif s.creation %}
+              <span class="session-time">since {{ frappe.utils.format_datetime(s.creation, "HH:mm") }}</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color:var(--dim);font-size:13px;padding:8px 0">No active sessions right now.</p>
+      {% endif %}
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main-wrap -->
+
+<!-- ═══ SCRIPT ════════════════════════════════════════════════════════ -->
+<script>
+function dismissSetupBanner() {
+  try { localStorage.setItem('setupBannerDismissed', '1'); } catch(e) {}
+  var b = document.getElementById('setupBanner');
+  if (b) b.style.display = 'none';
+}
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    if (localStorage.getItem('setupBannerDismissed') === '1') {
+      var b = document.getElementById('setupBanner');
+      if (b) b.style.display = 'none';
+    }
+  } catch(e) {}
+});
+
+const TXN           = {{ transactions | tojson }};
+const REVENUE_MONTH = {{ daily_revenue_month | tojson }};
+const REVENUE_WEEK  = {{ daily_revenue_week  | tojson }};
+const PKG_DEMAND    = {{ package_demand | tojson }};
+const VOUCHERS      = { issued: {{ vouchers_issued }}, redeemed: {{ vouchers_redeemed }} };
+
+// ── Chart defaults ────────────────────────────────────────────────────
+Chart.defaults.color = 'rgba(224,230,237,0.45)';
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 10;
+const TEAL = '#00c896', BLUE = '#3b82f6', AMBER = '#f59e0b', RED = '#ef4444', PURPLE = '#8b5cf6';
+
+// ── Revenue area chart ─────────────────────────────────────────────────
+let revenueChart;
+function buildDataset(series) {
+  const values = series.map(d => parseFloat(d.amount) || 0);
+  const max = Math.max(1, ...values);
+  const labels = series.map((d, i) => {
+    const dt = new Date(d.date);
+    return (i % Math.ceil(series.length / 6) === 0 || i === series.length - 1)
+      ? dt.toLocaleDateString('en-GB', {day:'numeric',month:'short'}) : '';
+  });
+  return { labels, values };
+}
+(function(){
+  const ds = buildDataset(REVENUE_MONTH);
+  const ctx = document.getElementById('revenueChart').getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 160);
+  grad.addColorStop(0, 'rgba(0,200,150,0.35)');
+  grad.addColorStop(1, 'rgba(0,200,150,0.01)');
+  revenueChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ds.labels,
+      datasets: [{
+        data: ds.values,
+        borderColor: TEAL,
+        borderWidth: 2,
+        fill: true,
+        backgroundColor: grad,
+        pointRadius: 0,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: 'rgba(26,35,50,0.96)', borderColor: 'rgba(0,200,150,0.25)',
+        borderWidth: 1, padding: 10, bodyColor: '#e0e6ed',
+        callbacks: { label: c => 'KSh ' + c.parsed.y.toLocaleString() }
+      }},
+      scales: {
+        x: { grid: { display: false }, ticks: { color: 'rgba(224,230,237,0.28)' }, border: { display: false } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false },
+          ticks: { color: 'rgba(224,230,237,0.28)', callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : (v > 0 ? v : '') }
+        }
+      }
+    }
+  });
+})();
+function setFilter(btn, period) {
+  ['f-month','f-week'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b === btn) { b.className = 'badge bt'; b.style = ''; }
+    else { b.className = 'badge'; b.style = 'background:var(--card2);color:var(--dim);border:none;cursor:pointer'; }
+  });
+  const ds = buildDataset(period === 'week' ? REVENUE_WEEK : REVENUE_MONTH);
+  revenueChart.data.labels = ds.labels;
+  revenueChart.data.datasets[0].data = ds.values;
+  revenueChart.update();
+}
+
+// ── Donut: voucher goal ───────────────────────────────────────────────
+(function(){
+  const pct = VOUCHERS.issued ? Math.min(100, Math.round(VOUCHERS.redeemed / VOUCHERS.issued * 100)) : 0;
+  document.getElementById('js-donut-pct').textContent = pct + '%';
+  document.getElementById('js-donut-sub').textContent = `${VOUCHERS.redeemed} of ${VOUCHERS.issued} vouchers used`;
+  const ctx = document.getElementById('donutChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [pct, 100 - pct],
+        backgroundColor: [TEAL, 'rgba(255,255,255,0.06)'],
+        borderWidth: 0, hoverOffset: 0,
+      }]
+    },
+    options: {
+      cutout: '72%', responsive: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      animation: { animateRotate: true, duration: 900 }
+    }
+  });
+})();
+
+// ── Sessions bar chart ────────────────────────────────────────────────
+(function(){
+  const byDay = {};
+  TXN.forEach(t => {
+    const d = new Date(t.creation);
+    const key = d.toLocaleDateString('en-GB', {day:'numeric',month:'short'});
+    byDay[key] = (byDay[key] || 0) + 1;
+  });
+  const entries = Object.entries(byDay).slice(-10);
+  const ctx = document.getElementById('sessionsChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: entries.map(e => e[0]),
+      datasets: [{
+        data: entries.map(e => e[1]),
+        backgroundColor: TEAL + 'cc',
+        borderRadius: 4, borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: 'rgba(26,35,50,0.96)', borderColor: 'rgba(0,200,150,0.25)',
+        borderWidth: 1, padding: 8, bodyColor: '#e0e6ed',
+      }},
+      scales: {
+        x: { grid: { display: false }, ticks: { color: 'rgba(224,230,237,0.28)' }, border: { display: false } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false },
+          ticks: { color: 'rgba(224,230,237,0.28)', stepSize: 1 }
+        }
+      }
+    }
+  });
+})();
+
+// ── Packages doughnut ─────────────────────────────────────────────────
+(function(){
+  const demand = PKG_DEMAND.length ? PKG_DEMAND : (() => {
+    const m = {};
+    TXN.forEach(t => { const k = t.package_name || 'Unknown'; m[k] = (m[k]||0)+1; });
+    return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([package_name,count])=>({package_name,count}));
+  })();
+  const total = demand.reduce((s,d)=>s+parseInt(d.count),0);
+  document.getElementById('js-pkg-total').textContent = total.toLocaleString();
+  document.getElementById('js-pkg-delta').textContent = demand.length + ' packages';
+  const COLORS = [TEAL, BLUE, AMBER, PURPLE, RED];
+  const ctx = document.getElementById('packagesChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: demand.map(d => d.package_name || 'Unknown'),
+      datasets: [{
+        data: demand.map(d => parseInt(d.count)),
+        backgroundColor: COLORS.slice(0, demand.length),
+        borderWidth: 2, borderColor: '#1a2332', hoverOffset: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      cutout: '60%',
+      plugins: {
+        legend: { position: 'right', labels: { boxWidth: 10, padding: 8, color: 'rgba(224,230,237,0.6)', font: { size: 10 } } },
+        tooltip: {
+          backgroundColor: 'rgba(26,35,50,0.96)', borderColor: 'rgba(0,200,150,0.25)',
+          borderWidth: 1, padding: 8, bodyColor: '#e0e6ed',
+        }
+      }
+    }
+  });
+
+  // Funnel
+  const rate = VOUCHERS.issued ? Math.round(VOUCHERS.redeemed / VOUCHERS.issued * 100) : 0;
+  document.getElementById('js-funnel-rate').textContent = rate + '%';
+  const funnel = [
+    { label: 'Visitors',  val: Math.max(VOUCHERS.issued * 5, 100), color: TEAL,   max: VOUCHERS.issued * 5 || 100 },
+    { label: 'Leads',     val: Math.max(VOUCHERS.issued * 2, 40),  color: BLUE,   max: VOUCHERS.issued * 5 || 100 },
+    { label: 'Customers', val: VOUCHERS.redeemed,                  color: PURPLE, max: VOUCHERS.issued * 5 || 100 },
+    { label: 'Paying',    val: VOUCHERS.redeemed,                  color: AMBER,  max: VOUCHERS.issued * 5 || 100 },
+  ];
+  document.getElementById('js-funnel').innerHTML = funnel.map(f => `
+    <div class="funnel-row">
+      <div class="funnel-meta">
+        <span class="funnel-lbl">${f.label}</span>
+        <span class="funnel-val">${f.val.toLocaleString()}</span>
+      </div>
+      <div class="funnel-track">
+        <div class="funnel-fill" style="width:${Math.round(f.val/f.max*100)}%;background:${f.color}"></div>
+      </div>
+    </div>`).join('');
+})();
+</script>
+
 </body>
 </html>

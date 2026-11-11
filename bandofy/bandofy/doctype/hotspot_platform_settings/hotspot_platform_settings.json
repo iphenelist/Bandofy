@@ -1,0 +1,269 @@
+{
+ "actions": [],
+ "creation": "2026-11-04 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "trial_section",
+  "trial_days",
+  "column_break_trial",
+  "platform_name",
+  "support_email",
+  "support_phone",
+  "vps_hostname",
+  "subscription_section",
+  "growth_price",
+  "growth_sites",
+  "growth_omada_aps",
+  "growth_ruijie_aps",
+  "column_break_plans",
+  "power_price",
+  "power_sites",
+  "power_omada_aps",
+  "power_ruijie_aps",
+  "ultra_section",
+  "ultra_price",
+  "ultra_sites",
+  "ultra_omada_aps",
+  "ultra_ruijie_aps",
+  "sms_section",
+  "sms_enabled",
+  "sms_provider",
+  "column_break_sms",
+  "sms_api_key",
+  "sms_sender_id",
+  "package_section",
+  "default_pkg_name",
+  "default_pkg_price",
+  "column_break_pkg",
+  "default_pkg_duration",
+  "default_pkg_bandwidth_down",
+  "default_pkg_bandwidth_up"
+ ],
+ "fields": [
+  {
+   "fieldname": "trial_section",
+   "fieldtype": "Section Break",
+   "label": "Trial & Platform"
+  },
+  {
+   "default": "7",
+   "description": "Number of days new vendors get full access before needing a subscription.",
+   "fieldname": "trial_days",
+   "fieldtype": "Int",
+   "label": "Free Trial Duration (Days)"
+  },
+  {
+   "fieldname": "column_break_trial",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Bandofy",
+   "fieldname": "platform_name",
+   "fieldtype": "Data",
+   "label": "Platform Name"
+  },
+  {
+   "fieldname": "support_email",
+   "fieldtype": "Data",
+   "label": "Support Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "support_phone",
+   "fieldtype": "Data",
+   "label": "Support Phone",
+   "options": "Phone"
+  },
+  {
+   "description": "Public IP or hostname of this VPS — shown to vendors in the RADIUS setup card on their dashboard (e.g. bandofy-radius.example.com or 203.0.113.5).",
+   "fieldname": "vps_hostname",
+   "fieldtype": "Data",
+   "label": "VPS Hostname / IP (RADIUS)"
+  },
+  {
+   "fieldname": "subscription_section",
+   "fieldtype": "Section Break",
+   "label": "Growth Plan"
+  },
+  {
+   "default": "12000",
+   "fieldname": "growth_price",
+   "fieldtype": "Currency",
+   "label": "Growth Plan Price (TZS/month)"
+  },
+  {
+   "default": "2",
+   "fieldname": "growth_sites",
+   "fieldtype": "Int",
+   "label": "Growth: Max Sites"
+  },
+  {
+   "default": "1",
+   "fieldname": "growth_omada_aps",
+   "fieldtype": "Int",
+   "label": "Growth: Max Omada APs"
+  },
+  {
+   "default": "1",
+   "fieldname": "growth_ruijie_aps",
+   "fieldtype": "Int",
+   "label": "Growth: Max Ruijie APs"
+  },
+  {
+   "fieldname": "column_break_plans",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "25000",
+   "fieldname": "power_price",
+   "fieldtype": "Currency",
+   "label": "Power Plan Price (TZS/month)"
+  },
+  {
+   "default": "5",
+   "fieldname": "power_sites",
+   "fieldtype": "Int",
+   "label": "Power: Max Sites"
+  },
+  {
+   "default": "3",
+   "fieldname": "power_omada_aps",
+   "fieldtype": "Int",
+   "label": "Power: Max Omada APs"
+  },
+  {
+   "default": "3",
+   "fieldname": "power_ruijie_aps",
+   "fieldtype": "Int",
+   "label": "Power: Max Ruijie APs"
+  },
+  {
+   "fieldname": "ultra_section",
+   "fieldtype": "Section Break",
+   "label": "Ultra Plan"
+  },
+  {
+   "default": "50000",
+   "fieldname": "ultra_price",
+   "fieldtype": "Currency",
+   "label": "Ultra Plan Price (TZS/month)"
+  },
+  {
+   "default": "10",
+   "fieldname": "ultra_sites",
+   "fieldtype": "Int",
+   "label": "Ultra: Max Sites"
+  },
+  {
+   "default": "5",
+   "fieldname": "ultra_omada_aps",
+   "fieldtype": "Int",
+   "label": "Ultra: Max Omada APs"
+  },
+  {
+   "default": "5",
+   "fieldname": "ultra_ruijie_aps",
+   "fieldtype": "Int",
+   "label": "Ultra: Max Ruijie APs"
+  },
+  {
+   "fieldname": "sms_section",
+   "fieldtype": "Section Break",
+   "label": "SMS Notifications (NextSMS)"
+  },
+  {
+   "default": "0",
+   "fieldname": "sms_enabled",
+   "fieldtype": "Check",
+   "label": "Enable SMS Notifications"
+  },
+  {
+   "default": "NextSMS",
+   "fieldname": "sms_provider",
+   "fieldtype": "Select",
+   "label": "SMS Provider",
+   "options": "NextSMS"
+  },
+  {
+   "fieldname": "column_break_sms",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sms_api_key",
+   "fieldtype": "Password",
+   "label": "SMS API Key"
+  },
+  {
+   "default": "BANDOFY",
+   "fieldname": "sms_sender_id",
+   "fieldtype": "Data",
+   "label": "Sender ID (max 11 chars)"
+  },
+  {
+   "fieldname": "package_section",
+   "fieldtype": "Section Break",
+   "label": "Default Package (for new signups)"
+  },
+  {
+   "default": "1 Hour",
+   "fieldname": "default_pkg_name",
+   "fieldtype": "Data",
+   "label": "Default Package Name"
+  },
+  {
+   "default": "500",
+   "fieldname": "default_pkg_price",
+   "fieldtype": "Currency",
+   "label": "Default Package Price (TZS)"
+  },
+  {
+   "fieldname": "column_break_pkg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "60",
+   "fieldname": "default_pkg_duration",
+   "fieldtype": "Int",
+   "label": "Default Package Duration (minutes)"
+  },
+  {
+   "default": "3072",
+   "fieldname": "default_pkg_bandwidth_down",
+   "fieldtype": "Int",
+   "label": "Default Bandwidth Down (Kbps)"
+  },
+  {
+   "default": "1024",
+   "fieldname": "default_pkg_bandwidth_up",
+   "fieldtype": "Int",
+   "label": "Default Bandwidth Up (Kbps)"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-11-04 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Bandofy",
+ "name": "Hotspot Platform Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

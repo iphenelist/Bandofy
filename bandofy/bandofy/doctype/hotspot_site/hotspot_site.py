@@ -107,6 +107,23 @@ class HotspotSite(Document):
 			frappe.throw(_("Please add at least one pricing package."))
 
 
+def get_permission_query_conditions(user=None):
+	"""Bandofy Managers only see their own site; System Managers see all."""
+	if not user:
+		user = frappe.session.user
+	if "System Manager" in frappe.get_roles(user):
+		return ""
+	return f"`tabHotspot Site`.`vendor_user` = {frappe.db.escape(user)}"
+
+
+def has_permission(doc, ptype="read", user=None):
+	if not user:
+		user = frappe.session.user
+	if "System Manager" in frappe.get_roles(user):
+		return True
+	return doc.vendor_user == user
+
+
 def open_api_configured():
 	"""Whether Hotspot Omada Settings has Open API keys, which site creation,
 	AP adoption, SSID editing, AP status/reboot and bandwidth caps need."""
