@@ -46,24 +46,3 @@ def get_revenue_trend(site_name, days=7):
 	return trend
 
 
-def get_omada_live_stats(site):
-	"""Controller status and live client count / bandwidth usage.
-
-	Fails soft: dashboard should still render if the controller is
-	unreachable, just marked as disconnected. `site` needs at least `name`.
-	"""
-	from bandofy import omada_auth as omada_service
-
-	stats = {"connected": False, "client_count": 0, "tx_rate": 0, "rx_rate": 0, "error": None}
-
-	hotspot_site = frappe.get_doc("Hotspot Site", site.name)
-	if hotspot_site.controller_type == "Ruijie":
-		stats["error"] = "Live client numbers come from the Omada Controller; this is a Ruijie site."
-		return stats
-	try:
-		stats = omada_service.get_live_stats(**omada_service.site_controller(hotspot_site))
-	except Exception as e:
-		stats["error"] = str(e)
-		frappe.log_error(title="Bandofy Omada Live Stats Fetch Failed", message=frappe.get_traceback())
-
-	return stats
