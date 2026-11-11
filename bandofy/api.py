@@ -1187,12 +1187,14 @@ def get_omada_sites_for_picker():
 
 	# Try Open API (richer — works when client_id is configured)
 	if settings.client_id:
+		from bandofy.omada_openapi import list_sites, OmadaApiError
 		try:
-			from bandofy.omada_openapi import list_sites
 			sites = list_sites()
 			return [{"name": s.get("name"), "siteId": s.get("siteId")} for s in sites if s.get("siteId")]
-		except Exception:
-			pass
+		except OmadaApiError as e:
+			frappe.throw(_("Omada Open API error: {0}").format(str(e)), title=_("Omada Sites"))
+		except Exception as e:
+			frappe.throw(_("Error fetching sites from Omada: {0}").format(str(e)), title=_("Omada Sites"))
 
 	# Fall back to operator login — Omada exposes a /hotspot/sites endpoint
 	# for the operator to see which sites they have access to.
