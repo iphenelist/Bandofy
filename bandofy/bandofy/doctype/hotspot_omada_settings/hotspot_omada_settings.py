@@ -21,15 +21,6 @@ class HotspotOmadaSettings(Document):
 		if self.default_timezone:
 			self.default_timezone = _normalize_timezone(self.default_timezone)
 
-		if self.has_value_changed("device_password") and self.device_password:
-			password = self.get_password("device_password", raise_exception=False)
-			if password and not _is_strong_device_password(password):
-				frappe.throw(
-					_(
-						"Device Account Password must be 10-64 characters with upper and lower case letters, "
-						"a number and one of {0}."
-					).format(DEVICE_PASSWORD_SYMBOLS)
-				)
 
 
 def _normalize_timezone(value):
