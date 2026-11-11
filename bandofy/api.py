@@ -1170,3 +1170,69 @@ def request_withdrawal(site, amount, phone_number, network):
 	doc.insert(ignore_permissions=True)
 	frappe.db.commit()
 	return doc.name
+
+
+@frappe.whitelist()
+def get_omada_sites_for_picker():
+	"""Return a list of {name, siteId} from the Omada Controller so the
+	Hotspot Site form can show a picker instead of asking the user to find
+	the 24-character site ID manually.
+
+	Tries the Open API first (needs client_id/client_secret); if not configured,
+	falls back to the operator login and the hotspot sites endpoint."""
+	frappe.only_for("System Manager")
+	settings = frappe.get_cached_doc("Hotspot Omada Settings")
+	if not settings.controller_url:
+		frappe.throw(_("Set the Controller URL in Hotspot Omada Settings first."))
+
+	# Try Open API (richer — works when client_id is configured)
+	if settings.client_id:
+		try:
+			from bandofy.omada_openapi import list_sites
+			sites = list_sites()
+			return [{"name": s.get("name"), "siteId": s.get("siteId")} for s in sites if s.get("siteId")]
+		except Exception:
+			pass
+
+	# Fall back to operator login — Omada exposes a /hotspot/sites endpoint
+	# for the operator to see which sites they have access to.
+	from bandofy.omada_auth import _new_session, _operator_login, _settings as _auth_settings
+	from bandofy.omada_openapi import controller_info, OmadaApiError
+
+	password = settings.get_password("operator_password", raise_exception=False)
+	if not (settings.operator_name and password):
+		frappe.throw(_("Set the Operator Name and Password in Hotspot Omada Settings first."))
+
+	try:
+		info = controller_info(settings.controller_url)
+	except OmadaApiError as e:
+		frappe.throw(str(e))
+
+	omadac_id = info.get("omadacId") or settings.omadac_id
+	if not omadac_id:
+		frappe.throw(_("Could not get the Controller ID. Run Test Connection in Hotspot Omada Settings."))
+
+	base_url = f"{settings.controller_url.rstrip('/')}/{omadac_id}"
+	timeout, verify = _auth_settings()
+	session, token = _operator_login(base_url, settings.operator_name, password, timeout)
+
+	try:
+		resp = session.get(
+			f"{base_url}/api/v2/hotspot/sites",
+			headers={"Csrf-Token": token},
+			timeout=timeout,
+		)
+		data = resp.json()
+		if data.get("errorCode") == 0:
+			rows = data.get("result") or []
+			if isinstance(rows, dict):
+				rows = rows.get("data") or []
+			return [{"name": r.get("name"), "siteId": r.get("siteId")} for r in rows if r.get("siteId")]
+	except Exception:
+		pass
+
+	frappe.throw(
+		_("Could not fetch sites from the Omada Controller. "
+		  "To enable automatic lookup, add Open API credentials in Hotspot Omada Settings "
+		  "(Omada → Settings → Platform Integration → Open API → Add New App).")
+	)
