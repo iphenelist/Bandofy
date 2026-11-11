@@ -11,7 +11,8 @@ import requests
 from frappe import _
 from frappe.utils import add_to_date, cint, get_datetime_str, get_url, getdate, now_datetime, nowdate
 
-from bandofy.radius_auth import issue_login, login_form
+from bandofy.omada_openapi import set_client_rate_limit
+from bandofy.omada_auth import authorize_client, site_controller
 from bandofy.utils import find_site, has_used_free_trial, is_sabbath_now, normalize_mac
 
 DEFAULT_SUCCESS_REDIRECT_URL = "https://www.youtube.com"
@@ -247,7 +248,7 @@ def _mark_transaction_paid(txn, reference_id, settings):
 
 	if settings.auto_authorize_on_payment:
 		frappe.enqueue(
-			"bandofy.api.authorize_mac",
+			"bandofy.api.authorize_mac_on_omada",
 			queue="short",
 			enqueue_after_commit=True,
 			transaction_id=txn.name,
@@ -255,7 +256,13 @@ def _mark_transaction_paid(txn, reference_id, settings):
 
 
 def _success_redirect_url(site_url):
-	return site_url or DEFAULT_SUCCESS_REDIRECT_URL
+	"""Where to send a connected customer: the site's own URL, else the
+	default from Hotspot Omada Settings."""
+	return (
+		site_url
+		or frappe.db.get_single_value("Hotspot Omada Settings", "default_success_redirect_url")
+		or DEFAULT_SUCCESS_REDIRECT_URL
+	)
 
 
 def _gateway_base_url(settings):
@@ -406,17 +413,22 @@ def redeem_voucher(
 		"message": _("Voucher accepted. You are now being connected."),
 	}
 
+	# Voucher redemption is already a synchronous, immediate-response
+	# flow (unlike payment, which waits on a webhook) -- authorize now so
+	# we can hand the portal page a redirect_url in this same response.
+	# On failure, fall back to the async retry queue instead of leaving
+	# an already-consumed voucher stuck with no authorization attempt.
 	site = frappe.get_doc("Hotspot Site", site_name)
 	try:
 		_authorize_transaction(txn, site)
 		result.update(_connect_details(txn, site))
 	except Exception:
 		frappe.log_error(
-			title=f"Bandofy Authorization Failed: {txn.name}",
+			title=f"Bandofy Omada Authorization Failed: {txn.name}",
 			message=frappe.get_traceback(),
 		)
 		frappe.enqueue(
-			"bandofy.api.authorize_mac",
+			"bandofy.api.authorize_mac_on_omada",
 			queue="short",
 			enqueue_after_commit=True,
 			transaction_id=txn.name,
@@ -472,16 +484,17 @@ def _redeem_staff_voucher(voucher_code, site_name, client_mac, ap_mac, ssid_name
 		"message": _("Welcome {0}. You are now being connected.").format(staff_voucher.staff_name),
 	}
 
+	# Same synchronous-authorize-now shortcut redeem_voucher uses.
 	try:
 		_authorize_transaction(txn, site)
 		result.update(_connect_details(txn, site))
 	except Exception:
 		frappe.log_error(
-			title=f"Bandofy Staff Authorization Failed: {txn.name}",
+			title=f"Bandofy Staff Omada Authorization Failed: {txn.name}",
 			message=frappe.get_traceback(),
 		)
 		frappe.enqueue(
-			"bandofy.api.authorize_mac",
+			"bandofy.api.authorize_mac_on_omada",
 			queue="short",
 			enqueue_after_commit=True,
 			transaction_id=txn.name,
@@ -584,16 +597,19 @@ def claim_free_trial(
 		"message": _("Free trial activated. You are now being connected."),
 	}
 
+	# Same synchronous-authorize-now shortcut redeem_voucher uses: this
+	# is an immediate-response flow, not a payment waiting on a webhook,
+	# so authorize right away and hand back a redirect_url directly.
 	try:
 		_authorize_transaction(txn, site)
 		result.update(_connect_details(txn, site))
 	except Exception:
 		frappe.log_error(
-			title=f"Bandofy Free Trial Authorization Failed: {txn.name}",
+			title=f"Bandofy Free Trial Omada Authorization Failed: {txn.name}",
 			message=frappe.get_traceback(),
 		)
 		frappe.enqueue(
-			"bandofy.api.authorize_mac",
+			"bandofy.api.authorize_mac_on_omada",
 			queue="short",
 			enqueue_after_commit=True,
 			transaction_id=txn.name,
@@ -701,29 +717,81 @@ def _require_ap_mac(site, ap_mac):
 
 
 def _authorize_transaction(txn, site):
-	"""Issue RADIUS credentials for the transaction and mark it authorized.
-	All AP types (Ruijie, TP-Link EAP standalone, any RADIUS AP) use this path.
+	"""Let this Paid transaction's device online, then flag the transaction
+	so the portal page's status poll (see get_omada_connection_status) knows
+	it can move on.
+
+	Omada sites: authorize the client's MAC on the Omada Controller.
+	Ruijie sites: set authorized_until (the AC handles the redirect itself).
 	"""
-	issue_login(txn)
+	if site.get("controller_type") == "Ruijie":
+		from frappe.utils import add_to_date
+		until = add_to_date(now_datetime(), minutes=max(int(txn.duration_minutes or 0), 1))
+		txn.db_set({"authorized_until": until, "omada_authorized": 1}, commit=True)
+		return
+
+	_authorize_on_omada(txn, site)
 	txn.db_set("omada_authorized", 1, commit=True)
+	_apply_package_bandwidth(txn, site)
 
 
 def _connect_details(txn, site):
-	"""Return the RADIUS login form the portal page submits to the AP's login server,
-	plus the success redirect URL."""
-	success_url = _success_redirect_url(site.get("success_redirect_url"))
-	result = {"redirect_url": success_url}
+	"""What the portal page needs to finish connecting an authorized device:
+	the redirect URL to send the browser to once authorized."""
+	return {"redirect_url": _success_redirect_url(site.get("success_redirect_url"))}
+
+
+def _authorize_on_omada(txn, site):
+	"""Call omada_service.authorize_client for this transaction/site."""
+	controller = site_controller(site)
+	authorize_client(
+		omada_host=controller["omada_host"],
+		controller_id=controller["controller_id"],
+		operator_username=controller["operator_username"],
+		operator_password=controller["operator_password"],
+		client_mac=txn.client_mac,
+		ap_mac=txn.ap_mac,
+		ssid_name=txn.ssid_name,
+		site_name=controller["site_id"],
+		duration_minutes=txn.duration_minutes,
+		radio_id=txn.radio_id,
+	)
+
+
+def _apply_package_bandwidth(txn, site):
+	"""When the site enforces package bandwidth, caps the client on Omada to
+	its package's Download/Upload Kbps (found by package name; Free Trial,
+	Staff Access etc. have no package row, so any earlier cap is removed).
+	Never fails the authorization -- the customer is already online."""
+	if not (site.get("enforce_bandwidth_limits") and site.omada_site_id):
+		return
+	# Rate limits are set through the Open API; without its keys there is
+	# nothing to call (and every authorization would log an error).
+	if not frappe.db.get_single_value("Hotspot Omada Settings", "client_id"):
+		return
+	package = next((p for p in site.packages if p.package_name == txn.package_name), None)
+	digits = normalize_mac(txn.client_mac).upper()
 	try:
-		result.update(login_form(txn, success_url))
+		set_client_rate_limit(
+			site.omada_site_id,
+			"-".join(digits[i : i + 2] for i in range(0, 12, 2)),
+			package.bandwidth_down_kbps if package else 0,
+			package.bandwidth_up_kbps if package else 0,
+		)
 	except Exception:
-		pass
-	return result
+		frappe.log_error(title=f"Bandofy bandwidth limit failed: {txn.name}", message=frappe.get_traceback())
 
 
-def authorize_mac(transaction_id):
-	"""Issue RADIUS credentials and mark the transaction authorized.
-	Enqueued from payment_callback / sync_pending_payments, and as a retry
-	fallback when the synchronous attempt in redeem_voucher fails.
+def authorize_mac_on_omada(transaction_id):
+	"""Get a paying client online: authorize its MAC on the Omada controller
+	(Omada sites) or record authorized_until (Ruijie sites).
+
+	Enqueued from :func:`payment_callback`/:func:`sync_pending_payments` once
+	a transaction is marked Paid, and as a retry fallback when the
+	synchronous attempt in :func:`redeem_voucher` fails. Endpoints/payload
+	per TP-Link's official "API and Code Sample for External Portal Server
+	(Omada Controller 5.0.15 or above)":
+	https://support.omadanetworks.com/us/document/13080/
 	"""
 	txn = frappe.get_doc("Hotspot Transaction", transaction_id)
 	site = frappe.get_doc("Hotspot Site", txn.site)
@@ -733,15 +801,17 @@ def authorize_mac(transaction_id):
 		frappe.logger("bandofy").info(f"Authorized {txn.client_mac} on {site.name} ({transaction_id})")
 	except Exception:
 		frappe.log_error(
-			title=f"Bandofy Authorization Failed: {transaction_id}",
+			title=f"Bandofy Omada Authorization Failed: {transaction_id}",
 			message=frappe.get_traceback(),
 		)
 
 
 @frappe.whitelist(allow_guest=True)
 def get_omada_connection_status(transaction_id, client_mac=None):
-	"""Polled by the portal page: reports whether RADIUS credentials have been
-	issued for this transaction and returns the login form once ready."""
+	"""Polled by the portal page: reports whether authorize_mac_on_omada
+	has completed for this transaction yet and, once it has, the redirect URL
+	to send the browser to.
+	"""
 	txn = frappe.db.get_value(
 		"Hotspot Transaction",
 		transaction_id,
@@ -760,8 +830,7 @@ def get_omada_connection_status(transaction_id, client_mac=None):
 	site = frappe.db.get_value(
 		"Hotspot Site", txn.site, ["controller_type", "success_redirect_url"], as_dict=True
 	)
-	txn_doc = frappe.get_doc("Hotspot Transaction", txn.name)
-	return {"ready": True, **_connect_details(txn_doc, site)}
+	return {"ready": True, **_connect_details(txn, site)}
 
 
 def restrict_desk_access():
@@ -861,8 +930,8 @@ def remove_package(site, package_name):
 
 
 @frappe.whitelist()
-def add_device(site, ap_mac, label="", ac_name=""):
-	"""Add an Access Point to the site's devices child table (all use RADIUS)."""
+def add_device(site, ap_mac, label="", controller_type="Omada", ac_name=""):
+	"""Add an Access Point to the site's devices child table."""
 	site_doc = frappe.get_doc("Hotspot Site", site)
 	if site_doc.vendor_user != frappe.session.user and "System Manager" not in frappe.get_roles():
 		frappe.throw(_("Not authorised."), frappe.PermissionError)
@@ -871,6 +940,12 @@ def add_device(site, ap_mac, label="", ac_name=""):
 	if not ap_mac:
 		frappe.throw(_("AP MAC Address is required."))
 
+	if controller_type not in ("Omada", "Ruijie"):
+		frappe.throw(_("Invalid integration type."))
+
+	if controller_type == "Ruijie" and not ac_name.strip():
+		frappe.throw(_("AC Name is required for Ruijie integration."))
+
 	for row in site_doc.devices:
 		if row.ap_mac.upper() == ap_mac:
 			frappe.throw(_("This MAC address is already registered."))
@@ -878,7 +953,7 @@ def add_device(site, ap_mac, label="", ac_name=""):
 	site_doc.append("devices", {
 		"ap_mac": ap_mac,
 		"label": label.strip(),
-		"controller_type": "Ruijie",
+		"controller_type": controller_type,
 		"ac_name": ac_name.strip(),
 		"is_active": 1,
 	})
@@ -1022,7 +1097,7 @@ def register_manager(full_name, email, password, phone, site_name):
 	site.vendor_user = email
 	site.phone_number = phone
 	site.is_active = 1
-	site.controller_type = "Ruijie"
+	site.controller_type = "Omada"
 	site.subscription_status = "Trial"
 	site.trial_expires_on = frappe.utils.add_days(frappe.utils.today(), trial_days)
 	site.append("packages", {
