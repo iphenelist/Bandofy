@@ -9,6 +9,34 @@ import frappe
 from frappe.query_builder.functions import CurDate, Date, Sum
 from pypika.terms import Interval
 
+import bandofy.omada_service as omada_service
+from bandofy.omada_auth import OmadaAuthError, get_live_stats
+
+
+def get_omada_live_stats(site):
+	"""Live Omada controller stats for one Hotspot Site doc.
+
+	Returns a dict with connected, client_count, tx_rate, rx_rate, and error.
+	Fails soft on Ruijie sites or when Omada credentials are not configured.
+	"""
+	_UNAVAILABLE = {"connected": False, "client_count": 0, "tx_rate": 0, "rx_rate": 0, "error": None}
+
+	if getattr(site, "controller_type", None) == "Ruijie":
+		return {**_UNAVAILABLE, "error": "Live stats not available for Ruijie sites."}
+
+	try:
+		ctrl = omada_service.site_controller(site)
+	except OmadaAuthError as e:
+		return {**_UNAVAILABLE, "error": str(e)}
+
+	try:
+		return get_live_stats(**ctrl)
+	except OmadaAuthError as e:
+		return {**_UNAVAILABLE, "error": str(e)}
+	except Exception:
+		frappe.log_error(title="Bandofy: get_omada_live_stats failed", message=frappe.get_traceback())
+		return {**_UNAVAILABLE, "error": "Could not reach the Omada Controller."}
+
 
 def get_revenue(site_name, start_date, end_date):
 	t = frappe.qb.DocType("Hotspot Transaction")
