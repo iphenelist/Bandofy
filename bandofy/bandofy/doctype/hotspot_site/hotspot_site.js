@@ -14,6 +14,16 @@ frappe.ui.form.on("Hotspot Site", {
 		bandofy.site_panels.setup(frm);
 		if (frm.is_new()) return;
 
+		const is_omada = !frm.doc.controller_type || frm.doc.controller_type === "Omada";
+		if (is_omada) {
+			// Always show Link Site button — user picks from a list, no hex ID needed.
+			frm.add_custom_button(
+				frm.doc.omada_site_id ? __("Change Omada Site") : __("Link Omada Site"),
+				() => bandofy_link_site(frm),
+				__("Omada")
+			);
+		}
+
 		// Automatic setup needs Open API keys in Hotspot Omada Settings. Without
 		// them the site is set up in the Omada Controller and only its Omada
 		// Site ID is entered here (see HotspotSite.onload).
@@ -124,6 +134,51 @@ function bandofy_adopt(frm) {
 									  )
 							);
 							frm.reload_doc();
+						},
+					});
+				},
+			});
+			d.show();
+		},
+	});
+}
+
+function bandofy_link_site(frm) {
+	frappe.call({
+		method: "bandofy.api.get_omada_sites_for_picker",
+		freeze: true,
+		freeze_message: __("Fetching sites from Omada Controller..."),
+		callback(r) {
+			const sites = r.message || [];
+			if (!sites.length) {
+				frappe.msgprint(__("No sites found on the Omada Controller."));
+				return;
+			}
+			const d = new frappe.ui.Dialog({
+				title: __("Select Omada Site"),
+				fields: [
+					{
+						fieldname: "site_id",
+						fieldtype: "Select",
+						label: __("Omada Site"),
+						reqd: 1,
+						options: sites.map((s) => ({ value: s.siteId, label: s.name })),
+					},
+				],
+				primary_action_label: __("Link"),
+				primary_action(values) {
+					d.hide();
+					frappe.call({
+						method: "frappe.client.set_value",
+						args: {
+							doctype: "Hotspot Site",
+							name: frm.doc.name,
+							fieldname: "omada_site_id",
+							value: values.site_id,
+						},
+						callback() {
+							frm.reload_doc();
+							frappe.show_alert({ message: __("Omada Site linked!"), indicator: "green" });
 						},
 					});
 				},
