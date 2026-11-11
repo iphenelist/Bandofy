@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import get_first_day, get_last_day, today
 
-from bandofy.dashboard_utils import get_revenue, get_revenue_trend
+from bandofy.dashboard_utils import get_omada_live_stats, get_revenue, get_revenue_trend
 from bandofy.utils import site_ap_macs
 
 no_cache = 1
