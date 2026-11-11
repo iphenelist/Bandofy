@@ -5,8 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import get_first_day, get_last_day, today
 
-from bandofy.dashboard_utils import get_omada_live_stats, get_revenue, get_revenue_trend
-from bandofy.radius_auth import RADIUS_CONTROLLER_TYPES
+from bandofy.dashboard_utils import get_revenue, get_revenue_trend
 from bandofy.utils import site_ap_macs
 
 no_cache = 1
@@ -54,63 +53,42 @@ def get_context(context):
 	context.total_revenue_month = get_revenue(site.name, get_first_day(today()), get_last_day(today()))
 
 	now = frappe.utils.now_datetime()
-	if (site.controller_type or "Omada") in RADIUS_CONTROLLER_TYPES:
-		context.active_connections = frappe.db.count(
-			"Hotspot Transaction",
-			{"site": site.name, "status": "Paid", "authorized_until": [">", now]}
-		)
-		context.active_sessions = frappe.db.get_all(
-			"Hotspot Transaction",
-			filters={"site": site.name, "status": "Paid", "authorized_until": [">", now]},
-			fields=["client_mac", "package_name", "authorized_until"],
-			order_by="authorized_until asc",
-			limit=10,
-		)
-	else:
-		cutoff = frappe.utils.add_to_date(now, hours=-24)
-		context.active_connections = frappe.db.count(
-			"Hotspot Transaction",
-			{"site": site.name, "status": "Paid", "creation": [">", cutoff]}
-		)
-		context.active_sessions = frappe.db.get_all(
-			"Hotspot Transaction",
-			filters={"site": site.name, "status": "Paid", "creation": [">", cutoff]},
-			fields=["client_mac", "package_name", "creation"],
-			order_by="creation desc",
-			limit=10,
-		)
-	context.controller_type = site.controller_type
+	context.active_connections = frappe.db.count(
+		"Hotspot Transaction",
+		{"site": site.name, "status": "Paid", "authorized_until": [">", now]}
+	)
+	context.active_sessions = frappe.db.get_all(
+		"Hotspot Transaction",
+		filters={"site": site.name, "status": "Paid", "authorized_until": [">", now]},
+		fields=["client_mac", "package_name", "authorized_until"],
+		order_by="authorized_until asc",
+		limit=10,
+	)
+	context.controller_type = "Ruijie"
 
 	# Onboarding completion (needs full doc for child tables)
 	site_doc = frappe.get_doc("Hotspot Site", site.name)
 	steps_done = 1  # step 1: account always done
 	steps_done += 1 if site_doc.devices else 0
-	ct = site.controller_type or "Omada"
-	if ct in RADIUS_CONTROLLER_TYPES:
-		steps_done += 1 if site.nas_identifier else 0
-	else:
-		steps_done += 1 if site.omada_site_id else 0
+	steps_done += 1 if site.nas_identifier else 0
 	steps_done += 1 if site_doc.packages else 0
 	steps_done += 1 if (site.portal_logo or site.portal_tagline) else 0
 	steps_done += 1 if site.enable_online_payment else 0
 	context.onboarding_complete = steps_done
 
-	# RADIUS setup info (shown in dashboard for RADIUS sites)
-	if ct in RADIUS_CONTROLLER_TYPES:
-		try:
-			radius_settings = frappe.get_cached_doc("Hotspot Ruijie Settings")
-			vps_hostname = frappe.db.get_single_value("Hotspot Platform Settings", "vps_hostname") or ""
-		except Exception:
-			radius_settings = None
-			vps_hostname = ""
-		context.radius_info = {
-			"server": f"{vps_hostname}:1812" if vps_hostname else "1812",
-			"secret": "••••••••" if radius_settings else "",
-			"nas_identifier": site.nas_identifier or "",
-			"portal_url": f"https://{frappe.local.site}/landing",
-		}
-	else:
-		context.radius_info = None
+	# RADIUS server info for the vendor
+	try:
+		radius_settings = frappe.get_cached_doc("Hotspot Ruijie Settings")
+		vps_hostname = frappe.db.get_single_value("Hotspot Platform Settings", "vps_hostname") or ""
+	except Exception:
+		radius_settings = None
+		vps_hostname = ""
+	context.radius_info = {
+		"server": f"{vps_hostname}:1812" if vps_hostname else "1812",
+		"secret": "••••••••" if radius_settings else "",
+		"nas_identifier": site.nas_identifier or "",
+		"portal_url": f"https://{frappe.local.site}/landing",
+	}
 
 	# Subscription info
 	context.subscription_status = site.subscription_status or "Trial"
