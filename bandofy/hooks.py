@@ -54,7 +54,7 @@ doctype_js = {"Hotspot Site": "public/js/hotspot_site_panels.js"}
 # ----------
 
 # application home page (will override Website Settings)
-# home_page = "login"
+home_page = "bandofy"
 
 # website user home page (by Role)
 role_home_page = {
@@ -66,8 +66,11 @@ role_home_page = {
 # Maps friendly public URLs to the underlying www page controllers.
 
 website_route_rules = [
-	{"from_route": "/wifi_login", "to_route": "wifi_login"},
+	{"from_route": "/landing", "to_route": "landing"},
+	{"from_route": "/wifi_login", "to_route": "landing"},
 	{"from_route": "/vendor-dashboard", "to_route": "vendor_dashboard"},
+	{"from_route": "/bandofy", "to_route": "bandofy"},
+	{"from_route": "/start", "to_route": "bandofy"},
 ]
 
 # Generators
@@ -132,13 +135,17 @@ after_install = "bandofy.install.after_install"
 # -----------
 # Permissions evaluated in scripted ways
 
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
-#
-# has_permission = {
-# 	"Event": "frappe.desk.doctype.event.event.has_permission",
-# }
+permission_query_conditions = {
+	"Hotspot Site": "bandofy.bandofy.doctype.hotspot_site.hotspot_site.get_permission_query_conditions",
+}
+
+has_permission = {
+	"Hotspot Site": "bandofy.bandofy.doctype.hotspot_site.hotspot_site.has_permission",
+}
+
+fixtures = [
+	{"dt": "Role", "filters": [["name", "=", "Bandofy Manager"]]},
+]
 
 # Document Events
 # ---------------

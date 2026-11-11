@@ -52,7 +52,7 @@ def get_omada_live_stats(site):
 	Fails soft: dashboard should still render if the controller is
 	unreachable, just marked as disconnected. `site` needs at least `name`.
 	"""
-	from bandofy import omada_service
+	from bandofy import omada_auth as omada_service
 
 	stats = {"connected": False, "client_count": 0, "tx_rate": 0, "rx_rate": 0, "error": None}
 

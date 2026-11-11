@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f1117">
+<title>Devices — {{ site.site_name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--sidebar:#131920;--card:#1a2332;--card2:#1f2a3c;--border:rgba(255,255,255,0.07);--bstrong:rgba(255,255,255,0.14);--teal:#00c896;--teal-d:rgba(0,200,150,0.12);--teal-r:rgba(0,200,150,0.28);--blue:#3b82f6;--blue-bg:rgba(59,130,246,0.12);--amber:#f59e0b;--amber-bg:rgba(245,158,11,0.12);--red:#ef4444;--red-bg:rgba(239,68,68,0.12);--text:#e0e6ed;--dim:rgba(224,230,237,0.5);--faint:rgba(224,230,237,0.24);--r:12px;--rs:8px;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;background:var(--bg)}body{height:100%;width:100%;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;display:flex}
+.sidebar{width:240px;flex-shrink:0;height:100vh;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--card2)}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:18px 16px 14px;font-size:18px;font-weight:800;color:var(--text);text-decoration:none;border-bottom:1px solid var(--border)}
+.sb-mark{width:32px;height:32px;border-radius:8px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#0a1f18}
+.sb-section{padding:14px 12px 4px;font-size:12px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:1px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:var(--rs);margin:1px 6px;font-size:15px;font-weight:500;color:var(--dim);text-decoration:none;cursor:pointer;border:none;background:none;width:calc(100% - 14px);transition:background .18s,color .15s}
+.sb-item:hover{background:var(--card);color:var(--text)}.sb-item.active{background:var(--teal-d);color:var(--teal);font-weight:600}
+.sb-item svg{width:15px;height:15px;flex-shrink:0}
+.sb-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--teal-d);border:1.5px solid var(--teal-r);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--teal);flex-shrink:0}
+.sb-user-name{font-size:15px;font-weight:600}.sb-user-role{font-size:13px;color:var(--dim)}
+.sb-logout{margin-left:auto;color:var(--dim);background:none;border:none;cursor:pointer;padding:4px;text-decoration:none;display:flex;transition:color .2s}.sb-logout:hover{color:var(--red)}.sb-logout svg{width:14px;height:14px}
+.main-wrap{flex:1;min-width:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 24px;height:62px;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--bg)}
+.topbar-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600;color:var(--teal)}.topbar-title svg{width:15px;height:15px}
+.topbar-spacer{flex:1}
+.topbar-user{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--card)}
+.topbar-user-av{width:26px;height:26px;border-radius:50%;background:var(--teal-d);border:1.5px solid var(--teal-r);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--teal)}
+.topbar-user-name{font-size:15px;font-weight:600}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:22px 24px 30px}
+.content::-webkit-scrollbar{width:4px}.content::-webkit-scrollbar-thumb{background:var(--card2);border-radius:4px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.sec-title{font-size:17px;font-weight:700}
+.btn-teal{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--rs);background:var(--teal);color:#0a1f18;font-size:15px;font-weight:700;border:none;cursor:pointer;transition:opacity .15s}.btn-teal:hover{opacity:.88}
+.btn-teal svg{width:13px;height:13px}
+.device-list{display:flex;flex-direction:column;gap:10px}
+.device-row{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--card2);border:1px solid var(--border);border-radius:var(--r);transition:border-color .15s}
+.device-row.active-row{border-color:var(--teal-r)}
+.device-icon{width:40px;height:40px;border-radius:10px;background:var(--teal-d);border:1px solid var(--teal-r);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.device-icon svg{width:20px;height:20px;color:var(--teal)}
+.device-info{flex:1;min-width:0}
+.device-label{font-size:16px;font-weight:600;margin-bottom:2px}
+.device-mac{font-size:14px;color:var(--dim);font-variant-numeric:tabular-nums;font-family:monospace}
+.device-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.badge-active{background:var(--teal-d);color:var(--teal)}.badge-inactive{background:var(--amber-bg);color:var(--amber)}
+.device-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.btn-icon{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--dim);transition:all .15s}
+.btn-icon:hover{border-color:var(--bstrong);color:var(--text)}
+.btn-icon.del:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+.btn-icon svg{width:14px;height:14px}
+.toggle-btn{position:relative;width:36px;height:20px;border:none;background:none;cursor:pointer;padding:0;flex-shrink:0}
+.toggle-track{position:absolute;inset:0;border-radius:999px;background:var(--card);border:1.5px solid var(--border);transition:background .2s,border-color .2s}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--dim);transition:transform .2s,background .2s}
+.toggle-btn.on .toggle-track{background:var(--teal-d);border-color:var(--teal)}
+.toggle-btn.on .toggle-thumb{background:var(--teal);transform:translateX(16px)}
+.empty-state{text-align:center;padding:48px 24px;color:var(--dim)}
+.empty-state svg{width:48px;height:48px;margin:0 auto 12px;display:block;color:var(--faint)}
+.empty-state p{font-size:16px;margin-top:6px}
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-bg.open{opacity:1;pointer-events:all}
+.modal{background:var(--card);border:1px solid var(--bstrong);border-radius:var(--r);width:100%;max-width:440px;padding:24px;transform:translateY(12px);transition:transform .2s}
+.modal-bg.open .modal{transform:none}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:18px}
+.form-row{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.form-row label{font-size:14px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.form-row input,.form-row select{padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;font-family:inherit;outline:none;transition:border-color .15s;width:100%}
+.form-row input:focus,.form-row select:focus{border-color:var(--teal-r)}
+.form-row .hint{font-size:13px;color:var(--faint);margin-top:2px}
+/* Integration type selector */
+.intg-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.intg-card{padding:12px 14px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--card2);cursor:pointer;transition:border-color .15s,background .15s}
+.intg-card:hover{border-color:var(--bstrong)}
+.intg-card.selected{border-color:var(--teal);background:var(--teal-d)}
+.intg-card-title{font-size:17px;font-weight:800;margin-bottom:5px}
+.intg-card-desc{font-size:14px;color:var(--dim);line-height:1.5}
+.intg-card.selected .intg-card-desc{color:rgba(0,200,150,0.75)}
+/* Integration badge on device cards */
+.intg-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:700;margin-top:3px}
+.intg-omada{background:var(--blue-bg);color:var(--blue)}
+.intg-radius{background:var(--amber-bg);color:var(--amber)}
+/* AC name hint under device-info */
+.device-ac{font-size:13px;color:var(--faint);margin-top:1px;font-family:monospace}
+/* conditional AC name field */
+.ac-row{display:none}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.btn-cancel{padding:8px 14px;border-radius:var(--rs);border:1px solid var(--border);background:none;color:var(--dim);font-size:15px;font-weight:600;cursor:pointer;transition:border-color .15s}.btn-cancel:hover{border-color:var(--bstrong);color:var(--text)}
+.alert{padding:10px 14px;border-radius:var(--rs);font-size:15px;font-weight:500;margin-bottom:16px;display:none}
+.alert.success{background:var(--teal-d);color:var(--teal);border:1px solid var(--teal-r)}
+.alert.error{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+.info-box{background:var(--blue-bg);border:1px solid rgba(59,130,246,0.25);border-radius:var(--rs);padding:12px 16px;margin-bottom:18px;display:flex;gap:10px;align-items:flex-start}
+.info-box svg{width:15px;height:15px;color:var(--blue);flex-shrink:0;margin-top:1px}
+.info-box p{font-size:15px;color:rgba(224,230,237,0.7);line-height:1.5}
+.status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;margin-right:2px}
+.status-dot.online{background:#00c896}.status-dot.offline{background:#ef4444}.status-dot.unknown{background:#6b7280}
+.btn-refresh{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--rs);border:1.5px solid var(--teal-r);background:var(--teal-d);color:var(--teal);font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-refresh:hover{background:rgba(0,200,150,0.2)}.btn-refresh svg{width:13px;height:13px}
+@media(max-width:900px){.sidebar{width:56px}.sb-item span,.sb-section,.sb-user-name,.sb-user-role,.sb-logo span{display:none}.sb-item{justify-content:center;padding:10px}.sb-logo{justify-content:center}.sb-footer{justify-content:center}.sb-logout{display:none}}
+@media(max-width:700px){.sidebar{display:none}}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <a class="sb-logo" href="/vendor-dashboard"><div class="sb-mark">Bw</div><span>Bandofy</span></a>
+  <div class="sb-section">Website</div>
+  <a class="sb-item" href="/start"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6c2-2.5 4.7-4 7-4s5 1.5 7 4M4 9c1-1.3 2.4-2 4-2s3 .7 4 2M7 12h2"/></svg><span>Landing Page</span></a>
+  <div class="sb-section">Dashboards</div>
+  <a class="sb-item" href="/vendor-dashboard"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg><span>Overview</span></a>
+  <a class="sb-item" href="/transactions"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 11 5 6 9 8 15 3"/><path d="M1 15h14"/></svg><span>Transactions</span></a>
+  <div class="sb-section">Manage</div>
+  <a class="sb-item active" href="/devices"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M5 13v2M11 13v2M3 16h10"/></svg><span>Devices</span></a>
+  <a class="sb-item" href="/vouchers"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V4a3 3 0 0 1 6 0v1"/></svg><span>Vouchers</span></a>
+  <a class="sb-item" href="/packages"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h12M2 8h8M2 13h5"/></svg><span>Packages</span></a>
+  <a class="sb-item" href="/site_settings"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M13 3l-1.5 1.5M4.5 11.5 3 13"/></svg><span>Settings</span></a>
+  <div class="sb-footer">
+    <div class="sb-avatar">{{ (site.vendor_name or "V")[0] | upper }}</div>
+    <div><div class="sb-user-name">{{ site.vendor_name or "Vendor" }}</div><div class="sb-user-role">Hotspot Manager</div></div>
+    <a class="sb-logout" href="/api/method/logout"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3M7 5L3 8l4 3M3 8h8"/></svg></a>
+  </div>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="topbar-title"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M5 13v2M11 13v2M3 16h10"/></svg>Access Point Devices</div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-user"><div class="topbar-user-av">{{ (site.vendor_name or "V")[0] | upper }}</div><div class="topbar-user-name">{{ site.vendor_name }}</div></div>
+  </header>
+  <div class="content">
+
+    <div id="alertBar" class="alert"></div>
+
+    <div class="info-box">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="7"/><path d="M8 7v4M8 5h.01"/></svg>
+      <p>Register the MAC addresses of your Wi-Fi access points (APs). When a customer connects through one of these devices, their session is linked to your hotspot site for payment and voucher redemption.</p>
+    </div>
+
+    <div class="sec-head">
+      <div class="sec-title">Access Points ({{ devices | length }})</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-refresh" onclick="refreshDeviceStatuses()" id="refreshBtn">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.5 2.5A7 7 0 1 0 14 9"/><polyline points="14 2 14 6 10 6"/></svg>
+          Refresh Status
+        </button>
+        <button class="btn-teal" onclick="openModal()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg>
+          Add Device
+        </button>
+      </div>
+    </div>
+
+    <div class="device-list" id="deviceList">
+      {% if devices %}
+        {% for d in devices %}
+        <div class="device-row {% if d.is_active %}active-row{% endif %}" id="row-{{ loop.index0 }}" data-mac="{{ d.ap_mac }}">
+          <div class="device-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+          </div>
+          <div class="device-info">
+            <div class="device-label" style="display:flex;align-items:center;gap:6px">
+              <span class="status-dot unknown" id="status-{{ loop.index0 }}" title="Checking status…"></span>
+              {{ d.label or ("Access Point " + loop.index|string) }}
+            </div>
+            <div class="device-mac">{{ d.ap_mac }}</div>
+            {% if d.controller_type == "Ruijie" %}
+            <span class="intg-pill intg-radius">⚡ Ruijie{% if d.ac_name %} · {{ d.ac_name }}{% endif %}</span>
+            {% else %}
+            <span class="intg-pill intg-omada">🔗 Omada</span>
+            {% endif %}
+          </div>
+          <span class="device-badge {% if d.is_active %}badge-active{% else %}badge-inactive{% endif %}" id="badge-{{ loop.index0 }}">
+            {% if d.is_active %}Active{% else %}Inactive{% endif %}
+          </span>
+          <div class="device-actions">
+            <button class="toggle-btn {% if d.is_active %}on{% endif %}" id="toggle-{{ loop.index0 }}"
+              onclick="toggleDevice('{{ d.ap_mac }}', this, {{ loop.index0 }})" title="Toggle active">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </button>
+            <button class="btn-icon del" onclick="removeDevice('{{ d.ap_mac }}')" title="Remove device">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M6 7v5M10 7v5"/><path d="M3 4l1 9a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-9"/></svg>
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+        <strong>No access points yet</strong>
+        <p>Add your first Wi-Fi device to link it to this hotspot site.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<!-- Add Device Modal -->
+<div class="modal-bg" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title">Add Access Point</div>
+    <div id="modalAlert" class="alert"></div>
+    <div class="form-row">
+      <label>AP MAC Address *</label>
+      <input type="text" id="inpMac" placeholder="e.g. AA:BB:CC:DD:EE:FF" autocomplete="off" spellcheck="false">
+      <span class="hint">Found in your router/AP admin panel under device info or WLAN settings.</span>
+    </div>
+    <div class="form-row">
+      <label>Label (optional)</label>
+      <input type="text" id="inpLabel" placeholder="e.g. Main Hall AP, Back Room AP">
+    </div>
+    <div class="form-row">
+      <label>Integration Type *</label>
+      <div class="intg-cards">
+        <div class="intg-card selected" id="intgOmada" onclick="selectIntg('Omada')">
+          <div class="intg-card-title">🔗 Omada</div>
+          <div class="intg-card-desc">TP-Link Omada Controller — AP is managed via the Omada cloud or local controller.</div>
+        </div>
+        <div class="intg-card" id="intgRadius" onclick="selectIntg('Ruijie')">
+          <div class="intg-card-title">⚡ Ruijie</div>
+          <div class="intg-card-desc">Ruijie AC with RADIUS — AP authenticates customers through Bandofy's RADIUS server.</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-row ac-row" id="acRow">
+      <label>AC Name *</label>
+      <input type="text" id="inpAcName" placeholder="e.g. AC-N2 or the AC hostname">
+      <span class="hint">The Access Controller name from your Ruijie device — used to match RADIUS packets to this AP.</span>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-teal" id="addBtn" onclick="addDevice()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg>
+        Add Device
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SITE = "{{ site.name }}";
+
+function showAlert(msg, type, el) {
+  el = el || document.getElementById('alertBar');
+  el.textContent = msg;
+  el.className = 'alert ' + type;
+  el.style.display = 'block';
+  if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 3500);
+}
+
+function callApi(method, args) {
+  return fetch('/api/method/' + method, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': frappe.csrf_token || getCsrf()},
+    body: JSON.stringify(args)
+  }).then(r => r.json());
+}
+
+function getCsrf() {
+  const m = document.cookie.match(/csrf_token=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+let selectedIntg = 'Omada';
+
+function selectIntg(type) {
+  selectedIntg = type;
+  document.getElementById('intgOmada').classList.toggle('selected', type === 'Omada');
+  document.getElementById('intgRadius').classList.toggle('selected', type === 'Ruijie');
+  document.getElementById('acRow').style.display = type === 'Ruijie' ? 'flex' : 'none';
+}
+
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('inpMac').value = '';
+  document.getElementById('inpLabel').value = '';
+  document.getElementById('inpAcName').value = '';
+  document.getElementById('modalAlert').style.display = 'none';
+  selectIntg('Omada');
+  setTimeout(() => document.getElementById('inpMac').focus(), 60);
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('open');
+  }
+}
+
+function addDevice() {
+  const mac = document.getElementById('inpMac').value.trim();
+  const label = document.getElementById('inpLabel').value.trim();
+  const acName = document.getElementById('inpAcName').value.trim();
+  const alertEl = document.getElementById('modalAlert');
+  if (!mac) { showAlert('MAC address is required.', 'error', alertEl); return; }
+  if (selectedIntg === 'Ruijie' && !acName) { showAlert('AC Name is required for Ruijie integration.', 'error', alertEl); return; }
+
+  const btn = document.getElementById('addBtn');
+  btn.textContent = 'Adding…'; btn.disabled = true;
+
+  callApi('bandofy.api.add_device', {site: SITE, ap_mac: mac, label: label, controller_type: selectedIntg, ac_name: acName}).then(r => {
+    btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg> Add Device';
+    if (r.exc) {
+      const msg = r._server_messages ? JSON.parse(JSON.parse(r._server_messages)[0]).message : (r.exc_type || 'Error');
+      showAlert(msg, 'error', document.getElementById('modalAlert'));
+    } else {
+      closeModal();
+      showAlert('Device added successfully.', 'success');
+      setTimeout(() => location.reload(), 1000);
+    }
+  });
+}
+
+function removeDevice(mac) {
+  if (!confirm('Remove this access point from your site?')) return;
+  callApi('bandofy.api.remove_device', {site: SITE, ap_mac: mac}).then(r => {
+    if (r.exc) {
+      const msg = r._server_messages ? JSON.parse(JSON.parse(r._server_messages)[0]).message : 'Error';
+      showAlert(msg, 'error');
+    } else {
+      showAlert('Device removed.', 'success');
+      setTimeout(() => location.reload(), 800);
+    }
+  });
+}
+
+function toggleDevice(mac, btn, idx) {
+  const isOn = btn.classList.contains('on');
+  const newState = isOn ? 0 : 1;
+  callApi('bandofy.api.toggle_device', {site: SITE, ap_mac: mac, is_active: newState}).then(r => {
+    if (r.exc) {
+      showAlert('Could not update device status.', 'error');
+    } else {
+      btn.classList.toggle('on', newState === 1);
+      const row = document.getElementById('row-' + idx);
+      const badge = document.getElementById('badge-' + idx);
+      if (newState === 1) {
+        row.classList.add('active-row');
+        badge.className = 'device-badge badge-active';
+        badge.textContent = 'Active';
+      } else {
+        row.classList.remove('active-row');
+        badge.className = 'device-badge badge-inactive';
+        badge.textContent = 'Inactive';
+      }
+    }
+  });
+}
+
+// Enter key submits modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && document.getElementById('modal').classList.contains('open')) addDevice();
+});
+
+function refreshDeviceStatuses() {
+  const btn = document.getElementById('refreshBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+  callApi('bandofy.api.get_device_statuses', {site: SITE}).then(r => {
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+    if (!r.exc && r.message) {
+      r.message.forEach(function(d, i) {
+        var dot = document.querySelector('[data-mac="' + d.ap_mac + '"] .status-dot');
+        if (!dot) {
+          // fallback: match by index
+          dot = document.getElementById('status-' + i);
+        }
+        if (dot) {
+          if (d.online === true) { dot.className = 'status-dot online'; dot.title = 'Online'; }
+          else if (d.online === false) { dot.className = 'status-dot offline'; dot.title = 'Offline'; }
+          else { dot.className = 'status-dot unknown'; dot.title = 'Status unknown (Ruijie — no live query)'; }
+        }
+      });
+    }
+  }).catch(function() {
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', refreshDeviceStatuses);
+</script>
+</body>
+</html>

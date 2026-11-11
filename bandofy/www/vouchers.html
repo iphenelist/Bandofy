@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f1117">
+<title>Vouchers — {{ site.site_name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--sidebar:#131920;--card:#1a2332;--card2:#1f2a3c;--border:rgba(255,255,255,0.07);--bstrong:rgba(255,255,255,0.14);--teal:#00c896;--teal-l:#33d9a8;--teal-d:rgba(0,200,150,0.12);--teal-r:rgba(0,200,150,0.28);--blue:#3b82f6;--blue-bg:rgba(59,130,246,0.12);--amber:#f59e0b;--amber-bg:rgba(245,158,11,0.12);--red:#ef4444;--red-bg:rgba(239,68,68,0.12);--purple:#8b5cf6;--text:#e0e6ed;--dim:rgba(224,230,237,0.5);--faint:rgba(224,230,237,0.24);--r:12px;--rs:8px;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;background:var(--bg)}body{height:100%;width:100%;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;display:flex}
+.sidebar{width:240px;flex-shrink:0;height:100vh;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--card2)}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:18px 16px 14px;font-size:18px;font-weight:800;color:var(--text);text-decoration:none;border-bottom:1px solid var(--border)}
+.sb-mark{width:32px;height:32px;border-radius:8px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#0a1f18}
+.sb-section{padding:14px 12px 4px;font-size:12px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:1px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:var(--rs);margin:1px 6px;font-size:15px;font-weight:500;color:var(--dim);text-decoration:none;cursor:pointer;border:none;background:none;width:calc(100% - 14px);transition:background .18s,color .15s}
+.sb-item:hover{background:var(--card);color:var(--text)}.sb-item.active{background:var(--teal-d);color:var(--teal);font-weight:600}
+.sb-item svg{width:15px;height:15px;flex-shrink:0}
+.sb-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--teal-d);border:1.5px solid var(--teal-r);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--teal);flex-shrink:0}
+.sb-user-name{font-size:15px;font-weight:600}.sb-user-role{font-size:13px;color:var(--dim)}
+.sb-logout{margin-left:auto;color:var(--dim);background:none;border:none;cursor:pointer;padding:4px;border-radius:5px;text-decoration:none;display:flex;transition:color .2s}.sb-logout:hover{color:var(--red)}.sb-logout svg{width:14px;height:14px}
+.main-wrap{flex:1;min-width:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 24px;height:62px;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--bg)}
+.topbar-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600;color:var(--teal)}.topbar-title svg{width:15px;height:15px}
+.topbar-spacer{flex:1}
+.topbar-icon{width:34px;height:34px;border-radius:var(--rs);border:1px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;color:var(--dim);cursor:pointer;transition:border-color .2s,color .2s}
+.topbar-icon:hover{border-color:var(--bstrong);color:var(--text)}.topbar-icon svg{width:15px;height:15px}
+.topbar-user{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--card);cursor:pointer;transition:border-color .2s}.topbar-user:hover{border-color:var(--bstrong)}
+.topbar-user-av{width:26px;height:26px;border-radius:50%;background:var(--teal-d);border:1.5px solid var(--teal-r);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--teal)}
+.topbar-user-name{font-size:15px;font-weight:600}.topbar-user svg{width:12px;height:12px;color:var(--dim)}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:22px 24px 30px}
+.content::-webkit-scrollbar{width:4px}.content::-webkit-scrollbar-thumb{background:var(--card2);border-radius:4px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px 18px}
+.card-sm{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+.card-label{font-size:13px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.7px}
+.card-value-sm{font-size:26px;font-weight:800;margin-top:4px;line-height:1;font-variant-numeric:tabular-nums}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-title{font-size:16px;font-weight:700}
+.hero-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--rs);border:1.5px solid var(--teal-r);background:var(--teal-d);color:var(--teal-l);font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;transition:background .2s;border:1.5px solid var(--teal-r)}
+.hero-btn:hover{background:rgba(0,200,150,0.2)}.hero-btn svg{width:14px;height:14px}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.bt{background:var(--teal-d);color:var(--teal)}.bb{background:var(--blue-bg);color:var(--blue)}.ba{background:var(--amber-bg);color:var(--amber)}.br{background:var(--red-bg);color:var(--red)}
+.txn-table{width:100%;border-collapse:collapse;font-size:15px}
+.txn-table th{text-align:left;padding:7px 10px;font-size:12px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border)}
+.txn-table td{padding:10px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.txn-table tr:last-child td{border-bottom:none}.txn-table tr:hover td{background:rgba(255,255,255,0.02)}
+.txn-name{font-weight:600;font-size:15px}.txn-time{font-size:13px;color:var(--dim);margin-top:1px}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+@media(max-width:900px){.sidebar{width:56px}.sb-item span,.sb-section,.sb-user-name,.sb-user-role,.sb-logo span{display:none}.sb-item{justify-content:center;padding:10px}.sb-logo{justify-content:center}.sb-footer{justify-content:center}.sb-logout{display:none}}
+@media(max-width:700px){.sidebar{display:none}.stats-row{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <a class="sb-logo" href="/vendor-dashboard"><div class="sb-mark">Bw</div><span>Bandofy</span></a>
+  <div class="sb-section">Website</div>
+  <a class="sb-item" href="/start"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6c2-2.5 4.7-4 7-4s5 1.5 7 4M4 9c1-1.3 2.4-2 4-2s3 .7 4 2M7 12h2"/></svg><span>Landing Page</span></a>
+  <div class="sb-section">Dashboards</div>
+  <a class="sb-item" href="/vendor-dashboard"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg><span>Overview</span></a>
+  <a class="sb-item" href="/transactions"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 11 5 6 9 8 15 3"/><path d="M1 15h14"/></svg><span>Transactions</span></a>
+  <div class="sb-section">Manage</div>
+  <a class="sb-item" href="/devices"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M5 13v2M11 13v2M3 16h10"/></svg><span>Devices</span></a>
+  <a class="sb-item active" href="/vouchers"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V4a3 3 0 0 1 6 0v1"/></svg><span>Vouchers</span></a>
+  <a class="sb-item" href="/packages"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h12M2 8h8M2 13h5"/></svg><span>Packages</span></a>
+  <a class="sb-item" href="/site_settings"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M13 3l-1.5 1.5M4.5 11.5 3 13"/></svg><span>Settings</span></a>
+  <div class="sb-footer">
+    <div class="sb-avatar">{{ (site.vendor_name or "V")[0] | upper }}</div>
+    <div><div class="sb-user-name">{{ site.vendor_name or "Vendor" }}</div><div class="sb-user-role">Hotspot Manager</div></div>
+    <a class="sb-logout" href="/api/method/logout" title="Log out"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3M7 5L3 8l4 3M3 8h8"/></svg></a>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="topbar-title"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V4a3 3 0 0 1 6 0v1"/></svg>Vouchers</div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-user"><div class="topbar-user-av">{{ (site.vendor_name or "V")[0] | upper }}</div><div class="topbar-user-name">{{ site.vendor_name }}</div><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg></div>
+  </header>
+  <div class="content">
+
+    <div class="stats-row">
+      <div class="card-sm"><div class="card-label">Total Vouchers</div><div class="card-value-sm" style="margin-top:6px">{{ total_vouchers }}</div></div>
+      <div class="card-sm"><div class="card-label">Used</div><div class="card-value-sm" style="margin-top:6px;color:var(--teal)">{{ used_vouchers }}</div></div>
+      <div class="card-sm"><div class="card-label">Unused</div><div class="card-value-sm" style="margin-top:6px;color:var(--amber)">{{ unused_vouchers }}</div></div>
+    </div>
+
+    <div class="sec-head">
+      <div class="sec-title">Voucher Batches</div>
+      <button class="hero-btn" onclick="document.getElementById('modal').style.display='flex'">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 2v12M2 8h12"/></svg>
+        Generate Vouchers
+      </button>
+    </div>
+
+    <div class="card" style="padding:0">
+      <table class="txn-table">
+        <thead><tr><th>Batch</th><th>Package</th><th>Qty</th><th>Used</th><th>Unused</th><th style="text-align:right">Price Each</th><th style="text-align:right">Actions</th></tr></thead>
+        <tbody>
+          {% for b in batches %}
+          <tr>
+            <td><div class="txn-name">{{ b.name }}</div><div class="txn-time">{{ frappe.utils.format_datetime(b.creation, "dd MMM yyyy · HH:mm") }}</div></td>
+            <td><span class="badge bt">{{ b.package_name or "—" }}</span></td>
+            <td style="font-weight:700;font-variant-numeric:tabular-nums">{{ b.quantity }}</td>
+            <td style="color:var(--teal);font-weight:600">{{ b.used }}</td>
+            <td style="color:var(--amber);font-weight:600">{{ b.unused }}</td>
+            <td style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">{{ frappe.utils.fmt_money(b.price_per_voucher) }}</td>
+            <td style="text-align:right">
+              <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Hotspot+Voucher+Batch&name={{ b.name }}&format=Hotspot+Voucher+Batch+Cards" target="_blank" style="color:var(--teal);font-size:14px;font-weight:700;text-decoration:none;padding:4px 10px;border-radius:5px;border:1px solid var(--teal-r);background:var(--teal-d);display:inline-block">Print</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" style="text-align:center;color:var(--dim);padding:30px;font-size:16px">No voucher batches yet. Click <strong>Generate Vouchers</strong> to create your first batch.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal" style="display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px)">
+  <div style="background:var(--card);border:1px solid var(--bstrong);border-radius:var(--r);padding:30px;width:100%;max-width:420px;position:relative">
+    <button onclick="document.getElementById('modal').style.display='none'" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--dim);cursor:pointer;font-size:22px;line-height:1">×</button>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:4px">Generate Voucher Batch</h3>
+    <p style="font-size:15px;color:var(--dim);margin-bottom:20px">Site: <strong>{{ site.site_name }}</strong></p>
+    <div id="batchErr" style="display:none;padding:9px 12px;border-radius:var(--rs);background:var(--red-bg);border:1px solid rgba(239,68,68,0.25);color:var(--red);font-size:15px;margin-bottom:12px"></div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:14px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Package</label>
+      <select id="bPkg" style="width:100%;padding:10px 12px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;font-family:inherit;outline:none">
+        {% for pkg in packages %}<option value="{{ pkg.name }}">{{ pkg.name }} — {{ frappe.utils.fmt_money(pkg.price) }} / {{ pkg.duration_minutes }} min</option>{% endfor %}
+      </select>
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:14px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Quantity (max 500)</label>
+      <input type="number" id="bQty" value="10" min="1" max="500" style="width:100%;padding:10px 12px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;font-family:inherit;outline:none">
+    </div>
+    <button id="bBtn" onclick="createBatch()" style="width:100%;padding:11px;border-radius:var(--rs);background:var(--teal);color:#0a1f18;font-size:13.5px;font-weight:800;border:none;cursor:pointer">Generate Vouchers</button>
+  </div>
+</div>
+
+<script>
+const SITE = "{{ site.name }}";
+async function createBatch() {
+  const pkg = document.getElementById('bPkg').value;
+  const qty = parseInt(document.getElementById('bQty').value);
+  const btn = document.getElementById('bBtn');
+  const err = document.getElementById('batchErr');
+  err.style.display = 'none';
+  if (!pkg || qty < 1) { err.textContent = 'Please select a package and quantity.'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Generating…';
+  try {
+    const r = await fetch('/api/method/bandofy.api.create_voucher_batch', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-Frappe-CSRF-Token': getCsrf()},
+      body: JSON.stringify({site: SITE, package_name: pkg, quantity: qty})
+    });
+    const d = await r.json();
+    if (d.exc) { err.textContent = frappeErrMsg(d); err.style.display = 'block'; }
+    else { window.location.reload(); }
+  } catch(e) { err.textContent = 'Network error.'; err.style.display = 'block'; }
+  finally { btn.disabled = false; btn.textContent = 'Generate Vouchers'; }
+}
+function frappeErrMsg(d) {
+  try { return JSON.parse(d._server_messages || '[]').map(m => { try { return JSON.parse(m).message; } catch { return m; } }).join(' '); }
+  catch { return 'Error.'; }
+}
+function getCsrf() { return document.cookie.split(';').map(c=>c.trim()).filter(c=>c.startsWith('csrftoken=')).map(c=>c.slice(10))[0]||''; }
+</script>
+</body>
+</html>

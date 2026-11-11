@@ -66,7 +66,7 @@ def _portal_url(settings):
 		raise OmadaApiError(
 			_(
 				"Set the Portal URL in Hotspot Omada Settings to your public Bandofy address, "
-				"e.g. https://yourdomain/wifi_login (phones must be able to open it). Current value: {0}"
+				"e.g. https://yourdomain/landing (phones must be able to open it). Current value: {0}"
 			).format(url or _("empty"))
 		)
 	return url

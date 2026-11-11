@@ -6,6 +6,8 @@
  "field_order": [
   "ap_mac",
   "label",
+  "controller_type",
+  "ac_name",
   "is_active"
  ],
  "fields": [
@@ -24,6 +26,23 @@
    "label": "Label (e.g. Back Room AP)"
   },
   {
+   "default": "Omada",
+   "description": "Omada: AP is managed by a TP-Link Omada Controller. RADIUS / Ruijie: AP authenticates customers through Bandofy's built-in RADIUS server.",
+   "fieldname": "controller_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Integration Type",
+   "options": "Omada\nRuijie\nRADIUS\nOmada RADIUS",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.controller_type == 'RADIUS / Ruijie'",
+   "description": "The AC (Access Controller) name as configured on your Ruijie device — used to match RADIUS accounting packets to this AP.",
+   "fieldname": "ac_name",
+   "fieldtype": "Data",
+   "label": "AC Name (Ruijie)"
+  },
+  {
    "default": "1",
    "fieldname": "is_active",
    "fieldtype": "Check",
@@ -39,7 +58,20 @@
  "module": "Bandofy",
  "name": "Hotspot Site Device",
  "owner": "Administrator",
- "permissions": [],
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 0,
+   "export": 0,
+   "print": 0,
+   "read": 1,
+   "report": 0,
+   "role": "Bandofy Manager",
+   "share": 0,
+   "write": 1
+  }
+ ],
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

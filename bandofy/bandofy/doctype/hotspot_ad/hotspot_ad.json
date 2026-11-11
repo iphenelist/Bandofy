@@ -170,6 +170,19 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 0,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bandofy Manager",
+   "share": 0,
+   "write": 1,
+   "apply_user_permissions": 1
   }
  ],
  "sort_field": "modified",

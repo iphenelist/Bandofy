@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f1117">
+<title>Settings — {{ site.site_name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--sidebar:#131920;--card:#1a2332;--card2:#1f2a3c;--border:rgba(255,255,255,0.07);--bstrong:rgba(255,255,255,0.14);--teal:#00c896;--teal-l:#33d9a8;--teal-d:rgba(0,200,150,0.12);--teal-r:rgba(0,200,150,0.28);--blue:#3b82f6;--amber:#f59e0b;--red:#ef4444;--red-bg:rgba(239,68,68,0.12);--text:#e0e6ed;--dim:rgba(224,230,237,0.5);--faint:rgba(224,230,237,0.24);--r:12px;--rs:8px;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;background:var(--bg)}body{height:100%;width:100%;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;display:flex}
+.sidebar{width:240px;flex-shrink:0;height:100vh;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--card2)}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:18px 16px 14px;font-size:18px;font-weight:800;color:var(--text);text-decoration:none;border-bottom:1px solid var(--border)}
+.sb-mark{width:32px;height:32px;border-radius:8px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#0a1f18}
+.sb-section{padding:14px 12px 4px;font-size:12px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:1px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:var(--rs);margin:1px 6px;font-size:15px;font-weight:500;color:var(--dim);text-decoration:none;cursor:pointer;border:none;background:none;width:calc(100% - 14px);transition:background .18s,color .15s}
+.sb-item:hover{background:var(--card);color:var(--text)}.sb-item.active{background:var(--teal-d);color:var(--teal);font-weight:600}
+.sb-item svg{width:15px;height:15px;flex-shrink:0}
+.sb-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--teal-d);border:1.5px solid var(--teal-r);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--teal);flex-shrink:0}
+.sb-user-name{font-size:15px;font-weight:600}.sb-user-role{font-size:13px;color:var(--dim)}
+.sb-logout{margin-left:auto;color:var(--dim);background:none;border:none;cursor:pointer;padding:4px;text-decoration:none;display:flex;transition:color .2s}.sb-logout:hover{color:var(--red)}.sb-logout svg{width:14px;height:14px}
+.main-wrap{flex:1;min-width:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 24px;height:62px;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--bg)}
+.topbar-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600;color:var(--teal)}.topbar-title svg{width:15px;height:15px}
+.topbar-spacer{flex:1}
+.topbar-user{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--card)}
+.topbar-user-av{width:26px;height:26px;border-radius:50%;background:var(--teal-d);border:1.5px solid var(--teal-r);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--teal)}
+.topbar-user-name{font-size:15px;font-weight:600}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:22px 24px 30px}
+.content::-webkit-scrollbar{width:4px}.content::-webkit-scrollbar-thumb{background:var(--card2);border-radius:4px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px 22px;margin-bottom:14px}
+.card-head{font-size:16px;font-weight:800;margin-bottom:2px}
+.card-sub{font-size:14px;color:var(--dim);margin-bottom:18px}
+label{display:block;font-size:14px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+input[type=text],input[type=tel],input[type=number],textarea{width:100%;padding:10px 13px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-size:16px;font-family:inherit;outline:none;transition:border-color .2s}
+input:focus,textarea:focus{border-color:var(--teal-r)}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-group{margin-bottom:14px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none;padding-bottom:0}
+.toggle-info{flex:1}
+.toggle-title{font-size:16px;font-weight:600;margin-bottom:2px}
+.toggle-desc{font-size:14px;color:var(--dim)}
+.toggle{width:42px;height:24px;border-radius:12px;background:var(--card2);border:1.5px solid var(--border);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--teal-d);border-color:var(--teal-r)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--dim);transition:left .2s,background .2s}
+.toggle.on::after{left:21px;background:var(--teal)}
+.save-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 22px;border-radius:var(--rs);background:var(--teal);color:#0a1f18;font-size:16px;font-weight:800;border:none;cursor:pointer;transition:opacity .2s}
+.save-btn:hover{opacity:.88}.save-btn:disabled{opacity:.5;cursor:not-allowed}
+.success-bar{display:none;padding:10px 14px;border-radius:var(--rs);background:var(--teal-d);border:1px solid var(--teal-r);color:var(--teal-l);font-size:15px;font-weight:600;margin-bottom:14px}
+.success-bar.show{display:flex;align-items:center;gap:8px}
+.err-bar{display:none;padding:10px 14px;border-radius:var(--rs);background:var(--red-bg);border:1px solid rgba(239,68,68,0.25);color:var(--red);font-size:15px;margin-bottom:14px}
+.err-bar.show{display:block}
+@media(max-width:900px){.sidebar{width:56px}.sb-item span,.sb-section,.sb-user-name,.sb-user-role,.sb-logo span{display:none}.sb-item{justify-content:center;padding:10px}.sb-logo{justify-content:center}.sb-footer{justify-content:center}.sb-logout{display:none}.form-row{grid-template-columns:1fr}}
+@media(max-width:700px){.sidebar{display:none}}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <a class="sb-logo" href="/vendor-dashboard"><div class="sb-mark">Bw</div><span>Bandofy</span></a>
+  <div class="sb-section">Website</div>
+  <a class="sb-item" href="/start"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6c2-2.5 4.7-4 7-4s5 1.5 7 4M4 9c1-1.3 2.4-2 4-2s3 .7 4 2M7 12h2"/></svg><span>Landing Page</span></a>
+  <div class="sb-section">Dashboards</div>
+  <a class="sb-item" href="/vendor-dashboard"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg><span>Overview</span></a>
+  <a class="sb-item" href="/transactions"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 11 5 6 9 8 15 3"/></svg><span>Transactions</span></a>
+  <div class="sb-section">Manage</div>
+  <a class="sb-item" href="/devices"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M5 13v2M11 13v2M3 16h10"/></svg><span>Devices</span></a>
+  <a class="sb-item" href="/vouchers"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V4a3 3 0 0 1 6 0v1"/></svg><span>Vouchers</span></a>
+  <a class="sb-item" href="/packages"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h12M2 8h8M2 13h5"/></svg><span>Packages</span></a>
+  <a class="sb-item active" href="/site_settings"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M13 3l-1.5 1.5M4.5 11.5 3 13"/></svg><span>Settings</span></a>
+  <div class="sb-footer">
+    <div class="sb-avatar">{{ (site.vendor_name or "V")[0] | upper }}</div>
+    <div><div class="sb-user-name">{{ site.vendor_name or "Vendor" }}</div><div class="sb-user-role">Hotspot Manager</div></div>
+    <a class="sb-logout" href="/api/method/logout"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3M7 5L3 8l4 3M3 8h8"/></svg></a>
+  </div>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="topbar-title"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg>Settings</div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-user"><div class="topbar-user-av">{{ (site.vendor_name or "V")[0] | upper }}</div><div class="topbar-user-name">{{ site.vendor_name }}</div></div>
+  </header>
+  <div class="content">
+
+    <div id="successBar" class="success-bar">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 8l4 4 8-8"/></svg>
+      Settings saved successfully.
+    </div>
+    <div id="errBar" class="err-bar"></div>
+
+    <!-- Basic Info -->
+    <div class="card">
+      <div class="card-head">Hotspot Details</div>
+      <div class="card-sub">Basic information about your Wi-Fi hotspot</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Site / Wi-Fi Name</label>
+          <input type="text" id="fSiteName" value="{{ site.site_name }}" maxlength="32" placeholder="Kitonga Wifi">
+          <div style="font-size:13px;color:var(--faint);margin-top:3px">This is also your Wi-Fi SSID name (max 32 chars)</div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Phone Number</label>
+          <input type="tel" id="fPhone" value="{{ site.phone_number or '' }}" placeholder="0712 345 678">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0;margin-top:14px">
+        <label>Portal Tagline</label>
+        <input type="text" id="fTagline" value="{{ site.portal_tagline or '' }}" placeholder="Fast, affordable internet" maxlength="80">
+      </div>
+      <div class="form-group" style="margin-bottom:0;margin-top:14px">
+        <label>Portal Brand Color</label>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:5px">
+          <input type="color" id="fPortalColor" value="{{ site.portal_primary_color or '#00c896' }}" style="width:48px;height:36px;border:none;border-radius:6px;cursor:pointer;padding:2px;background:none">
+          <span id="portalColorHex" style="font-size:0.9em;color:var(--dim);font-family:monospace">{{ site.portal_primary_color or '#00c896' }}</span>
+          <span style="font-size:0.85em;color:var(--faint)">Accent color shown on the captive portal</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment -->
+    <div class="card">
+      <div class="card-head">Payment Settings</div>
+      <div class="card-sub">Configure Mobile Money collection</div>
+      <div class="form-row" style="margin-bottom:14px">
+        <div class="form-group" style="margin-bottom:0">
+          <label>M-Pesa / Mpesa Paybill or Till</label>
+          <input type="text" id="fMobile" value="{{ site.mobile_money_account or '' }}" placeholder="e.g. 400200">
+        </div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Enable Online Payments</div>
+          <div class="toggle-desc">Allow customers to pay via M-Pesa directly on the portal</div>
+        </div>
+        <div class="toggle {% if enable_online_payment %}on{% endif %}" id="tOnline" onclick="toggleSwitch(this)"></div>
+      </div>
+    </div>
+
+    <!-- Free Trial -->
+    <div class="card">
+      <div class="card-head">Free Trial</div>
+      <div class="card-sub">Give new visitors a timed free trial before paying</div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Enable Free Trial</div>
+          <div class="toggle-desc">New devices get free access for the duration below</div>
+        </div>
+        <div class="toggle {% if enable_free_trial %}on{% endif %}" id="tTrial" onclick="toggleSwitch(this)"></div>
+      </div>
+      <div class="form-group" style="margin-top:14px">
+        <label>Free Trial Duration (minutes)</label>
+        <input type="number" id="fTrialMin" value="{{ free_trial_minutes }}" min="1" max="1440" placeholder="10" style="max-width:160px">
+      </div>
+    </div>
+
+    <!-- SMS Notifications -->
+    <div class="card">
+      <div class="card-head">SMS Notifications</div>
+      <div class="card-sub">Send payment confirmation SMS to guests after they pay. Requires SMS API key configured by the system admin.</div>
+      <div class="toggle-row" style="border-bottom:none;padding-bottom:0">
+        <div class="toggle-info">
+          <div class="toggle-title">Enable SMS Notifications</div>
+          <div class="toggle-desc">Guests receive an SMS confirmation after a successful payment</div>
+        </div>
+        <div class="toggle {% if site.sms_notifications_enabled %}on{% endif %}" id="tSms" onclick="toggleSwitch(this)"></div>
+      </div>
+    </div>
+
+    <button class="save-btn" id="saveBtn" onclick="saveSettings()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 8l4 4 8-8"/></svg>
+      Save Settings
+    </button>
+
+  </div>
+</div>
+
+<script>
+const SITE = "{{ site.name }}";
+function toggleSwitch(el) { el.classList.toggle('on'); }
+function getCsrf(){ return document.cookie.split(';').map(c=>c.trim()).filter(c=>c.startsWith('csrftoken=')).map(c=>c.slice(10))[0]||''; }
+
+document.addEventListener('DOMContentLoaded', function() {
+  const colorInput = document.getElementById('fPortalColor');
+  const colorHex = document.getElementById('portalColorHex');
+  colorInput.addEventListener('input', function() { colorHex.textContent = this.value; });
+});
+
+async function saveSettings() {
+  const btn = document.getElementById('saveBtn');
+  const ok = document.getElementById('successBar');
+  const err = document.getElementById('errBar');
+  ok.classList.remove('show'); err.classList.remove('show');
+  btn.disabled = true; btn.querySelector('svg').style.display='none'; btn.childNodes[btn.childNodes.length-1].textContent='Saving…';
+  try {
+    const r = await fetch('/api/method/bandofy.api.update_site_settings', {
+      method:'POST', headers:{'Content-Type':'application/json','X-Frappe-CSRF-Token':getCsrf()},
+      body: JSON.stringify({
+        site: SITE,
+        site_name: document.getElementById('fSiteName').value.trim(),
+        phone_number: document.getElementById('fPhone').value.trim(),
+        portal_tagline: document.getElementById('fTagline').value.trim(),
+        mobile_money_account: document.getElementById('fMobile').value.trim(),
+        enable_online_payment: document.getElementById('tOnline').classList.contains('on') ? 1 : 0,
+        enable_free_trial: document.getElementById('tTrial').classList.contains('on') ? 1 : 0,
+        free_trial_minutes: parseInt(document.getElementById('fTrialMin').value)||10,
+        portal_primary_color: document.getElementById('fPortalColor').value,
+        sms_notifications_enabled: document.getElementById('tSms').classList.contains('on') ? 1 : 0,
+      })
+    });
+    const d = await r.json();
+    if (d.exc) {
+      try { err.textContent = JSON.parse(d._server_messages||'[]').map(m=>{try{return JSON.parse(m).message;}catch{return m;}}).join(' '); }
+      catch { err.textContent='Error saving settings.'; }
+      err.classList.add('show');
+    } else {
+      ok.classList.add('show');
+      setTimeout(()=>ok.classList.remove('show'), 4000);
+    }
+  } catch(e) { err.textContent='Network error.'; err.classList.add('show'); }
+  finally { btn.disabled=false; btn.querySelector('svg').style.display=''; btn.childNodes[btn.childNodes.length-1].textContent='Save Settings'; }
+}
+</script>
+</body>
+</html>

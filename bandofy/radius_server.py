@@ -1,13 +1,14 @@
 # Copyright (c) 2026, Innocent P M and contributors
 # For license information, please see license.txt
 
-"""Bandofy's RADIUS server for Ruijie sites (see bandofy.ruijie).
+"""Bandofy's RADIUS server for RADIUS-based sites (see bandofy.radius_auth).
 
-A Ruijie AC sends the one-time login the portal page submitted to it (or,
+An AP (Ruijie, Mikrotik, UniFi, Omada RADIUS, or any generic RADIUS
+controller) sends the one-time login the portal page submitted to it (or,
 for a returning device, its MAC) as an Access-Request. This server asks
-:func:`bandofy.ruijie.check_login` and answers Access-Accept with a
-Session-Timeout of the remaining paid time, or Access-Reject. Omada sites
-never use it.
+:func:`bandofy.radius_auth.check_login` and answers Access-Accept with a
+Session-Timeout of the remaining paid time, or Access-Reject. Omada (API)
+sites never use it.
 
 It is a separate long-running process. Run it next to the bench, e.g. as a
 supervisor program or a Procfile line:
@@ -84,10 +85,13 @@ class BandofyRadiusServer(Server):
 		if self.enabled:
 			try:
 				self._fresh_transaction()
-				from bandofy.ruijie import check_login
+				from bandofy.radius_auth import check_login
 
 				username = _first(pkt, "User-Name")
 				password = pkt.PwDecrypt(pkt["User-Password"][0]) if "User-Password" in pkt else ""
+				nas_id = _first(pkt, "NAS-Identifier")
+				if nas_id:
+					frappe.logger("bandofy").debug(f"RADIUS: NAS-Identifier={nas_id!r} User-Name={username!r}")
 				remaining = check_login(
 					username,
 					password,
