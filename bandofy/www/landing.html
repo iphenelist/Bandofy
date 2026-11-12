@@ -1085,6 +1085,18 @@
 		r.style.setProperty('--shadow-accent', '0 12px 28px -10px ' + c + 'cc');
 	})();
 	</script>
+	<script>
+	// Frappe's esbuild plugin prepends frappe.dom.set_style(css) to every Vue
+	// bundle that has scoped styles. This page doesn't load the Frappe web
+	// runtime, so we provide the minimal polyfill it needs.
+	window.frappe = window.frappe || {};
+	window.frappe.dom = window.frappe.dom || {};
+	window.frappe.dom.set_style = function(css) {
+		var el = document.createElement("style");
+		el.textContent = css;
+		document.head.appendChild(el);
+	};
+	</script>
 	{{ include_script("wifi_portal.bundle.js") }}
 </body>
 </html>

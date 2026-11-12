@@ -1085,6 +1085,15 @@
 		r.style.setProperty('--shadow-accent', '0 12px 28px -10px ' + c + 'cc');
 	})();
 	</script>
+	<script>
+	window.frappe = window.frappe || {};
+	window.frappe.dom = window.frappe.dom || {};
+	window.frappe.dom.set_style = function(css) {
+		var el = document.createElement("style");
+		el.textContent = css;
+		document.head.appendChild(el);
+	};
+	</script>
 	{{ include_script("wifi_portal.bundle.js") }}
 </body>
 </html>
