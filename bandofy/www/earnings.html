@@ -5,77 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0f1117">
 <title>Earnings — {{ site.site_name }}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/bandofy/css/manager.css">
 <style>
-:root {
-  --bg:       #0f1117;
-  --sidebar:  #131920;
-  --card:     #1a2332;
-  --card2:    #1f2a3c;
-  --border:   rgba(255,255,255,0.07);
-  --bstrong:  rgba(255,255,255,0.14);
-  --teal:     #00c896;
-  --teal-l:   #33d9a8;
-  --teal-d:   rgba(0,200,150,0.15);
-  --teal-r:   rgba(0,200,150,0.30);
-  --amber:    #f59e0b;
-  --amber-bg: rgba(245,158,11,0.14);
-  --red:      #ef4444;
-  --red-bg:   rgba(239,68,68,0.14);
-  --text:     #e0e6ed;
-  --dim:      rgba(224,230,237,0.50);
-  --faint:    rgba(224,230,237,0.25);
-  --r:        12px;
-  --rs:       8px;
-  color-scheme: dark;
-}
-*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
-html,body { height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
-body { font-family: 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; display: flex; -webkit-font-smoothing: antialiased; }
-
-.sidebar { width: 220px; flex-shrink: 0; height: 100vh; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
-.sidebar::-webkit-scrollbar { width: 3px; }
-.sidebar::-webkit-scrollbar-thumb { background: var(--card2); }
-.sb-logo { display: flex; align-items: center; gap: 10px; padding: 18px 16px 14px; font-size: 15px; font-weight: 800; color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border); }
-.sb-mark { width: 32px; height: 32px; border-radius: 8px; background: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; color: #0a1f18; }
-.sb-section { padding: 14px 12px 4px; font-size: 9.5px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; }
-.sb-item { display: flex; align-items: center; gap: 9px; padding: 8px 14px; border-radius: var(--rs); margin: 1px 6px; font-size: 12.5px; font-weight: 500; color: var(--dim); text-decoration: none; cursor: pointer; border: none; background: none; transition: background .18s, color .15s; width: calc(100% - 12px); }
-.sb-item:hover { background: var(--card); color: var(--text); }
-.sb-item.active { background: var(--teal-d); color: var(--teal); font-weight: 600; }
-.sb-item svg { width: 15px; height: 15px; flex-shrink: 0; }
-.sb-footer { margin-top: auto; padding: 12px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 9px; }
-.sb-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--teal-d); border: 1.5px solid var(--teal-r); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--teal); flex-shrink: 0; }
-.sb-user-name { font-size: 12px; font-weight: 600; }
-.sb-user-role { font-size: 10px; color: var(--dim); }
-.sb-logout { margin-left: auto; color: var(--dim); background: none; border: none; cursor: pointer; padding: 4px; border-radius: 5px; transition: color .2s; text-decoration: none; display: flex; }
-.sb-logout:hover { color: var(--red); }
-.sb-logout svg { width: 14px; height: 14px; }
-
-.main-wrap { flex: 1; min-width: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-.topbar { display: flex; align-items: center; gap: 12px; padding: 0 24px; height: 56px; flex-shrink: 0; border-bottom: 1px solid var(--border); background: var(--bg); }
-.topbar-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--teal); }
-.topbar-title svg { width: 15px; height: 15px; }
-.topbar-spacer { flex: 1; }
-.topbar-user { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: var(--rs); border: 1px solid var(--border); background: var(--card); }
-.topbar-user-av { width: 26px; height: 26px; border-radius: 50%; background: var(--teal-d); border: 1.5px solid var(--teal-r); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--teal); }
-.topbar-user-name { font-size: 12px; font-weight: 600; }
-
-.content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 22px 24px 30px; }
-.content::-webkit-scrollbar { width: 4px; }
-.content::-webkit-scrollbar-thumb { background: var(--card2); border-radius: 4px; }
-
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
-.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 18px; }
-.card-sm { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; }
-.card-label { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .7px; }
-.card-value { font-size: 28px; font-weight: 800; margin-top: 4px; line-height: 1; font-variant-numeric: tabular-nums; }
-.sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.sec-title { font-size: 13px; font-weight: 700; }
-.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; }
-.bt { background: var(--teal-d); color: var(--teal); }
-.ba { background: var(--amber-bg); color: var(--amber); }
-.br { background: var(--red-bg); color: var(--red); }
 
 .wd-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .wd-table th { text-align: left; padding: 7px 10px; font-size: 10px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: .7px; border-bottom: 1px solid var(--border); }
@@ -86,11 +18,10 @@ body { font-family: 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-ser
 .btn-primary { padding: 10px 20px; border-radius: var(--rs); border: none; background: var(--teal); color: #0a1f18; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: filter .2s; }
 .btn-primary:hover { filter: brightness(1.08); }
 
-/* Modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
 .modal-overlay.hidden { display: none; }
 .modal-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 100%; max-width: 420px; }
-.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 18px; }
+.modal-title { font-size: 15px; font-weight: 700; margin-bottom: 18px; }
 .field-group { margin-bottom: 14px; }
 .field-label { font-size: 11px; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 6px; }
 .field-input { width: 100%; padding: 10px 12px; background: var(--card2); border: 1px solid var(--border); border-radius: var(--rs); color: var(--text); font-size: 14px; font-family: inherit; outline: none; }
@@ -98,8 +29,7 @@ body { font-family: 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-ser
 .modal-footer { display: flex; gap: 10px; margin-top: 20px; }
 .btn-cancel { padding: 10px 20px; border-radius: var(--rs); border: 1px solid var(--border); background: none; color: var(--dim); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
 
-@media (max-width: 900px) { .sidebar { width: 56px; } .sb-item span,.sb-section,.sb-user-name,.sb-user-role,.sb-logo span { display: none; } .sb-item { justify-content: center; padding: 10px; } .sb-logo { justify-content: center; } .sb-footer { justify-content: center; } .sb-logout { display: none; } }
-@media (max-width: 700px) { .sidebar { display: none; } .grid-3 { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .grid-3 { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
