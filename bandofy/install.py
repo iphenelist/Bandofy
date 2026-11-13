@@ -16,7 +16,18 @@ DEFAULT_PACKAGES = [
 
 
 def after_install():
+	setup_roles()
 	create_default_packages()
+
+
+def setup_roles():
+	"""Ensure the Bandofy Manager role exists and lands on the vendor dashboard."""
+	if not frappe.db.exists("Role", "Bandofy Manager"):
+		r = frappe.new_doc("Role")
+		r.role_name = "Bandofy Manager"
+		r.desk_access = 1
+		r.insert(ignore_permissions=True)
+	frappe.db.set_value("Role", "Bandofy Manager", "home_page", "/vendor-dashboard")
 
 
 def create_default_packages(set_bandwidth=False):

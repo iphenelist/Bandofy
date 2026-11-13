@@ -3,7 +3,7 @@
   "desk_access": 1,
   "disabled": 0,
   "doctype": "Role",
-  "home_page": "",
+  "home_page": "/vendor-dashboard",
   "is_custom": 0,
   "name": "Bandofy Manager",
   "role_name": "Bandofy Manager",
