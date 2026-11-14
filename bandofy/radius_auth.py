@@ -29,7 +29,7 @@ from bandofy.utils import normalize_mac
 PASSWORD_LENGTH = 24
 
 
-RADIUS_CONTROLLER_TYPES = ("Ruijie", "RADIUS", "Omada RADIUS")
+RADIUS_CONTROLLER_TYPES = ("Ruijie", "RADIUS", "Omada RADIUS", "MikroTik", "Omada Gateway")
 
 
 def uses_radius(site):
@@ -59,12 +59,15 @@ def issue_login(txn):
 	txn.db_set({"radius_password": "*" * PASSWORD_LENGTH, "authorized_until": until})
 
 
-def login_form(txn, success_url):
+def login_form(txn, success_url, login_url=None):
 	"""What the portal page submits to the AC's login server for this
 	transaction: {action, method, fields}. {username}, {password} and
 	{success_url} are filled in here; {user_ip}, {user_mac}, {ac_name},
 	{nas_ip}, {ap_mac}, {ssid} and {url} come from the AC's redirect and are
-	filled in by the portal page (public/js/wifi_portal/login.js)."""
+	filled in by the portal page (public/js/wifi_portal/login.js).
+
+	``login_url`` overrides the global Hotspot Ruijie Settings.login_url — used
+	for MikroTik and Omada Gateway sites that have their own per-site URL."""
 	settings = frappe.get_cached_doc("Hotspot Ruijie Settings")
 	password = get_decrypted_password("Hotspot Transaction", txn.name, "radius_password")
 
@@ -83,7 +86,7 @@ def login_form(txn, success_url):
 		return value
 
 	return {
-		"action": fill(settings.login_url or "http://1.1.1.1:8082/login"),
+		"action": fill(login_url or settings.login_url or "http://1.1.1.1:8082/login"),
 		"method": (settings.login_method or "POST").upper(),
 		"fields": {name: fill(value) for name, value in fields.items()},
 	}

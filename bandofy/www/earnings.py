@@ -2,6 +2,8 @@ import frappe
 from frappe.query_builder.functions import Sum
 from frappe.utils import get_first_day, today
 
+from bandofy.utils import get_vendor_site_name
+
 no_cache = 1
 
 
@@ -12,7 +14,7 @@ def get_context(context):
 		frappe.local.flags.redirect_location = "/login?redirect-to=/earnings"
 		raise frappe.Redirect
 
-	site = frappe.db.get_value("Hotspot Site", {"vendor_user": frappe.session.user}, "name")
+	site = get_vendor_site_name()
 	if not site:
 		frappe.local.flags.redirect_location = "/vendor-dashboard"
 		raise frappe.Redirect

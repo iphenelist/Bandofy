@@ -722,10 +722,13 @@ def _authorize_transaction(txn, site):
 	it can move on.
 
 	Omada sites: authorize the client's MAC on the Omada Controller.
-	Ruijie sites: set authorized_until (the AC handles the redirect itself).
+	RADIUS sites (Ruijie, MikroTik, Omada Gateway, RADIUS, Omada RADIUS):
+	  issue a one-time RADIUS password and record authorized_until; the portal
+	  page then POSTs those credentials to the AC's own login server.
 	"""
-	if site.get("controller_type") == "Ruijie":
-		from frappe.utils import add_to_date
+	from bandofy.radius_auth import RADIUS_CONTROLLER_TYPES, issue_login
+	if site.get("controller_type") in RADIUS_CONTROLLER_TYPES:
+		issue_login(txn)
 		until = add_to_date(now_datetime(), minutes=max(int(txn.duration_minutes or 0), 1))
 		txn.db_set({"authorized_until": until, "omada_authorized": 1}, commit=True)
 		return
@@ -736,9 +739,18 @@ def _authorize_transaction(txn, site):
 
 
 def _connect_details(txn, site):
-	"""What the portal page needs to finish connecting an authorized device:
-	the redirect URL to send the browser to once authorized."""
-	return {"redirect_url": _success_redirect_url(site.get("success_redirect_url"))}
+	"""What the portal page needs to finish connecting an authorized device.
+
+	Omada: a redirect URL — the browser is sent there once the MAC is authorized.
+	RADIUS (Ruijie, MikroTik, Omada Gateway, …): a login form the portal page
+	  POSTs to the AC's own login server, which checks credentials with Bandofy's
+	  RADIUS server and then grants the client access.
+	"""
+	from bandofy.radius_auth import uses_radius, login_form
+	success_url = _success_redirect_url(site.get("success_redirect_url"))
+	if uses_radius(site):
+		return {"login": login_form(txn, success_url, login_url=site.get("radius_login_url"))}
+	return {"redirect_url": success_url}
 
 
 def _authorize_on_omada(txn, site):
@@ -828,7 +840,7 @@ def get_omada_connection_status(transaction_id, client_mac=None):
 		return {"ready": False}
 
 	site = frappe.db.get_value(
-		"Hotspot Site", txn.site, ["controller_type", "success_redirect_url"], as_dict=True
+		"Hotspot Site", txn.site, ["controller_type", "success_redirect_url", "radius_login_url"], as_dict=True
 	)
 	return {"ready": True, **_connect_details(txn, site)}
 
@@ -930,6 +942,21 @@ def remove_package(site, package_name):
 
 
 @frappe.whitelist()
+def update_portal_theme(site, theme):
+	"""Set the captive portal colour theme for a site. Called by /portal-preview."""
+	from bandofy.utils import get_vendor_site_name
+	VALID_THEMES = ("Default", "Ocean", "Forest", "Sunset", "Midnight")
+	if theme not in VALID_THEMES:
+		frappe.throw(_("Invalid theme."))
+	user_site = get_vendor_site_name()
+	if site != user_site and "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not authorised."), frappe.PermissionError)
+	frappe.db.set_value("Hotspot Site", site, "portal_theme", theme, update_modified=False)
+	frappe.db.commit()
+	return {"theme": theme}
+
+
+@frappe.whitelist()
 def add_device(site, ap_mac, label="", controller_type="Omada", ac_name=""):
 	"""Add an Access Point to the site's devices child table."""
 	site_doc = frappe.get_doc("Hotspot Site", site)
@@ -940,7 +967,8 @@ def add_device(site, ap_mac, label="", controller_type="Omada", ac_name=""):
 	if not ap_mac:
 		frappe.throw(_("AP MAC Address is required."))
 
-	if controller_type not in ("Omada", "Ruijie"):
+	DEVICE_CONTROLLER_TYPES = ("Omada", "Omada Gateway", "Ruijie", "MikroTik", "RADIUS", "Omada RADIUS")
+	if controller_type not in DEVICE_CONTROLLER_TYPES:
 		frappe.throw(_("Invalid integration type."))
 
 	if controller_type == "Ruijie" and not ac_name.strip():

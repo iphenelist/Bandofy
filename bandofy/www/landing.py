@@ -43,6 +43,14 @@ def get_context(context):
 	nas_ip = _param("wlannasip", "nas_ip")
 	# RADIUS sites: the NAS-Identifier the AP puts in the portal redirect URL.
 	nas_id = _param("nas_id", "nasid", "NAS-Identifier")
+	# MikroTik: link-login-only is the per-connection login URL (dynamic,
+	# encodes the client IP context). Use `ip` as a user_ip fallback and
+	# `link-orig` as an orig_url fallback.
+	mikrotik_login_url = (frappe.form_dict.get("link-login-only") or "").strip()
+	if not user_ip:
+		user_ip = (frappe.form_dict.get("ip") or "").strip()
+	if not orig_url:
+		orig_url = (frappe.form_dict.get("link-orig") or "").strip()
 	# Controller-managed sites add the Omada site ID as "site"; it is how the
 	# portal finds the Hotspot Site (the AP MAC is the fallback).
 	omada_site = (frappe.form_dict.get("site") or "").strip()
@@ -58,6 +66,7 @@ def get_context(context):
 	context.ac_name = ac_name
 	context.user_ip = user_ip
 	context.nas_ip = nas_ip
+	context.mikrotik_login_url = mikrotik_login_url
 	context.controller_type = None
 	context.vendor_name = None
 	context.site_label = None
@@ -77,6 +86,7 @@ def get_context(context):
 	context.portal_logo = None
 	context.portal_tagline = None
 	context.portal_primary_color = None
+	context.portal_theme = "Default"
 
 	if ap_mac or omada_site or ac_name or nas_id:
 		site = find_site(
@@ -98,6 +108,7 @@ def get_context(context):
 				"portal_logo",
 				"portal_tagline",
 				"portal_primary_color",
+				"portal_theme",
 				"lipa_namba_image",
 			],
 		)
@@ -118,6 +129,7 @@ def get_context(context):
 			context.portal_logo = site.portal_logo
 			context.portal_tagline = site.portal_tagline
 			context.portal_primary_color = site.portal_primary_color or "#00c896"
+			context.portal_theme = site.portal_theme or "Default"
 			apply_preview_overrides(context, site)
 			context.lipa_images, context.lipa_default = get_lipa_images(site.lipa_namba_image)
 			context.packages = frappe.get_all(
@@ -167,6 +179,7 @@ def build_portal_data(context):
 		"ac_name",
 		"user_ip",
 		"nas_ip",
+		"mikrotik_login_url",
 		"controller_type",
 		"site_found",
 		"vendor_name",

@@ -7,7 +7,7 @@ from frappe.utils import get_first_day, get_last_day, today
 
 from bandofy.dashboard_utils import get_omada_live_stats, get_revenue, get_revenue_trend
 from bandofy.radius_auth import RADIUS_CONTROLLER_TYPES
-from bandofy.utils import site_ap_macs
+from bandofy.utils import get_vendor_site_name, site_ap_macs
 
 no_cache = 1
 
@@ -19,9 +19,16 @@ def get_context(context):
 		frappe.local.flags.redirect_location = "/login?redirect-to=/vendor-dashboard"
 		raise frappe.Redirect
 
+	site_name = get_vendor_site_name()
+	if not site_name:
+		frappe.throw(
+			_("No Hotspot Site is linked to your account. Please contact the administrator."),
+			frappe.PermissionError,
+		)
+
 	site = frappe.db.get_value(
 		"Hotspot Site",
-		{"vendor_user": frappe.session.user},
+		site_name,
 		[
 			"name",
 			"vendor_name",
@@ -40,12 +47,6 @@ def get_context(context):
 		],
 		as_dict=True,
 	)
-
-	if not site:
-		frappe.throw(
-			_("No Hotspot Site is linked to your account. Please contact the administrator."),
-			frappe.PermissionError,
-		)
 
 	context.site = site
 	context.ap_count = len(site_ap_macs(site.name))

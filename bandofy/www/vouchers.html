@@ -6,14 +6,15 @@
 <meta name="theme-color" content="#0f1117">
 <title>Vouchers — {{ site.site_name }}</title>
 <link rel="stylesheet" href="/assets/bandofy/css/manager.css">
+<script>try{var _t=localStorage.getItem('dashTheme')||'light';document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
 </head>
 <body>
 
 <!-- Sidebar -->
 <aside class="sidebar">
-  <a class="sb-logo" href="/vendor-dashboard"><div class="sb-mark">Bw</div><span>Bandofy</span></a>
+  <a class="sb-logo" href="/vendor-dashboard"><div class="sb-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg></div><span>Bandofy</span></a>
   <div class="sb-section">Website</div>
-  <a class="sb-item" href="/start"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6c2-2.5 4.7-4 7-4s5 1.5 7 4M4 9c1-1.3 2.4-2 4-2s3 .7 4 2M7 12h2"/></svg><span>Landing Page</span></a>
+  <a class="sb-item" href="/portal-preview"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="2" width="14" height="10" rx="1.5"/><path d="M5 15h6M8 12v3"/></svg><span>Portal Preview</span></a>
   <div class="sb-section">Dashboards</div>
   <a class="sb-item" href="/vendor-dashboard"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg><span>Overview</span></a>
   <a class="sb-item" href="/transactions"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 11 5 6 9 8 15 3"/><path d="M1 15h14"/></svg><span>Transactions</span></a>
@@ -34,6 +35,8 @@
   <header class="topbar">
     <div class="topbar-title"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V4a3 3 0 0 1 6 0v1"/></svg>Vouchers</div>
     <div class="topbar-spacer"></div>
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme"><svg id="themeIconSun" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.3 3.3l1.4 1.4M11.3 11.3l1.4 1.4M11.3 3.3l-1.4 1.4M4.7 11.3l-1.4 1.4"/></svg><svg id="themeIconMoon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10A6 6 0 0 1 6 3a6 6 0 1 0 7 7z"/></svg></button>
+    <div class="topbar-icon" title="Notifications"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2a5 5 0 0 1 5 5v3l1 1H2l1-1V7a5 5 0 0 1 5-5ZM6 13a2 2 0 0 0 4 0"/></svg></div>
     <div class="topbar-user"><div class="topbar-user-av">{{ (site.vendor_name or "V")[0] | upper }}</div><div class="topbar-user-name">{{ site.vendor_name }}</div><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg></div>
   </header>
   <div class="content">
@@ -126,6 +129,15 @@ function frappeErrMsg(d) {
   catch { return 'Error.'; }
 }
 function getCsrf() { return document.cookie.split(';').map(c=>c.trim()).filter(c=>c.startsWith('csrftoken=')).map(c=>c.slice(10))[0]||''; }
+</script>
+<script>
+(function(){try{var t=localStorage.getItem('dashTheme')||'light';var s=document.getElementById('themeIconSun'),m=document.getElementById('themeIconMoon');if(t==='dark'){if(s)s.style.display='';if(m)m.style.display='none';}else{if(s)s.style.display='none';if(m)m.style.display='';}}catch(e){}})();
+function toggleTheme(){var d=document.documentElement,isLight=d.getAttribute('data-theme')!=='dark',next=isLight?'dark':'light';d.setAttribute('data-theme',next);try{localStorage.setItem('dashTheme',next);}catch(e){}var s=document.getElementById('themeIconSun'),m=document.getElementById('themeIconMoon');if(s)s.style.display=next==='dark'?'':'none';if(m)m.style.display=next==='dark'?'none':'';}
+</script>
+
+<!-- csrf_token -->
+<script>
+window.frappe = window.frappe || {};
 </script>
 </body>
 </html>

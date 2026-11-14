@@ -2,6 +2,7 @@ import frappe
 from frappe.utils import date_diff, today
 
 from bandofy.radius_auth import RADIUS_CONTROLLER_TYPES
+from bandofy.utils import get_vendor_site_name
 
 no_cache = 1
 
@@ -20,7 +21,7 @@ def get_context(context):
 		frappe.local.flags.redirect_location = "/login?redirect-to=/onboarding"
 		raise frappe.Redirect
 
-	site = frappe.db.get_value("Hotspot Site", {"vendor_user": frappe.session.user}, "name")
+	site = get_vendor_site_name()
 	if not site:
 		frappe.local.flags.redirect_location = "/vendor-dashboard"
 		raise frappe.Redirect

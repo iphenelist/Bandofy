@@ -71,7 +71,14 @@ function submitLogin(login, message) {
 	success.text = message || t("msg_connected_default");
 	success.open = true;
 	setTimeout(() => {
-		const action = fillLogin(login.action);
+		// MikroTik sends a per-connection login URL in the redirect params
+		// (link-login-only). It includes the client's IP context, so prefer it
+		// over the static site-level URL the server put in login.action.
+		const resolvedAction =
+			portal.mikrotik_login_url && portal.controller_type === "MikroTik"
+				? portal.mikrotik_login_url
+				: login.action;
+		const action = fillLogin(resolvedAction);
 		const fields = Object.entries(login.fields || {}).map(([name, value]) => [
 			name,
 			fillLogin(value),

@@ -12,12 +12,14 @@ class HotspotSite(Document):
 	def onload(self):
 		# The Omada menu and live AP panels need the Open API; the form hides
 		# them when it isn't configured.
-		self.set_onload("open_api", self.controller_type != "Ruijie" and open_api_configured())
+		from bandofy.radius_auth import RADIUS_CONTROLLER_TYPES
+		self.set_onload("open_api", self.controller_type not in RADIUS_CONTROLLER_TYPES and open_api_configured())
 
 	def validate(self):
 		self.sync_names_from_site_name()
 		self.validate_omada_site_id()
 		self.validate_ruijie_ac_name()
+		self.validate_radius_login_url()
 		self.validate_devices()
 		self.validate_vendor_user_uniqueness()
 		self.validate_packages()
@@ -61,6 +63,16 @@ class HotspotSite(Document):
 		self.ruijie_ac_name = (self.ruijie_ac_name or "").strip() or None
 		if self.controller_type == "Ruijie" and not self.ruijie_ac_name:
 			frappe.throw(_("Enter the Ruijie AC Name: the controller's name as it sends it (wlanacname)."))
+
+	def validate_radius_login_url(self):
+		"""MikroTik and Omada Gateway require a static AP Login URL because there
+		is no global setting for them (unlike Ruijie which uses Hotspot Ruijie Settings)."""
+		if self.controller_type in ("MikroTik", "Omada Gateway") and not (self.radius_login_url or "").strip():
+			frappe.throw(
+				_("Enter the AP Login URL for {0} (e.g. http://&lt;router-ip&gt;/login).").format(
+					self.controller_type
+				)
+			)
 
 	def validate_devices(self):
 		"""An AP belongs to exactly one site: no MAC twice in this site's

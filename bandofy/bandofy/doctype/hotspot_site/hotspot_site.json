@@ -399,12 +399,12 @@
   },
   {
    "default": "Omada",
-   "description": "Omada: customers authorized via Omada Controller HTTP API. Ruijie / RADIUS / Omada RADIUS: customers log in through Bandofy's RADIUS server on the VPS — works with any AP brand that supports external RADIUS.",
+   "description": "Omada: authorized via Omada Controller HTTP API. Omada Gateway: TP-Link ER-series standalone gateway (RADIUS). MikroTik: RouterOS HotSpot (RADIUS). Ruijie / RADIUS / Omada RADIUS: any AP brand supporting external RADIUS.",
    "fieldname": "controller_type",
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Controller Type",
-   "options": "Omada\nRuijie\nRADIUS\nOmada RADIUS"
+   "options": "Omada\nOmada Gateway\nRuijie\nMikroTik\nRADIUS\nOmada RADIUS"
   },
   {
    "depends_on": "eval:doc.controller_type=='Ruijie'",
@@ -416,7 +416,7 @@
    "unique": 1
   },
   {
-   "depends_on": "eval:['Ruijie','RADIUS','Omada RADIUS'].includes(doc.controller_type)",
+   "depends_on": "eval:['Ruijie','RADIUS','Omada RADIUS','MikroTik','Omada Gateway'].includes(doc.controller_type)",
    "description": "Auto-generated unique ID for this site's RADIUS config. Enter this as the NAS-Identifier in your AP's RADIUS settings.",
    "fieldname": "nas_identifier",
    "fieldtype": "Data",
@@ -424,11 +424,18 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.controller_type=='RADIUS'",
-   "description": "URL the portal page posts the login form to on the AP (vendor-specific). E.g. Mikrotik: http://router-ip/login. Leave blank for Ruijie/Omada RADIUS (uses global Hotspot Ruijie Settings).",
+   "depends_on": "eval:['RADIUS','MikroTik','Omada Gateway'].includes(doc.controller_type)",
+   "description": "URL the portal page posts credentials to on the AP. MikroTik: http://&lt;router-ip&gt;/login. Omada Gateway: http://&lt;gateway-ip&gt;/login. Leave blank for Ruijie/Omada RADIUS (uses global Hotspot Ruijie Settings).",
    "fieldname": "radius_login_url",
    "fieldtype": "Data",
-   "label": "AP Login URL (RADIUS)"
+   "label": "AP Login URL"
+  },
+  {
+   "default": "Default",
+   "fieldname": "portal_theme",
+   "fieldtype": "Select",
+   "label": "Portal Theme",
+   "options": "Default\nOcean\nForest\nSunset\nMidnight"
   },
   {
    "fieldname": "subscription_section",

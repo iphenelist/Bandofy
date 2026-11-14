@@ -1074,15 +1074,27 @@
 	<script>window.PORTAL = {{ portal_data | tojson }};</script>
 	<script>
 	(function(){
-		var c = window.PORTAL && window.PORTAL.portal_primary_color;
-		if (!c || c === '#00c896') return;
+		var _theme = {{ portal_theme | tojson }};
+		var _color = window.PORTAL && window.PORTAL.portal_primary_color;
+		var themes = {
+			Default:  { bg:'#0a0f1e', card:'#111827', accent:'#00c896', text:'#f1f5f9' },
+			Ocean:    { bg:'#ffffff', card:'#f0f7ff', accent:'#2563eb', text:'#1e293b' },
+			Forest:   { bg:'#f0fdf4', card:'#ffffff', accent:'#16a34a', text:'#14532d' },
+			Sunset:   { bg:'#fff7ed', card:'#ffffff', accent:'#ea580c', text:'#431407' },
+			Midnight: { bg:'#0f0a1a', card:'#1a0f2e', accent:'#8b5cf6', text:'#f1f5f9' },
+		};
+		var t = themes[_theme] || themes.Default;
+		var accent = _color && _color !== '#00c896' ? _color : t.accent;
 		var r = document.documentElement;
-		r.style.setProperty('--teal', c);
-		r.style.setProperty('--teal-l', c);
-		r.style.setProperty('--teal-d', c + '1f');
-		r.style.setProperty('--teal-r', c + '47');
-		r.style.setProperty('--btn-bg', c);
-		r.style.setProperty('--shadow-accent', '0 12px 28px -10px ' + c + 'cc');
+		r.style.setProperty('--bg', t.bg);
+		r.style.setProperty('--ink', t.bg);
+		r.style.setProperty('--teal', accent);
+		r.style.setProperty('--teal-l', accent);
+		r.style.setProperty('--teal-d', accent + '1f');
+		r.style.setProperty('--teal-r', accent + '47');
+		r.style.setProperty('--btn-bg', accent);
+		r.style.setProperty('--shadow-accent', '0 12px 28px -10px ' + accent + 'cc');
+		r.style.setProperty('--text', t.text);
 	})();
 	</script>
 	<script>

@@ -70,7 +70,7 @@ def find_site(omada_site=None, ap_mac=None, fields=None, active_only=True, ac_na
 	if ac_name and ac_name.strip():
 		lookups.append({"ruijie_ac_name": ac_name.strip(), "controller_type": "Ruijie"})
 	if nas_id and nas_id.strip():
-		lookups.append({"nas_identifier": nas_id.strip(), "controller_type": ["in", ["Ruijie", "RADIUS", "Omada RADIUS"]]})
+		lookups.append({"nas_identifier": nas_id.strip(), "controller_type": ["in", ["Ruijie", "RADIUS", "Omada RADIUS", "MikroTik", "Omada Gateway"]]})
 	for filters in lookups:
 		if active_only:
 			filters["is_active"] = 1
@@ -111,6 +111,25 @@ def is_admin_user(user=None):
 	branding preview override both check against."""
 	user = user or frappe.session.user
 	return user == "Administrator" or "System Manager" in frappe.get_roles(user)
+
+
+def get_vendor_site_name(user=None):
+	"""Return the Hotspot Site name for *user* (defaults to session user).
+
+	For regular vendor accounts the site must be directly linked via
+	``vendor_user``.  Administrators and System Managers that have no site
+	linked to their own account fall back to the first site in the database
+	so they can reach all management pages without needing a personal
+	vendor-user link."""
+	user = user or frappe.session.user
+	site_name = frappe.db.get_value("Hotspot Site", {"vendor_user": user}, "name")
+	if not site_name and is_admin_user(user):
+		site_name = frappe.db.get_value(
+			"Hotspot Site", {"is_active": 1}, "name", order_by="creation asc"
+		)
+		if not site_name:
+			site_name = frappe.db.get_value("Hotspot Site", {}, "name", order_by="creation asc")
+	return site_name
 
 
 def is_sabbath_now(site, now=None):
