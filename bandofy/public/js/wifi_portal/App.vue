@@ -125,7 +125,20 @@
 
 		<AdCarousel v-if="portal.ads && portal.ads.length" :ads="portal.ads" />
 
-		<div class="footer-note">{{ t("footer_powered") }}</div>
+		<div class="footer-note">
+			<a
+				v-if="portal.support_phone"
+				:href="`tel:${portal.support_phone}`"
+				class="footer-phone"
+			>
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="13" height="13">
+					<path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C11.4 21 3 12.6 3 2.7c0-.6.4-1 1-1H7.7c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.2 1.1L6.6 10.8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+				</svg>
+				{{ portal.support_phone }}
+			</a>
+			<span v-if="portal.support_phone"> · </span>
+			{{ t("footer_powered") }}
+		</div>
 	</div>
 
 	<template v-if="portal.site_found">

@@ -869,7 +869,8 @@ def restrict_desk_access():
 @frappe.whitelist()
 def update_site_settings(site, site_name=None, phone_number=None, portal_tagline=None,
                           mobile_money_account=None, enable_online_payment=0,
-                          enable_free_trial=0, free_trial_minutes=10, portal_primary_color=None):
+                          enable_free_trial=0, free_trial_minutes=10, portal_primary_color=None,
+                          sms_notifications_enabled=0):
 	"""Update basic site settings from the /site-settings web page."""
 	site_doc = frappe.get_doc("Hotspot Site", site)
 	if site_doc.vendor_user != frappe.session.user and "System Manager" not in frappe.get_roles():
@@ -888,6 +889,7 @@ def update_site_settings(site, site_name=None, phone_number=None, portal_tagline
 	site_doc.enable_online_payment = int(enable_online_payment or 0)
 	site_doc.enable_free_trial = int(enable_free_trial or 0)
 	site_doc.free_trial_minutes = int(free_trial_minutes or 10)
+	site_doc.sms_notifications_enabled = int(sms_notifications_enabled or 0)
 	site_doc.save(ignore_permissions=True)
 	frappe.db.commit()
 	return {"updated": site}
