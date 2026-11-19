@@ -70,7 +70,7 @@ body{display:flex;align-items:center;justify-content:center;min-height:100vh;pad
   <div class="foot">
     Already set up? <a href="/vendor-dashboard">Go to Dashboard</a>
     &nbsp;·&nbsp;
-    <a href="/api/method/logout">Log out</a>
+    <a href="#" onclick="doLogout();return false;">Log out</a>
   </div>
 </div>
 
@@ -118,6 +118,14 @@ function frappeErr(d) {
 document.getElementById('fSiteName').addEventListener('keydown', function(e){
   if (e.key === 'Enter') createSite();
 });
+function doLogout() {
+  fetch('/api/method/logout', {
+    method: 'POST',
+    headers: {'X-Frappe-CSRF-Token': getCsrf(), 'Content-Type': 'application/json'},
+    body: '{}'
+  }).then(function(){ window.location.href = '/login'; })
+    .catch(function(){ window.location.href = '/login'; });
+}
 </script>
 </body>
 </html>

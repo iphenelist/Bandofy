@@ -73,7 +73,7 @@
       <div class="sb-user-name">{{ site.vendor_name or "Vendor" }}</div>
       <div class="sb-user-role">Hotspot Manager</div>
     </div>
-    <a class="sb-logout" href="/api/method/logout" title="Log out">
+    <a class="sb-logout" href="#" onclick="doLogout();return false;" title="Log out">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3M7 5L3 8l4 3M3 8h8"/></svg>
     </a>
   </div>
@@ -207,6 +207,19 @@ function submitWithdrawal() {
 <script>
 (function(){try{var t=localStorage.getItem('dashTheme')||'light';var s=document.getElementById('themeIconSun'),m=document.getElementById('themeIconMoon');if(t==='dark'){if(s)s.style.display='';if(m)m.style.display='none';}else{if(s)s.style.display='none';if(m)m.style.display='';}}catch(e){}})();
 function toggleTheme(){var d=document.documentElement,isLight=d.getAttribute('data-theme')!=='dark',next=isLight?'dark':'light';d.setAttribute('data-theme',next);try{localStorage.setItem('dashTheme',next);}catch(e){}var s=document.getElementById('themeIconSun'),m=document.getElementById('themeIconMoon');if(s)s.style.display=next==='dark'?'':'none';if(m)m.style.display=next==='dark'?'none':'';}
+</script>
+<script>
+function doLogout() {
+  var csrf = document.cookie.split(';').map(function(c){return c.trim();})
+    .filter(function(c){return c.startsWith('csrftoken=');})
+    .map(function(c){return c.slice(10);})[0] || '';
+  fetch('/api/method/logout', {
+    method: 'POST',
+    headers: {'X-Frappe-CSRF-Token': csrf, 'Content-Type': 'application/json'},
+    body: '{}'
+  }).then(function(){ window.location.href = '/login'; })
+    .catch(function(){ window.location.href = '/login'; });
+}
 </script>
 </body>
 </html>
