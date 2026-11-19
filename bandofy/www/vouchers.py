@@ -16,7 +16,8 @@ def get_context(context):
 
     site_name = get_vendor_site_name()
     if not site_name:
-        frappe.throw(_("No Hotspot Site linked to your account."), frappe.PermissionError)
+        frappe.local.flags.redirect_location = "/create-site"
+        raise frappe.Redirect
     site = frappe.db.get_value(
         "Hotspot Site",
         site_name,

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Your Hotspot Site — Bandofy</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#f5f6f8;color:#0d1b3e;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+.wrap{width:100%;max-width:460px}
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:32px;justify-content:center}
+.logo-mark{width:40px;height:40px;border-radius:10px;background:#8b1527;display:flex;align-items:center;justify-content:center;color:#fff}
+.logo-name{font-size:20px;font-weight:800;color:#0d1b3e}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:32px 28px}
+.card h1{font-size:20px;font-weight:800;margin-bottom:6px}
+.card p{font-size:13px;color:#64748b;margin-bottom:24px;line-height:1.5}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.field input,.field select{width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#0d1b3e;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus{border-color:#8b1527;background:#fff}
+.field .hint{font-size:11px;color:#94a3b8;margin-top:4px}
+.err{display:none;padding:10px 13px;border-radius:8px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.22);color:#dc2626;font-size:13px;margin-bottom:14px}
+.btn-primary{width:100%;padding:13px;border-radius:8px;background:#8b1527;color:#fff;font-size:14px;font-weight:800;border:none;cursor:pointer;font-family:inherit;transition:background .15s}
+.btn-primary:hover{background:#7a1221}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed}
+.foot{text-align:center;margin-top:16px;font-size:12px;color:#94a3b8}
+.foot a{color:#8b1527;font-weight:600;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+        <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+        <circle cx="12" cy="20" r="1.5" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+    <span class="logo-name">Bandofy</span>
+  </div>
+
+  <div class="card">
+    <h1>Create Your Hotspot Site</h1>
+    <p>Give your site a name and choose how your access point controller connects. You can change these later in Settings.</p>
+
+    <div id="errBox" class="err"></div>
+
+    <div class="field">
+      <label>Site Name</label>
+      <input type="text" id="fSiteName" placeholder="e.g. Kariakoo Hotspot" autocomplete="off">
+      <div class="hint">Visible to your customers on the login portal.</div>
+    </div>
+
+    <div class="field">
+      <label>Controller Type</label>
+      <select id="fController">
+        <option value="Omada">TP-Link Omada</option>
+        <option value="Ruijie">Ruijie / RADIUS</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <button class="btn-primary" id="createBtn" onclick="createSite()">Create Site &amp; Continue</button>
+  </div>
+
+  <div class="foot">
+    Already set up? <a href="/vendor-dashboard">Go to Dashboard</a>
+    &nbsp;·&nbsp;
+    <a href="/api/method/logout">Log out</a>
+  </div>
+</div>
+
+<script>
+async function createSite() {
+  var name = document.getElementById('fSiteName').value.trim();
+  var ctrl = document.getElementById('fController').value;
+  var btn  = document.getElementById('createBtn');
+  var err  = document.getElementById('errBox');
+  err.style.display = 'none';
+  if (!name) { err.textContent = 'Please enter a site name.'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Creating…';
+  try {
+    var r = await fetch('/api/method/bandofy.api.create_site_for_user', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'X-Frappe-CSRF-Token': getCsrf()},
+      body: JSON.stringify({site_name: name, controller_type: ctrl})
+    });
+    var d = await r.json();
+    if (d.exc) {
+      err.textContent = frappeErr(d);
+      err.style.display = 'block';
+    } else {
+      window.location.href = '/onboarding';
+    }
+  } catch(e) {
+    err.textContent = 'Network error. Please try again.';
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Create Site & Continue';
+  }
+}
+function getCsrf() {
+  return document.cookie.split(';').map(function(c){return c.trim();})
+    .filter(function(c){return c.startsWith('csrftoken=');})
+    .map(function(c){return c.slice(10);})[0] || '';
+}
+function frappeErr(d) {
+  try {
+    return JSON.parse(d._server_messages || '[]')
+      .map(function(m){try{return JSON.parse(m).message;}catch{return m;}})
+      .join(' ') || 'An error occurred.';
+  } catch { return 'An error occurred.'; }
+}
+document.getElementById('fSiteName').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') createSite();
+});
+</script>
+</body>
+</html>

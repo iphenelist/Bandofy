@@ -1061,6 +1061,91 @@ def create_voucher_batch(site, package_name, quantity):
 	return {"batch": batch.name, "count": quantity}
 
 
+@frappe.whitelist()
+def get_batch_vouchers(site, batch):
+	"""Return individual vouchers for a batch (for single-voucher editing in /vouchers)."""
+	site_doc = frappe.get_doc("Hotspot Site", site)
+	if site_doc.vendor_user != frappe.session.user and "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+	vouchers = frappe.get_all(
+		"Hotspot Voucher",
+		filters={"site": site, "batch": batch},
+		fields=["name", "voucher_code", "status", "expires_on", "used_on", "used_by_mac"],
+		order_by="name asc",
+		ignore_permissions=True,
+	)
+	for v in vouchers:
+		v["expires_on"] = str(v["expires_on"]) if v.get("expires_on") else ""
+		v["used_on"] = str(v["used_on"]) if v.get("used_on") else ""
+	return vouchers
+
+
+@frappe.whitelist()
+def update_voucher(site, voucher_code, status=None, expires_on=None):
+	"""Update a single voucher's status or expiry. Called from /vouchers page."""
+	site_doc = frappe.get_doc("Hotspot Site", site)
+	if site_doc.vendor_user != frappe.session.user and "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+	voucher = frappe.get_doc("Hotspot Voucher", voucher_code)
+	if voucher.site != site:
+		frappe.throw(_("Voucher does not belong to this site."), frappe.PermissionError)
+
+	if status and status in ("Unused", "Blocked"):
+		voucher.status = status
+	if expires_on is not None:
+		voucher.expires_on = expires_on or None
+	voucher.save(ignore_permissions=True)
+	frappe.db.commit()
+	return {"status": voucher.status, "expires_on": str(voucher.expires_on) if voucher.expires_on else ""}
+
+
+@frappe.whitelist()
+def create_site_for_user(site_name, controller_type=None):
+	"""Create a Hotspot Site for the currently logged-in Bandofy Manager."""
+	user = frappe.session.user
+	if user == "Guest":
+		frappe.throw(_("You must be logged in."), frappe.PermissionError)
+
+	site_name = (site_name or "").strip()
+	if not site_name:
+		frappe.throw(_("Site name is required."))
+
+	if frappe.db.exists("Hotspot Site", {"vendor_user": user}):
+		frappe.throw(_("You already have a Hotspot Site linked to your account."))
+
+	if frappe.db.exists("Hotspot Site", {"site_name": site_name}):
+		frappe.throw(_("A site with that name already exists. Please choose a different name."))
+
+	try:
+		ps = frappe.get_single("Hotspot Platform Settings")
+		pkg_name = ps.default_pkg_name or "1 Hour"
+		pkg_price = float(ps.default_pkg_price or 500)
+		pkg_duration = int(ps.default_pkg_duration or 60)
+		trial_days = int(ps.trial_days or 14)
+	except Exception:
+		pkg_name, pkg_price, pkg_duration, trial_days = "1 Hour", 500.0, 60, 14
+
+	site_doc = frappe.new_doc("Hotspot Site")
+	site_doc.site_name = site_name
+	site_doc.vendor_name = frappe.db.get_value("User", user, "full_name") or site_name
+	site_doc.vendor_user = user
+	site_doc.controller_type = controller_type or "Omada"
+	site_doc.is_active = 1
+	site_doc.subscription_status = "Trial"
+	site_doc.trial_expires_on = frappe.utils.add_days(frappe.utils.today(), trial_days)
+	site_doc.append("packages", {
+		"package_name": pkg_name,
+		"price": pkg_price,
+		"duration_minutes": pkg_duration,
+		"package_type": "Data",
+	})
+	site_doc.insert(ignore_permissions=True)
+	frappe.db.commit()
+	return {"site": site_doc.name}
+
+
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def register_manager(full_name, email, password, phone, site_name):
 	"""Public signup: create a User + Hotspot Site, assign Bandofy Manager role,
