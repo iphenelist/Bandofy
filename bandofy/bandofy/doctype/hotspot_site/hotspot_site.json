@@ -46,6 +46,7 @@
   "column_break_branding",
   "portal_tagline",
   "portal_primary_color",
+  "sms_notifications_enabled",
   "access_section",
   "enable_free_trial",
   "free_trial_minutes",
@@ -305,6 +306,13 @@
    "fieldname": "portal_primary_color",
    "fieldtype": "Data",
    "label": "Portal Brand Color"
+  },
+  {
+   "default": "0",
+   "description": "Send SMS notifications to customers when their session starts or expires.",
+   "fieldname": "sms_notifications_enabled",
+   "fieldtype": "Check",
+   "label": "SMS Notifications Enabled"
   },
   {
    "fieldname": "access_section",
