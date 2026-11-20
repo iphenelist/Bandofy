@@ -180,8 +180,8 @@ async function toggleVouchers(batch) {
   try {
     var r = await fetch('/api/method/bandofy.api.get_batch_vouchers', {
       method: 'POST',
-      headers: {'Content-Type':'application/json','X-Frappe-CSRF-Token': getCsrf()},
-      body: JSON.stringify({site: SITE, batch: batch})
+      headers: {'X-Frappe-CSRF-Token': getCsrf()},
+      body: new URLSearchParams({site: SITE, batch: batch})
     });
     var d = await r.json();
     if (d.exc || !d.message) {
@@ -243,8 +243,8 @@ async function saveVoucher() {
   try {
     var r = await fetch('/api/method/bandofy.api.update_voucher', {
       method: 'POST',
-      headers: {'Content-Type':'application/json','X-Frappe-CSRF-Token': getCsrf()},
-      body: JSON.stringify({
+      headers: {'X-Frappe-CSRF-Token': getCsrf()},
+      body: new URLSearchParams({
         site: SITE,
         voucher_code: _editCode,
         status: status,
