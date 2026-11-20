@@ -184,7 +184,11 @@ async function toggleVouchers(batch) {
       body: JSON.stringify({site: SITE, batch: batch})
     });
     var d = await r.json();
-    if (d.exc || !d.message) { list.innerHTML = '<div style="color:var(--red);font-size:12px;padding:8px 0">Failed to load vouchers.</div>'; return; }
+    if (d.exc || !d.message) {
+      var msg = 'Failed to load vouchers.';
+      try { msg = JSON.parse(d._server_messages||'[]').map(function(m){try{return JSON.parse(m).message;}catch{return m;}}).join(' ') || msg; } catch {}
+      list.innerHTML = '<div style="color:var(--red);font-size:12px;padding:8px 0">' + msg + '</div>'; return;
+    }
     renderVouchers(list, d.message);
     _loaded[batch] = true;
   } catch(e) {

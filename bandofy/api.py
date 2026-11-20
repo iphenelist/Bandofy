@@ -1066,8 +1066,9 @@ def create_voucher_batch(site, package_name, quantity):
 @frappe.whitelist()
 def get_batch_vouchers(site, batch):
 	"""Return individual vouchers for a batch (for single-voucher editing in /vouchers)."""
-	from bandofy.utils import get_vendor_site_name
-	if get_vendor_site_name() != site:
+	from bandofy.utils import get_vendor_site_name, is_admin_user
+	vendor_user = frappe.db.get_value("Hotspot Site", site, "vendor_user")
+	if not (is_admin_user() or vendor_user == frappe.session.user or get_vendor_site_name() == site):
 		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 	vouchers = frappe.get_all(
@@ -1086,8 +1087,9 @@ def get_batch_vouchers(site, batch):
 @frappe.whitelist()
 def update_voucher(site, voucher_code, status=None, expires_on=None):
 	"""Update a single voucher's status or expiry. Called from /vouchers page."""
-	from bandofy.utils import get_vendor_site_name
-	if get_vendor_site_name() != site:
+	from bandofy.utils import get_vendor_site_name, is_admin_user
+	vendor_user = frappe.db.get_value("Hotspot Site", site, "vendor_user")
+	if not (is_admin_user() or vendor_user == frappe.session.user or get_vendor_site_name() == site):
 		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 	voucher = frappe.get_doc("Hotspot Voucher", voucher_code)
