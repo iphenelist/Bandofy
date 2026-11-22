@@ -30,7 +30,7 @@
 		<template v-if="selected">
 			<div class="mm-modal-pkg">
 				<span class="mm-modal-pkg-name">{{ selected.package_name }}</span>
-				<span class="mm-modal-pkg-price">{{ amount(selected) }} <small>{{ portal.currency }}</small></span>
+				<span class="mm-modal-pkg-price">{{ amount(selected) }} <span class="mm-modal-pkg-currency">{{ portal.currency }}</span></span>
 			</div>
 		</template>
 		<label class="field-step" for="mm-phone">{{ t("step_phone_number") }}</label>
@@ -136,6 +136,7 @@ function pay() {
 	gap: 8px;
 	margin-bottom: 14px;
 	padding-bottom: 12px;
+	padding-right: 24px;
 	border-bottom: 1px solid var(--line, rgba(255,255,255,0.07));
 }
 .mm-modal-pkg-name {
@@ -148,10 +149,10 @@ function pay() {
 	font-weight: 800;
 	color: var(--teal, #00c896);
 }
-.mm-modal-pkg-price small {
-	font-size: 0.55em;
+.mm-modal-pkg-currency {
+	font-size: 0.7em;
 	font-weight: 600;
-	color: var(--text-dim, rgba(224,230,237,0.55));
+	color: var(--text-dim, rgba(224,230,237,0.65));
 }
 .mm-modal-error {
 	margin-top: 8px;
