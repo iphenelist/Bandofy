@@ -1,55 +1,57 @@
 <template>
-	<div class="mm-form">
-		<div class="field-step">{{ t("step_select_package") }}</div>
+	<div>
+		<div class="mm-form">
+			<div class="field-step">{{ t("step_select_package") }}</div>
 
-		<div v-if="packages.length" class="pkg-list">
-			<button
-				v-for="pkg in packages"
-				:key="pkg.idx"
-				type="button"
-				class="pkg-card"
-				@click="selectPackage(pkg)"
-			>
-				<div class="pkg-card-header">
-					<span class="pkg-card-name">{{ pkg.package_name }}</span>
-					<span class="pkg-card-type">{{ pkg.package_type || 'Unlimited' }}</span>
-				</div>
-				<div class="pkg-card-price">{{ amount(pkg) }} <small>{{ portal.currency }}</small></div>
-				<div class="pkg-pills">
-					<span class="pkg-pill">⏱ {{ formatDuration(pkg.duration_minutes) }}</span>
-					<span v-if="getSpeed(pkg)" class="pkg-pill">⚡ {{ getSpeed(pkg) }}</span>
-					<span v-if="pkg.device_limit > 0" class="pkg-pill">👥 {{ pkg.device_limit === 1 ? '1 device' : pkg.device_limit + ' devices' }}</span>
-					<span v-if="pkg.data_limit_mb > 0" class="pkg-pill">📦 {{ pkg.data_limit_mb }} MB</span>
-				</div>
-			</button>
-		</div>
-		<div v-else class="empty-state">{{ t("empty_packages") }}</div>
-	</div>
-
-	<BaseModal :open="phoneModal" @close="closeModal">
-		<template v-if="selected">
-			<div class="mm-modal-pkg">
-				<span class="mm-modal-pkg-name">{{ selected.package_name }}</span>
-				<span class="mm-modal-pkg-price">{{ amount(selected) }} <span class="mm-modal-pkg-currency">{{ portal.currency }}</span></span>
+			<div v-if="packages.length" class="pkg-list">
+				<button
+					v-for="pkg in packages"
+					:key="pkg.idx"
+					type="button"
+					class="pkg-card"
+					@click="selectPackage(pkg)"
+				>
+					<div class="pkg-card-header">
+						<span class="pkg-card-name">{{ pkg.package_name }}</span>
+						<span class="pkg-card-type">{{ pkg.package_type || 'Unlimited' }}</span>
+					</div>
+					<div class="pkg-card-price">{{ amount(pkg) }} <span class="pkg-card-currency">{{ portal.currency }}</span></div>
+					<div class="pkg-pills">
+						<span class="pkg-pill">⏱ {{ formatDuration(pkg.duration_minutes) }}</span>
+						<span v-if="getSpeed(pkg)" class="pkg-pill">⚡ {{ getSpeed(pkg) }}</span>
+						<span v-if="pkg.device_limit > 0" class="pkg-pill">👥 {{ pkg.device_limit === 1 ? '1 device' : pkg.device_limit + ' devices' }}</span>
+						<span v-if="pkg.data_limit_mb > 0" class="pkg-pill">📦 {{ pkg.data_limit_mb }} MB</span>
+					</div>
+				</button>
 			</div>
-		</template>
-		<label class="field-step" for="mm-phone">{{ t("step_phone_number") }}</label>
-		<div class="phone-pill">
-			<input
-				id="mm-phone"
-				ref="phoneInput"
-				v-model.trim="phone"
-				type="tel"
-				inputmode="tel"
-				:placeholder="t('modal_phone_placeholder')"
-				@keydown.enter="pay"
-			/>
+			<div v-else class="empty-state">{{ t("empty_packages") }}</div>
 		</div>
-		<div v-if="localError" class="mm-modal-error">{{ localError }}</div>
-		<button type="button" class="modal-submit" :disabled="busy" @click="pay">
-			{{ busy ? t("msg_sending_request") : t("pay_and_connect_btn", { price: `${amount(selected || {})} ${portal.currency}` }) }}
-		</button>
-	</BaseModal>
+
+		<BaseModal :open="phoneModal" @close="closeModal">
+			<template v-if="selected">
+				<div class="mm-modal-pkg">
+					<div class="mm-modal-pkg-name">{{ selected.package_name }}</div>
+					<div class="mm-modal-pkg-price">{{ amount(selected) }} <span class="mm-modal-pkg-currency">{{ portal.currency }}</span></div>
+				</div>
+			</template>
+			<label class="field-step" for="mm-phone">{{ t("step_phone_number") }}</label>
+			<div class="phone-pill">
+				<input
+					id="mm-phone"
+					ref="phoneInput"
+					v-model.trim="phone"
+					type="tel"
+					inputmode="tel"
+					:placeholder="t('modal_phone_placeholder')"
+					@keydown.enter="pay"
+				/>
+			</div>
+			<div v-if="localError" class="mm-modal-error">{{ localError }}</div>
+			<button type="button" class="modal-submit" :disabled="busy" @click="pay">
+				{{ busy ? t("msg_sending_request") : t("pay_and_connect_btn", { price: `${amount(selected || {})} ${portal.currency}` }) }}
+			</button>
+		</BaseModal>
+	</div>
 </template>
 
 <script setup>
@@ -130,34 +132,40 @@ function pay() {
 
 <style scoped>
 .mm-modal-pkg {
-	display: flex;
-	align-items: baseline;
-	justify-content: space-between;
-	gap: 8px;
-	margin-bottom: 14px;
-	padding-bottom: 12px;
+	text-align: center;
+	margin-bottom: 16px;
+	padding-bottom: 14px;
 	padding-right: 24px;
 	border-bottom: 1px solid var(--line, rgba(255,255,255,0.07));
 }
 .mm-modal-pkg-name {
-	font-size: 1em;
+	font-size: 0.88em;
 	font-weight: 700;
-	color: var(--text, #e0e6ed);
+	color: var(--text-dim, rgba(224,230,237,0.65));
+	margin-bottom: 4px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
 }
 .mm-modal-pkg-price {
-	font-size: 1.3em;
+	font-size: 1.6em;
 	font-weight: 800;
 	color: var(--teal, #00c896);
+	line-height: 1;
 }
 .mm-modal-pkg-currency {
-	font-size: 0.7em;
+	font-size: 0.6em;
 	font-weight: 600;
-	color: var(--text-dim, rgba(224,230,237,0.65));
+	color: var(--text-dim, rgba(224,230,237,0.55));
 }
 .mm-modal-error {
 	margin-top: 8px;
 	font-size: 0.85em;
 	color: #f87171;
+}
+.pkg-card-currency {
+	font-size: 0.65em;
+	font-weight: 600;
+	color: var(--text-dim, rgba(224,230,237,0.55));
 }
 .pkg-list {
 	display: grid;
