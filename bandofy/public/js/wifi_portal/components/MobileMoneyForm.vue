@@ -8,8 +8,7 @@
 				:key="pkg.idx"
 				type="button"
 				class="pkg-card"
-				:class="{ selected: selected && selected.idx === pkg.idx }"
-				@click="selected = pkg"
+				@click="selectPackage(pkg)"
 			>
 				<div class="pkg-card-header">
 					<span class="pkg-card-name">{{ pkg.package_name }}</span>
@@ -25,65 +24,55 @@
 			</button>
 		</div>
 		<div v-else class="empty-state">{{ t("empty_packages") }}</div>
-
-		<template v-if="packages.length">
-			<label class="field-step" for="mm-phone">{{ t("step_phone_number") }}</label>
-			<div class="phone-pill">
-				<input
-					id="mm-phone"
-					ref="phoneInput"
-					v-model.trim="phone"
-					type="tel"
-					inputmode="tel"
-					:placeholder="t('modal_phone_placeholder')"
-					@keydown.enter="pay"
-				/>
-			</div>
-
-			<button type="button" class="btn-primary btn-pay" :disabled="busy" @click="pay">
-				{{
-					busy
-						? t("msg_sending_request")
-						: selected
-						? t("pay_and_connect_btn", {
-								price: `${amount(selected)} ${portal.currency}`,
-						  })
-						: t("choose_package_first")
-				}}
-			</button>
-		</template>
 	</div>
+
+	<BaseModal :open="phoneModal" @close="closeModal">
+		<template v-if="selected">
+			<div class="mm-modal-pkg">
+				<span class="mm-modal-pkg-name">{{ selected.package_name }}</span>
+				<span class="mm-modal-pkg-price">{{ amount(selected) }} <small>{{ portal.currency }}</small></span>
+			</div>
+		</template>
+		<label class="field-step" for="mm-phone">{{ t("step_phone_number") }}</label>
+		<div class="phone-pill">
+			<input
+				id="mm-phone"
+				ref="phoneInput"
+				v-model.trim="phone"
+				type="tel"
+				inputmode="tel"
+				:placeholder="t('modal_phone_placeholder')"
+				@keydown.enter="pay"
+			/>
+		</div>
+		<div v-if="localError" class="mm-modal-error">{{ localError }}</div>
+		<button type="button" class="modal-submit" :disabled="busy" @click="pay">
+			{{ busy ? t("msg_sending_request") : t("pay_and_connect_btn", { price: `${amount(selected || {})} ${portal.currency}` }) }}
+		</button>
+	</BaseModal>
 </template>
 
 <script setup>
-// "Mobile Money" tab: pick a package, enter the paying number, and send an
-// STK push via initiate_payment -- all on the card, no popup.
-import { ref } from "vue";
+// "Mobile Money" tab: pick a package then enter the paying number in a popup.
+import { nextTick, ref } from "vue";
 import { call, errorText, resultMessage } from "../api";
 import { formatDuration, t } from "../i18n";
 import { clearMessage, handleSuccessPayload, showMessage } from "../login";
 import { connectArgs, portal } from "../portal";
+import BaseModal from "./BaseModal.vue";
 
 const props = defineProps({ packages: { type: Array, required: true } });
 const emit = defineEmits(["unavailable"]);
 
-const selected = ref(props.packages.length ? props.packages[0] : null);
+const selected = ref(null);
 const phone = ref("");
 const busy = ref(false);
+const phoneModal = ref(false);
+const localError = ref("");
 const phoneInput = ref(null);
 
 function amount(pkg) {
 	return Number(pkg.price || 0).toLocaleString("en-US");
-}
-
-function subtitle(pkg) {
-	const kind = t(pkg.package_type === "Bundle" ? "group_bundle" : "group_unlimited");
-	const kbps = parseInt(pkg.bandwidth_down_kbps, 10) || 0;
-	const parts = [kind];
-	if (kbps) parts.push(kbps >= 1024 ? `${Math.round(kbps / 102.4) / 10} Mbps` : `${kbps} Kbps`);
-	if (pkg.device_limit > 0) parts.push(pkg.device_limit === 1 ? "1 device" : `${pkg.device_limit} devices`);
-	if (pkg.data_limit_mb > 0) parts.push(`${pkg.data_limit_mb} MB data`);
-	return parts.join(" · ");
 }
 
 function getSpeed(pkg) {
@@ -92,22 +81,31 @@ function getSpeed(pkg) {
 	return kbps >= 1024 ? `${Math.round(kbps / 102.4) / 10} Mbps` : `${kbps} Kbps`;
 }
 
-function pay() {
-	if (busy.value) return;
-	if (!selected.value) {
-		showMessage(t("choose_package_first"), "error");
-		return;
-	}
+function selectPackage(pkg) {
 	if (!portal.online_payment_enabled) {
 		emit("unavailable");
 		return;
 	}
+	selected.value = pkg;
+	localError.value = "";
+	phone.value = "";
+	phoneModal.value = true;
+	nextTick(() => phoneInput.value && phoneInput.value.focus());
+}
+
+function closeModal() {
+	if (busy.value) return;
+	phoneModal.value = false;
+}
+
+function pay() {
+	if (busy.value) return;
 	if (!phone.value) {
-		showMessage(t("msg_please_enter_phone"), "error");
+		localError.value = t("msg_please_enter_phone");
 		phoneInput.value && phoneInput.value.focus();
 		return;
 	}
-
+	localError.value = "";
 	busy.value = true;
 	clearMessage();
 	call("initiate_payment", {
@@ -118,18 +116,48 @@ function pay() {
 		.then((result) => {
 			const payload = resultMessage(result);
 			if (payload) {
+				phoneModal.value = false;
 				showMessage(payload.message || t("msg_stk_sent_default"), "success");
 				handleSuccessPayload(payload);
 			} else {
-				showMessage(errorText(result), "error");
+				localError.value = errorText(result);
 			}
 		})
-		.catch(() => showMessage(t("msg_network_error"), "error"))
+		.catch(() => { localError.value = t("msg_network_error"); })
 		.finally(() => (busy.value = false));
 }
 </script>
 
 <style scoped>
+.mm-modal-pkg {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 14px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--line, rgba(255,255,255,0.07));
+}
+.mm-modal-pkg-name {
+	font-size: 1em;
+	font-weight: 700;
+	color: var(--text, #e0e6ed);
+}
+.mm-modal-pkg-price {
+	font-size: 1.3em;
+	font-weight: 800;
+	color: var(--teal, #00c896);
+}
+.mm-modal-pkg-price small {
+	font-size: 0.55em;
+	font-weight: 600;
+	color: var(--text-dim, rgba(224,230,237,0.55));
+}
+.mm-modal-error {
+	margin-top: 8px;
+	font-size: 0.85em;
+	color: #f87171;
+}
 .pkg-list {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
