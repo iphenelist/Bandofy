@@ -43,6 +43,7 @@ const MESSAGES = {
 		maintenance_close_btn: "Nimeelewa",
 		success_title: "Umefanikiwa!",
 		success_redirect_note: "Unaelekezwa kwenye intaneti...",
+		voucher_modal_hint: "Ingiza nambari ya voucher kwa kifurushi hiki.",
 		msg_please_enter_voucher: "Tafadhali ingiza nambari yako ya voucher.",
 		msg_generic_error: "Hitilafu imetokea. Tafadhali jaribu tena.",
 		msg_network_error:
@@ -125,6 +126,7 @@ const MESSAGES = {
 		maintenance_close_btn: "Got it",
 		success_title: "Success!",
 		success_redirect_note: "Redirecting you to the internet...",
+		voucher_modal_hint: "Enter the voucher code for this package.",
 		msg_please_enter_voucher: "Please enter your voucher code.",
 		msg_generic_error: "Something went wrong. Please try again.",
 		msg_network_error: "Network error. Please check your connection and try again.",

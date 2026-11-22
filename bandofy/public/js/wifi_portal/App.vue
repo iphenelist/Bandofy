@@ -63,22 +63,25 @@
 				<SabbathCard v-if="portal.sabbath_active" />
 				<FreeTrialCard v-if="portal.free_trial_enabled" />
 				<template v-if="!portal.sabbath_active">
-					<div v-if="portal.payment_providers && portal.payment_providers.length" class="pay-logos pay-logos-top">
-						<div
-							v-for="p in portal.payment_providers"
-							:key="p.file"
-							class="pay-logo"
-							:title="p.name"
-						>
-							<img
-								v-if="!brokenLogos[p.file]"
-								:src="`/assets/bandofy/images/payment_logos/${p.file}.png`"
-								:alt="p.name"
-								@error="brokenLogos[p.file] = true"
-							/>
-							<span v-else class="pay-fallback" style="display: flex">{{
-								p.name
-							}}</span>
+					<div v-if="portal.payment_providers && portal.payment_providers.length" class="pay-section-top">
+						<div class="pay-label">{{ t("pay_label") }}</div>
+						<div class="pay-logos">
+							<div
+								v-for="p in portal.payment_providers"
+								:key="p.file"
+								class="pay-logo"
+								:title="p.name"
+							>
+								<img
+									v-if="!brokenLogos[p.file]"
+									:src="`/assets/bandofy/images/payment_logos/${p.file}.png`"
+									:alt="p.name"
+									@error="brokenLogos[p.file] = true"
+								/>
+								<span v-else class="pay-fallback" style="display: flex">{{
+									p.name
+								}}</span>
+							</div>
 						</div>
 					</div>
 
@@ -102,7 +105,11 @@
 						:packages="portal.packages || []"
 						@unavailable="modal = 'maintenance'"
 					/>
-					<VoucherForm v-show="activeTab === 'voucher'" @find="modal = 'find'" />
+					<VoucherForm
+						v-show="activeTab === 'voucher'"
+						:packages="portal.packages || []"
+						@find="modal = 'find'"
+					/>
 				</template>
 
 				<div v-if="status.text" class="msg show" :class="status.type">
